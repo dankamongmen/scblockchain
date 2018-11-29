@@ -5,3 +5,4 @@ catena -- ShareCare blockchain for health information
 ## Build requirements
 
 * C++ compiler and GNU Make
+* Google Test
