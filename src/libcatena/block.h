@@ -1,0 +1,4 @@
+#ifndef CATENA_LIBCATENA_BLOCK
+#define CATENA_LIBCATENA_BLOCK
+
+#endif

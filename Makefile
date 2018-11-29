@@ -14,7 +14,7 @@ CPPSRC:=$(shell find $(CSRCDIRS) -type f -iname \*.cpp -print)
 CPPINC:=$(shell find $(CSRCDIRS) -type f -iname \*.h -print)
 CPPOBJ:=$(addprefix $(OUT)/,$(CPPSRC:%.c=%.o))
 
-WFLAGS:=-Wall -W -Werror
+WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
 CXXFLAGS:=-pipe -std=c++14 -pthread
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS)
