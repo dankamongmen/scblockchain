@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin check test clean
+.PHONY: all bin valgrind check test clean
 .DEFAULT_GOAL:=all
 
 SRC:=src
@@ -8,6 +8,7 @@ TAGS:=.tags
 BINOUT:=$(OUT)
 BIN:=$(BINOUT)/catena
 TESTBIN:=$(BINOUT)/catenatest
+VALGRIND:=valgrind --tool=memcheck --leak-check=full
 
 CPPSRCDIRS:=$(wildcard $(SRC)/*)
 CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
@@ -53,6 +54,9 @@ check: test
 
 test: $(TESTBIN) $(TESTDATA)
 	$(BINOUT)/catenatest
+
+valgrind: $(TESTBIN) $(TESTDATA)
+	$(VALGRIND) $(BINOUT)/catenatest
 
 clean:
 	rm -rf $(OUT)

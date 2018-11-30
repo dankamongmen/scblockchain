@@ -1,3 +1,4 @@
+#include <memory>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -60,15 +61,14 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 void CatenaBlocks::loadFile(const std::string& fname){
 	std::ifstream f;
 	blockcount = 0; // FIXME discard existing blocks
-	char *memblock;
 	std::streampos size;
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
 	size = f.tellg();
-	memblock = new char[size];
+	std::unique_ptr<char[]> memblock(new char[size]);
 	f.seekg(0, std::ios::beg);
-	f.read(memblock, size);
-	int blocknum = verifyData(memblock, size);
+	f.read(memblock.get(), size);
+	int blocknum = verifyData(memblock.get(), size);
 	if(blocknum <= 0){
 		return;
 	}
