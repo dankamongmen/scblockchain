@@ -59,16 +59,15 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 }
 
 void CatenaBlocks::loadFile(const std::string& fname){
-	std::ifstream f;
 	blockcount = 0; // FIXME discard existing blocks
-	std::streampos size;
+	std::ifstream f;
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
-	size = f.tellg();
+	auto size = f.tellg();
 	std::unique_ptr<char[]> memblock(new char[size]);
 	f.seekg(0, std::ios::beg);
 	f.read(memblock.get(), size);
-	int blocknum = verifyData(memblock.get(), size);
+	auto blocknum = verifyData(memblock.get(), size);
 	if(blocknum <= 0){
 		return;
 	}
