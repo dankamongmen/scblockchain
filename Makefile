@@ -20,8 +20,9 @@ CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
 
 WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
+CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
-CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS)
+CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS)
 
 # FIXME detect this, or let it be specified
 LDLIBSGTEST:=/usr/lib/x86_64-linux-gnu/libgtest.a
