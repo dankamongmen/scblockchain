@@ -10,9 +10,13 @@ BIN:=$(BINOUT)/catena
 TESTBIN:=$(BINOUT)/catenatest
 
 CPPSRCDIRS:=$(wildcard $(SRC)/*)
-CPPSRC:=$(shell find $(CSRCDIRS) -type f -iname \*.cpp -print)
-CPPINC:=$(shell find $(CSRCDIRS) -type f -iname \*.h -print)
-CPPOBJ:=$(addprefix $(OUT)/,$(CPPSRC:%.c=%.o))
+CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
+CPPINC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.h -print)
+
+CATENASRC:=$(foreach dir, src/catena src/libcatena, $(filter $(dir)/%, $(CPPSRC)))
+CATENAOBJ:=$(addprefix $(OUT)/,$(CATENASRC:%.cpp=%.o))
+CATENATESTSRC:=$(foreach dir, src/test src/libcatena, $(filter $(dir)/%, $(CPPSRC)))
+CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
 
 WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
@@ -24,13 +28,17 @@ LDLIBSGTEST:=/usr/lib/x86_64-linux-gnu/libgtest.a
 
 all: $(TAGS) $(BIN) $(TESTBIN)
 
-$(BINOUT)/catena: src/catena/catena.cpp
+$(BINOUT)/catena: $(CATENAOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-$(BINOUT)/catenatest: src/test/catenatest.cpp
+$(BINOUT)/catenatest: $(CATENATESTOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDLIBSGTEST)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST)
+
+$(OUT)/%.o: %.cpp $(CPPINC)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Generated targets which live outside of $(OUT)
 $(TAGS): $(CPPSRC) $(CPPINC)
