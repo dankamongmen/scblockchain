@@ -18,6 +18,8 @@ CATENAOBJ:=$(addprefix $(OUT)/,$(CATENASRC:%.cpp=%.o))
 CATENATESTSRC:=$(foreach dir, src/test src/libcatena, $(filter $(dir)/%, $(CPPSRC)))
 CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
 
+TESTDATA:=test/genesisblock
+
 WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
 CPPFLAGS:=-I$(SRC)
@@ -49,7 +51,7 @@ bin: $(BIN)
 
 check: test
 
-test: $(TESTBIN)
+test: $(TESTBIN) $(TESTDATA)
 	$(BINOUT)/catenatest
 
 clean:
