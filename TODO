@@ -1,0 +1,11 @@
+# Todo
+
+## Disk format
+
+* Read blockfiles from disk into blockchain
+* Serialize block onto files representing blockchain
+
+## APIs
+
+* Registration
+* Retrieve/update
