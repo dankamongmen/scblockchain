@@ -4,8 +4,6 @@
 #include <iostream>
 #include "libcatena/block.h"
 
-#define BLOCKHEADERLEN 96
-
 unsigned CatenaBlocks::getBlockCount(){
 	return blockcount;
 }
@@ -14,8 +12,8 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 	int blocknum = 0;
 	while(len){
 		// FIXME free extracted blocks on any error (unique_ptr?)
-		if(len < BLOCKHEADERLEN){
-			std::cerr << "needed " << BLOCKHEADERLEN <<
+		if(len < CatenaBlock::BLOCKHEADERLEN){
+			std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
 				" bytes, had only " << len << std::endl;
 			return -1;
 		}
@@ -37,7 +35,7 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 			chdr.totlen <<= 8;
 			chdr.totlen += *data++;
 		}
-		if(chdr.totlen < BLOCKHEADERLEN || chdr.totlen > len){
+		if(chdr.totlen < CatenaBlock::BLOCKHEADERLEN || chdr.totlen > len){
 			std::cerr << "invalid totlen " << chdr.totlen << std::endl;
 			return -1;
 		}
@@ -58,7 +56,17 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 	return blockcount;
 }
 
-void CatenaBlocks::loadFile(const std::string& fname){
+bool CatenaBlocks::loadData(const char *data, unsigned len){
+	blockcount = 0; // FIXME discard existing blocks
+	auto blocknum = verifyData(data, len);
+	if(blocknum <= 0){
+		return false;
+	}
+	blockcount = blocknum;
+	return true;
+}
+
+bool CatenaBlocks::loadFile(const std::string& fname){
 	blockcount = 0; // FIXME discard existing blocks
 	std::ifstream f;
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -67,9 +75,5 @@ void CatenaBlocks::loadFile(const std::string& fname){
 	std::unique_ptr<char[]> memblock(new char[size]);
 	f.seekg(0, std::ios::beg);
 	f.read(memblock.get(), size);
-	auto blocknum = verifyData(memblock.get(), size);
-	if(blocknum <= 0){
-		return;
-	}
-	blockcount = blocknum;
+	return loadData(memblock.get(), size);
 }
