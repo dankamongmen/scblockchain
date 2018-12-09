@@ -4,6 +4,18 @@
 #include <iostream>
 #include "libcatena/block.h"
 
+const int CatenaBlock::BLOCKHEADERLEN;
+
+// NOT the on-disk packed format
+struct CatenaBlockHeader {
+	char hash[HASHLEN];
+	char prev[HASHLEN];
+	unsigned version;
+	unsigned totlen;
+	unsigned txcount;
+	uint64_t utc;
+};
+
 unsigned CatenaBlocks::getBlockCount(){
 	return blockcount;
 }
@@ -76,4 +88,9 @@ bool CatenaBlocks::loadFile(const std::string& fname){
 	f.seekg(0, std::ios::beg);
 	f.read(memblock.get(), size);
 	return loadData(memblock.get(), size);
+}
+
+std::unique_ptr<const char> CatenaBlock::serializeBlock(unsigned &len){
+	len = 0;
+	return 0;
 }

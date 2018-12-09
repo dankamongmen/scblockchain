@@ -1,6 +1,8 @@
 #ifndef CATENA_LIBCATENA_BLOCK
 #define CATENA_LIBCATENA_BLOCK
 
+#include <memory>
+
 // A contiguous chain of zero or more CatenaBlock objects
 class CatenaBlocks {
 public:
@@ -19,24 +21,18 @@ int blockcount;
 int verifyData(const char *data, unsigned len);
 };
 
-// A single block
+// A descriptor of a single block, and logic to serialize blocks
 class CatenaBlock {
 public:
 CatenaBlock() = default;
 virtual ~CatenaBlock() = default;
 static const int BLOCKHEADERLEN = 96;
+
+// On valid return, size of the block is written to len
+// FIXME should replace out reference with tuple
+static std::unique_ptr<const char> serializeBlock(unsigned &len);
 };
 
 #define HASHLEN 32 // length of hash outputs in bytes
-
-// NOT the on-disk packed format
-struct CatenaBlockHeader {
-	char hash[HASHLEN];
-	char prev[HASHLEN];
-	unsigned version;
-	unsigned totlen;
-	unsigned txcount;
-	uint64_t utc;
-};
 
 #endif

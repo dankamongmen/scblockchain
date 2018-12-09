@@ -15,6 +15,7 @@ TEST(CatenaBlocks, CatenaBlocksInvalidFile){
 	EXPECT_THROW(cbs.loadFile(""), std::ifstream::failure);
 }
 
+// Chunks too small to be a valid block
 TEST(CatenaBlocks, CatenaBlocksInvalidShort){
 	CatenaBlocks cbs;
 	// Should fail on 0 bytes
@@ -24,9 +25,20 @@ TEST(CatenaBlocks, CatenaBlocksInvalidShort){
 	EXPECT_FALSE(cbs.loadData(block, sizeof(block) - 1));
 }
 
+// A chunk large enough to be a valid block, but containing all 0s
 TEST(CatenaBlocks, CatenaBlocksInvalidZeroes){
 	CatenaBlocks cbs;
 	char block[CatenaBlock::BLOCKHEADERLEN];
 	memset(block, 0, sizeof(block));
 	EXPECT_FALSE(cbs.loadData(block, sizeof(block)));
+}
+
+// Generate a simple block, and read it back
+TEST(CatenaBlocks, CatenaBlockGenerated){
+	std::unique_ptr<const char> block;
+	unsigned size;
+	ASSERT_TRUE(0 != (block = CatenaBlock::serializeBlock(size)));
+	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, size);
+	CatenaBlocks cbs;
+	EXPECT_TRUE(cbs.loadData(block.get(), size));
 }
