@@ -38,8 +38,8 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 		std::memcpy(chdr.prev, data, sizeof(chdr.prev));
 		data += sizeof(chdr.prev);
 		// 16-bit version field
-		std::memcpy(&chdr.version, data, 2); // FIXME unsafe
-		data += 2;
+		chdr.version = *data++ * 0x100;
+		chdr.version += *data++;
 		if(chdr.version != CatenaBlock::BLOCKVERSION){
 			std::cerr << "expected version " << CatenaBlock::BLOCKVERSION << ", got " << chdr.version << std::endl;
 			return -1;

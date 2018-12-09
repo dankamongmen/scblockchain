@@ -17,6 +17,8 @@ To be a valid blockchain:
 1. One and only one block must be a genesis block, and
 2. All other blocks must reference one and only one existing previous block.
 
+All multibyte integer sequences are written in big-endian format.
+
 ## Version 0 block format
 
 A block is formed of a header, immediately followed by a data section. The
