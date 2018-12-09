@@ -56,11 +56,16 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 			chdr.txcount <<= 8;
 			chdr.txcount += *data++;
 		}
-		for(int i = 0 ; i < 40 ; ++i){
+		for(int i = 0 ; i < 5 ; ++i){
 			chdr.utc <<= 8;
 			chdr.utc += *data++;
 		}
-		// FIXME ensure reserved bytes are zeroes
+		for(int i = 0 ; i < 19 ; ++i){
+			if(*data++){
+				std::cerr << "non-zero reserved byte" << std::endl;
+				return -1;
+			}
+		}
 		// FIXME extract data section, stash block
 		len -= chdr.totlen;
 		++blocknum;
