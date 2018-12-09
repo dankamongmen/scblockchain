@@ -27,10 +27,11 @@ public:
 CatenaBlock() = default;
 virtual ~CatenaBlock() = default;
 static const int BLOCKHEADERLEN = 96;
+static const int BLOCKVERSION = 0;
 
 // On valid return, size of the block is written to len
 // FIXME should replace out reference with tuple
-static std::unique_ptr<const char> serializeBlock(unsigned &len);
+static std::unique_ptr<const char[]> serializeBlock(unsigned &len);
 };
 
 #define HASHLEN 32 // length of hash outputs in bytes

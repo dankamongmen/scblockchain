@@ -35,7 +35,7 @@ TEST(CatenaBlocks, CatenaBlocksInvalidZeroes){
 
 // Generate a simple block, and read it back
 TEST(CatenaBlocks, CatenaBlockGenerated){
-	std::unique_ptr<const char> block;
+	std::unique_ptr<const char[]> block;
 	unsigned size;
 	ASSERT_TRUE(0 != (block = CatenaBlock::serializeBlock(size)));
 	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, size);

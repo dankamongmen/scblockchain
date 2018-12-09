@@ -4,6 +4,7 @@
 #include <iostream>
 #include "libcatena/block.h"
 
+const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
 
 // NOT the on-disk packed format
@@ -39,8 +40,8 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 		// 16-bit version field
 		std::memcpy(&chdr.version, data, 2); // FIXME unsafe
 		data += 2;
-		if(chdr.version != 0){
-			std::cerr << "expected version 0, got " << chdr.version << std::endl;
+		if(chdr.version != CatenaBlock::BLOCKVERSION){
+			std::cerr << "expected version " << CatenaBlock::BLOCKVERSION << ", got " << chdr.version << std::endl;
 			return -1;
 		}
 		for(int i = 0 ; i < 3 ; ++i){
@@ -90,7 +91,15 @@ bool CatenaBlocks::loadFile(const std::string& fname){
 	return loadData(memblock.get(), size);
 }
 
-std::unique_ptr<const char> CatenaBlock::serializeBlock(unsigned &len){
-	len = 0;
-	return 0;
+std::unique_ptr<const char[]> CatenaBlock::serializeBlock(unsigned &len){
+	auto block = new char[BLOCKHEADERLEN]();
+	len = BLOCKHEADERLEN;
+	char *targ = block + HASHLEN * 2;
+	*targ++ = BLOCKVERSION / 0x100;
+	*targ++ = BLOCKVERSION % 0x100;
+	*targ++ = BLOCKHEADERLEN / 0x10000;
+	*targ++ = BLOCKHEADERLEN / 0x100;
+	*targ++ = BLOCKHEADERLEN % 0x100;
+	std::unique_ptr<const char[]> ret(block);
+	return ret;
 }
