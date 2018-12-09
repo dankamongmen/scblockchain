@@ -7,20 +7,6 @@
 const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
 
-// NOT the on-disk packed format
-struct CatenaBlockHeader {
-	char hash[HASHLEN];
-	char prev[HASHLEN];
-	unsigned version;
-	unsigned totlen;
-	unsigned txcount;
-	uint64_t utc;
-};
-
-unsigned CatenaBlocks::getBlockCount(){
-	return blockcount;
-}
-
 bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsigned len){
 	if(len < CatenaBlock::BLOCKHEADERLEN){
 		std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
@@ -67,7 +53,10 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsig
 }
 
 int CatenaBlocks::verifyData(const char *data, unsigned len){
+	unsigned totlen = 0;
 	int blocknum = 0;
+	offsets.clear();
+	headers.clear();
 	while(len){
 		// FIXME free extracted blocks on any error (unique_ptr?)
 		CatenaBlockHeader chdr;
@@ -76,25 +65,25 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 		}
 		data += CatenaBlock::BLOCKHEADERLEN;
 		// FIXME extract data section, stash block
+		// FIXME check hash
 		len -= chdr.totlen;
+		offsets.push_back(totlen);
+		headers.push_back(chdr);
+		totlen += chdr.totlen;
 		++blocknum;
 	}
-	blockcount = blocknum;
-	return blockcount;
+	return blocknum;
 }
 
 bool CatenaBlocks::loadData(const char *data, unsigned len){
-	blockcount = 0; // FIXME discard existing blocks
 	auto blocknum = verifyData(data, len);
 	if(blocknum <= 0){
 		return false;
 	}
-	blockcount = blocknum;
 	return true;
 }
 
 bool CatenaBlocks::loadFile(const std::string& fname){
-	blockcount = 0; // FIXME discard existing blocks
 	std::ifstream f;
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
