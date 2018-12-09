@@ -10,6 +10,9 @@ BIN:=$(BINOUT)/catena
 TESTBIN:=$(BINOUT)/catenatest
 VALGRIND:=valgrind --tool=memcheck --leak-check=full
 
+SSLLIBS:=$(shell pkg-config --libs openssl)
+SSLCFLAGS:=$(shell pkg-config --cflags openssl)
+
 CPPSRCDIRS:=$(wildcard $(SRC)/*)
 CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
 CPPINC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.h -print)
@@ -25,6 +28,7 @@ WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
 CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
+EXTFLAGS:=$(SSLCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS)
 
 # FIXME detect this, or let it be specified
@@ -34,11 +38,11 @@ all: $(TAGS) $(BIN) $(TESTBIN)
 
 $(BINOUT)/catena: $(CATENAOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SSLLIBS)
 
 $(BINOUT)/catenatest: $(CATENATESTOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS)
 
 $(OUT)/%.o: %.cpp $(CPPINC)
 	@mkdir -p $(@D)

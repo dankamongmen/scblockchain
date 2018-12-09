@@ -4,8 +4,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
-
-#define HASHLEN 32 // length of hash outputs in bytes
+#include <libcatena/hash.h>
 
 // NOT the on-disk packed format
 struct CatenaBlockHeader {

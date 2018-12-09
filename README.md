@@ -9,3 +9,4 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 
 * C++ compiler and GNU Make
 * Google Test
+* OpenSSL 1.1+ (libopenssl-dev)

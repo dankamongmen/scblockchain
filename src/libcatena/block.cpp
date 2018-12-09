@@ -1,5 +1,6 @@
 #include <memory>
 #include <cstring>
+#include <iomanip>
 #include <fstream>
 #include <iostream>
 #include "libcatena/block.h"
@@ -44,10 +45,14 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsig
 		chdr->utc += *data++;
 	}
 	for(int i = 0 ; i < 19 ; ++i){
-		if(*data++){
-			std::cerr << "non-zero reserved byte" << std::endl;
+		if(*data){
+			std::ios state(NULL);
+			state.copyfmt(std::cerr);
+			std::cerr << "non-zero reserved byte (" << std::hex << std::setw(2) << std::hex << *data << ")" << std::endl;
+			std::cerr.copyfmt(state);
 			return false;
 		}
+		++data;
 	}
 	return true;
 }
