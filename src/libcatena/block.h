@@ -32,6 +32,8 @@ static const int BLOCKVERSION = 0;
 
 // Returns allocated block with serialized data, and size of serialized data
 static std::pair<std::unique_ptr<const char[]>, unsigned> serializeBlock();
+
+static bool extractHeader(struct CatenaBlockHeader*, const char*, unsigned);
 };
 
 #define HASHLEN 32 // length of hash outputs in bytes

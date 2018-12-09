@@ -21,51 +21,60 @@ unsigned CatenaBlocks::getBlockCount(){
 	return blockcount;
 }
 
+bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsigned len){
+	if(len < CatenaBlock::BLOCKHEADERLEN){
+		std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
+			" bytes, had only " << len << std::endl;
+		return false;
+	}
+	std::memcpy(chdr->hash, data, sizeof(chdr->hash));
+	data += sizeof(chdr->hash);
+	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
+	data += sizeof(chdr->prev);
+	// 16-bit version field
+	chdr->version = *data++ * 0x100;
+	chdr->version += *data++;
+	if(chdr->version != CatenaBlock::BLOCKVERSION){
+		std::cerr << "expected version " << CatenaBlock::BLOCKVERSION << ", got " << chdr->version << std::endl;
+		return false;
+	}
+	chdr->totlen = 0;
+	for(int i = 0 ; i < 3 ; ++i){
+		chdr->totlen <<= 8;
+		chdr->totlen += *data++;
+	}
+	if(chdr->totlen < CatenaBlock::BLOCKHEADERLEN || chdr->totlen > len){
+		std::cerr << "invalid totlen " << chdr->totlen << std::endl;
+		return false;
+	}
+	chdr->txcount = 0;
+	for(int i = 0 ; i < 3 ; ++i){
+		chdr->txcount <<= 8;
+		chdr->txcount += *data++;
+	}
+	chdr->utc = 0;
+	for(int i = 0 ; i < 5 ; ++i){
+		chdr->utc <<= 8;
+		chdr->utc += *data++;
+	}
+	for(int i = 0 ; i < 19 ; ++i){
+		if(*data++){
+			std::cerr << "non-zero reserved byte" << std::endl;
+			return false;
+		}
+	}
+	return true;
+}
+
 int CatenaBlocks::verifyData(const char *data, unsigned len){
 	int blocknum = 0;
 	while(len){
 		// FIXME free extracted blocks on any error (unique_ptr?)
-		if(len < CatenaBlock::BLOCKHEADERLEN){
-			std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
-				" bytes, had only " << len << std::endl;
-			return -1;
-		}
 		CatenaBlockHeader chdr;
-		memset(&chdr, 0, sizeof(chdr));
-		// FIXME could probably do this faster
-		std::memcpy(chdr.hash, data, sizeof(chdr.hash));
-		data += sizeof(chdr.hash);
-		std::memcpy(chdr.prev, data, sizeof(chdr.prev));
-		data += sizeof(chdr.prev);
-		// 16-bit version field
-		chdr.version = *data++ * 0x100;
-		chdr.version += *data++;
-		if(chdr.version != CatenaBlock::BLOCKVERSION){
-			std::cerr << "expected version " << CatenaBlock::BLOCKVERSION << ", got " << chdr.version << std::endl;
+		if(!CatenaBlock::extractHeader(&chdr, data, len)){
 			return -1;
 		}
-		for(int i = 0 ; i < 3 ; ++i){
-			chdr.totlen <<= 8;
-			chdr.totlen += *data++;
-		}
-		if(chdr.totlen < CatenaBlock::BLOCKHEADERLEN || chdr.totlen > len){
-			std::cerr << "invalid totlen " << chdr.totlen << std::endl;
-			return -1;
-		}
-		for(int i = 0 ; i < 3 ; ++i){
-			chdr.txcount <<= 8;
-			chdr.txcount += *data++;
-		}
-		for(int i = 0 ; i < 5 ; ++i){
-			chdr.utc <<= 8;
-			chdr.utc += *data++;
-		}
-		for(int i = 0 ; i < 19 ; ++i){
-			if(*data++){
-				std::cerr << "non-zero reserved byte" << std::endl;
-				return -1;
-			}
-		}
+		data += CatenaBlock::BLOCKHEADERLEN;
 		// FIXME extract data section, stash block
 		len -= chdr.totlen;
 		++blocknum;
