@@ -7,7 +7,7 @@
 TEST(CatenaBlocks, CatenaBlocksGenesisBlock){
 	CatenaBlocks cbs;
 	ASSERT_TRUE(cbs.loadFile(GENESISBLOCK_EXTERNAL));
-	EXPECT_LT(0, cbs.getBlockCount());
+	EXPECT_EQ(1, cbs.getBlockCount());
 }
 
 TEST(CatenaBlocks, CatenaBlocksInvalidFile){
@@ -42,4 +42,22 @@ TEST(CatenaBlocks, CatenaBlockGenerated){
 	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, size);
 	CatenaBlocks cbs;
 	EXPECT_TRUE(cbs.loadData(block.get(), size));
+}
+
+// Generate two blocks, and read them back
+TEST(CatenaBlocks, CatenaChainGenerated){
+	std::unique_ptr<const char[]> b1, b2;
+	unsigned s1, s2;
+	std::tie(b1, s1) = CatenaBlock::serializeBlock();
+	ASSERT_TRUE(0 != b1);
+	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, s1);
+	std::tie(b2, s2) = CatenaBlock::serializeBlock();
+	ASSERT_TRUE(0 != b2);
+	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, s2);
+	char block[s1 + s2];
+	memcpy(block, b1.get(), s1);
+	memcpy(block + s1, b2.get(), s2);
+	CatenaBlocks cbs;
+	EXPECT_TRUE(cbs.loadData(block, s1 + s2));
+	EXPECT_EQ(2, cbs.getBlockCount());
 }

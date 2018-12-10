@@ -82,6 +82,8 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 			return -1;
 		}
 		data += CatenaBlock::BLOCKHEADERLEN;
+		// FIXME validate UTC increases
+		// FIXME validate previous hash
 		// FIXME extract data section, stash block
 		len -= chdr.totlen;
 		offsets.push_back(totlen);
