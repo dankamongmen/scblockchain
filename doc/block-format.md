@@ -90,7 +90,7 @@ publication time of the block. *reserved* ought be set to all zeroes.
 
 ### Version 0 block data
 
-A table of 32-bit offsets, one per transaction.
+A table of 32-bit offsets, one per transaction (*txcount* from the header).
 
 ```
  0                   1                   2                   3
