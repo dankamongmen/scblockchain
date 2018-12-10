@@ -9,7 +9,8 @@
 const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
 
-bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsigned len){
+bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
+				unsigned len, const unsigned char* prevhash){
 	if(len < CatenaBlock::BLOCKHEADERLEN){
 		std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
 			" bytes, had only " << len << std::endl;
@@ -19,6 +20,18 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsig
 	data += sizeof(chdr->hash);
 	const char* hashstart = data;
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
+	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
+		std::cerr << "invalid prev hash (wanted ";
+		std::ios state(NULL);
+		state.copyfmt(std::cerr);
+		std::cerr << std::hex;
+		for(int i = 0 ; i < HASHLEN ; ++i){
+			std::cerr << std::setfill('0') << std::setw(2) << (int)prevhash[i];
+		}
+		std::cerr.copyfmt(state);
+		std::cerr << ")" << std::endl;
+		return false;
+	}
 	data += sizeof(chdr->prev);
 	// 16-bit version field
 	chdr->version = *data++ * 0x100;
@@ -71,6 +84,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsig
 }
 
 int CatenaBlocks::verifyData(const char *data, unsigned len){
+	unsigned char prevhash[HASHLEN] = {0};
 	unsigned totlen = 0;
 	int blocknum = 0;
 	offsets.clear();
@@ -78,12 +92,14 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 	while(len){
 		// FIXME free extracted blocks on any error (unique_ptr?)
 		CatenaBlockHeader chdr;
-		if(!CatenaBlock::extractHeader(&chdr, data, len)){
+		if(!CatenaBlock::extractHeader(&chdr, data, len, prevhash)){
+			offsets.clear();
+			headers.clear();
 			return -1;
 		}
 		data += CatenaBlock::BLOCKHEADERLEN;
+		memcpy(prevhash, chdr.hash, sizeof(prevhash));
 		// FIXME validate UTC increases
-		// FIXME validate previous hash
 		// FIXME extract data section, stash block
 		len -= chdr.totlen;
 		offsets.push_back(totlen);
@@ -103,6 +119,8 @@ bool CatenaBlocks::loadData(const char *data, unsigned len){
 }
 
 bool CatenaBlocks::loadFile(const std::string& fname){
+	offsets.clear();
+	headers.clear();
 	std::ifstream f;
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
