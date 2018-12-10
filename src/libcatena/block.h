@@ -52,7 +52,7 @@ static std::pair<std::unique_ptr<const char[]>, unsigned>
 	serializeBlock(unsigned char* prevhash);
 
 static bool extractHeader(CatenaBlockHeader* chdr, const char* data,
-			unsigned len, const unsigned char* prevhash);
+	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
 };
 
 #endif

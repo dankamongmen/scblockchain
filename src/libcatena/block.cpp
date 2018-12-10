@@ -10,7 +10,7 @@ const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
 
 bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
-				unsigned len, const unsigned char* prevhash){
+		unsigned len, const unsigned char* prevhash, uint64_t prevutc){
 	if(len < CatenaBlock::BLOCKHEADERLEN){
 		std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
 			" bytes, had only " << len << std::endl;
@@ -22,6 +22,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
 	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
 		std::cerr << "invalid prev hash (wanted ";
+		// FIXME factor this out? reused elsewhere...
 		std::ios state(NULL);
 		state.copyfmt(std::cerr);
 		std::cerr << std::hex;
@@ -33,15 +34,14 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 		return false;
 	}
 	data += sizeof(chdr->prev);
-	// 16-bit version field
-	chdr->version = *data++ * 0x100;
+	chdr->version = *data++ * 0x100; // 16-bit version field
 	chdr->version += *data++;
 	if(chdr->version != CatenaBlock::BLOCKVERSION){
 		std::cerr << "expected version " << CatenaBlock::BLOCKVERSION << ", got " << chdr->version << std::endl;
 		return false;
 	}
 	chdr->totlen = 0;
-	for(int i = 0 ; i < 3 ; ++i){
+	for(int i = 0 ; i < 3 ; ++i){ // 24-bit totlen field
 		chdr->totlen <<= 8;
 		chdr->totlen += *data++;
 	}
@@ -54,12 +54,16 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 		chdr->txcount <<= 8;
 		chdr->txcount += *data++;
 	}
-	chdr->utc = 0;
+	chdr->utc = 0; // 40-bit UTC field
 	for(int i = 0 ; i < 5 ; ++i){
 		chdr->utc <<= 8;
 		chdr->utc += *data++;
 	}
-	for(int i = 0 ; i < 19 ; ++i){
+	if(chdr->utc < prevutc){ // allow non-strictly-increasing timestamps?
+		std::cerr << "utc " << chdr->utc << " was less than " << prevutc << std::endl;
+		return false;
+	}
+	for(int i = 0 ; i < 19 ; ++i){ // 19 reserved bytes
 		if(*data){
 			std::cerr << "non-zero reserved byte" << std::endl;
 			return false;
@@ -85,21 +89,21 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 
 int CatenaBlocks::verifyData(const char *data, unsigned len){
 	unsigned char prevhash[HASHLEN] = {0};
+	uint64_t prevutc = 0;
 	unsigned totlen = 0;
 	int blocknum = 0;
 	offsets.clear();
 	headers.clear();
 	while(len){
-		// FIXME free extracted blocks on any error (unique_ptr?)
 		CatenaBlockHeader chdr;
-		if(!CatenaBlock::extractHeader(&chdr, data, len, prevhash)){
-			offsets.clear();
+		if(!CatenaBlock::extractHeader(&chdr, data, len, prevhash, prevutc)){
 			headers.clear();
+			offsets.clear();
 			return -1;
 		}
 		data += CatenaBlock::BLOCKHEADERLEN;
 		memcpy(prevhash, chdr.hash, sizeof(prevhash));
-		// FIXME validate UTC increases
+		prevutc = chdr.utc;
 		// FIXME extract data section, stash block
 		len -= chdr.totlen;
 		offsets.push_back(totlen);
@@ -143,6 +147,12 @@ CatenaBlock::serializeBlock(unsigned char* prevhash){
 	*targ++ = BLOCKHEADERLEN / 0x10000;
 	*targ++ = BLOCKHEADERLEN / 0x100;
 	*targ++ = BLOCKHEADERLEN % 0x100;
+	time_t now = time(NULL);
+	++targ;
+	*targ++ = (now & 0xff000000) >> 24u;
+	*targ++ = (now & 0x00ff0000) >> 16u;
+	*targ++ = (now & 0x0000ff00) >> 8u;
+	*targ++ = (now & 0x000000ff);
 	catenaHash(block + HASHLEN, BLOCKHEADERLEN - HASHLEN, block);
 	memcpy(prevhash, block, HASHLEN);
 	std::unique_ptr<const char[]> ret(block);
