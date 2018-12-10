@@ -68,7 +68,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
 	if(memcmp(hash, chdr->hash, HASHLEN)){
 		std::cerr << "invalid block hash (wanted ";
-		hashOStream(std::cerr, prevhash);
+		hashOStream(std::cerr, hash);
 		std::cerr << ")" << std::endl;
 		return false;
 	}
