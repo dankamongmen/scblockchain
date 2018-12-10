@@ -9,6 +9,17 @@
 const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
 
+bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const char* data, unsigned len){
+	if(len / 4 < chdr->txcount){
+		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
+		return false;
+	}
+	data += chdr->txcount * 4;
+	len -= chdr->txcount * 4;
+	std::cout << len << std::endl; // FIXME
+	return true;
+}
+
 bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 		unsigned len, const unsigned char* prevhash, uint64_t prevutc){
 	if(len < CatenaBlock::BLOCKHEADERLEN){
@@ -22,8 +33,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
 	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
 		std::cerr << "invalid prev hash (wanted ";
-		hashOStream(std::cerr, prevhash);
-		std::cerr << ")" << std::endl;
+		hashOStream(std::cerr, prevhash) << ")" << std::endl;
 		return false;
 	}
 	data += sizeof(chdr->prev);
@@ -68,8 +78,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
 	if(memcmp(hash, chdr->hash, HASHLEN)){
 		std::cerr << "invalid block hash (wanted ";
-		hashOStream(std::cerr, hash);
-		std::cerr << ")" << std::endl;
+		hashOStream(std::cerr, hash) << ")" << std::endl;
 		return false;
 	}
 	return true;
@@ -80,8 +89,8 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
 	int blocknum = 0;
-	offsets.clear();
-	headers.clear();
+	std::vector<unsigned> new_offsets;
+	std::vector<CatenaBlockHeader> new_headers;
 	while(len){
 		CatenaBlockHeader chdr;
 		if(!CatenaBlock::extractHeader(&chdr, data, len, prevhash, prevutc)){
@@ -92,17 +101,25 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 		data += CatenaBlock::BLOCKHEADERLEN;
 		memcpy(prevhash, chdr.hash, sizeof(prevhash));
 		prevutc = chdr.utc;
-		// FIXME extract data section, stash block
+		if(!CatenaBlock::extractBody(&chdr, data, chdr.totlen - CatenaBlock::BLOCKHEADERLEN)){
+			headers.clear();
+			offsets.clear();
+			return -1;
+		}
 		len -= chdr.totlen;
-		offsets.push_back(totlen);
-		headers.push_back(chdr);
+		new_offsets.push_back(totlen);
+		new_headers.push_back(chdr);
 		totlen += chdr.totlen;
 		++blocknum;
 	}
+	headers.swap(new_headers);
+	offsets.swap(new_offsets);
 	return blocknum;
 }
 
 bool CatenaBlocks::loadData(const char *data, unsigned len){
+	offsets.clear();
+	headers.clear();
 	auto blocknum = verifyData(data, len);
 	if(blocknum <= 0){
 		return false;
@@ -135,8 +152,9 @@ CatenaBlock::serializeBlock(unsigned char* prevhash){
 	*targ++ = BLOCKHEADERLEN / 0x10000;
 	*targ++ = BLOCKHEADERLEN / 0x100;
 	*targ++ = BLOCKHEADERLEN % 0x100;
+	targ += 3; // txcount
 	time_t now = time(NULL);
-	++targ;
+	++targ; // first byte of utc
 	*targ++ = (now & 0xff000000) >> 24u;
 	*targ++ = (now & 0x00ff0000) >> 16u;
 	*targ++ = (now & 0x0000ff00) >> 8u;
