@@ -45,6 +45,18 @@ TEST(CatenaBlocks, CatenaBlockGenerated){
 	EXPECT_TRUE(cbs.loadData(block.get(), size));
 }
 
+// Generate a simple block with invalid prev, and read it back
+TEST(CatenaBlocks, CatenaBlockGeneratedBadprev){
+	unsigned char prevhash[HASHLEN] = {1};
+	std::unique_ptr<const char[]> block;
+	unsigned size;
+	std::tie(block, size) = CatenaBlock::serializeBlock(prevhash);
+	ASSERT_TRUE(0 != block);
+	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, size);
+	CatenaBlocks cbs;
+	EXPECT_FALSE(cbs.loadData(block.get(), size));
+}
+
 // Generate two blocks, and read them back
 TEST(CatenaBlocks, CatenaChainGenerated){
 	unsigned char prevhash[HASHLEN] = {0};

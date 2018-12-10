@@ -22,14 +22,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
 	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
 		std::cerr << "invalid prev hash (wanted ";
-		// FIXME factor this out? reused elsewhere...
-		std::ios state(NULL);
-		state.copyfmt(std::cerr);
-		std::cerr << std::hex;
-		for(int i = 0 ; i < HASHLEN ; ++i){
-			std::cerr << std::setfill('0') << std::setw(2) << (int)prevhash[i];
-		}
-		std::cerr.copyfmt(state);
+		hashOStream(std::cerr, prevhash);
 		std::cerr << ")" << std::endl;
 		return false;
 	}
@@ -75,13 +68,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
 	if(memcmp(hash, chdr->hash, HASHLEN)){
 		std::cerr << "invalid block hash (wanted ";
-		std::ios state(NULL);
-		state.copyfmt(std::cerr);
-		std::cerr << std::hex;
-		for(int i = 0 ; i < HASHLEN ; ++i){
-			std::cerr << std::setfill('0') << std::setw(2) << (int)hash[i];
-		}
-		std::cerr.copyfmt(state);
+		hashOStream(std::cerr, prevhash);
 		std::cerr << ")" << std::endl;
 		return false;
 	}
