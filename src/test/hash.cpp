@@ -1,0 +1,28 @@
+#include <gtest/gtest.h>
+#include <libcatena/hash.h>
+
+TEST(CatenaHash, SHA256Vectors){
+	static const struct {
+		const char *data;
+		const char *hash;
+	} tests[] = {
+		{
+			.data = "",
+			.hash = "\xe3\xb0\xc4\x42\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99\x6f\xb9\x24\x27\xae\x41\xe4\x64\x9b\x93\x4c\xa4\x95\x99\x1b\x78\x52\xb8\x55",
+		}, {
+			.data = "The quick brown fox jumps over the lazy dog",
+			.hash = "\xd7\xa8\xfb\xb3\x07\xd7\x80\x94\x69\xca\x9a\xbc\xb0\x08\x2e\x4f\x8d\x56\x51\xe4\x6d\x3c\xdb\x76\x2d\x02\xd0\xbf\x37\xc9\xe5\x92",
+		}, {
+			.data = "Test vector from febooti.com",
+			.hash = "\x07\x7b\x18\xfe\x29\x03\x6a\xda\x48\x90\xbd\xec\x19\x21\x86\xe1\x06\x78\x59\x7a\x67\x88\x02\x90\x52\x1d\xf7\x0d\xf4\xba\xc9\xab",
+		}, {
+			.data = NULL,
+			.hash = NULL,
+		}
+	}, *t;
+	for(t = tests ; t->data ; ++t){
+		unsigned char h[HASHLEN];
+		catenaHash(t->data, strlen(t->data), h);
+		EXPECT_EQ(0, memcmp(h, t->hash, sizeof(h)));
+	}
+}

@@ -4,6 +4,6 @@
 #define HASHLEN 32 // length of hash outputs in bytes
 
 // Interface to hashing functions. hash must be at least HASHLEN bytes.
-void catenahash(const void* in, unsigned len, void* hash);
+void catenaHash(const void* in, unsigned len, void* hash);
 
 #endif

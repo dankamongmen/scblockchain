@@ -3,7 +3,7 @@
 #include <libcatena/hash.h>
 
 // FIXME can we extract these context creations?
-void catenahash(const void* in, unsigned len, void* hash){
+void catenaHash(const void* in, unsigned len, void* hash){
 	auto mdctx = EVP_MD_CTX_create(); // FIXME clean up on all paths
 	if(!mdctx){
 		throw std::runtime_error("couldn't get EVP context");
