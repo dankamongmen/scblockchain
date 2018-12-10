@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include "libcatena/block.h"
+#include "libcatena/hash.h"
 
 const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
@@ -16,6 +17,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsig
 	}
 	std::memcpy(chdr->hash, data, sizeof(chdr->hash));
 	data += sizeof(chdr->hash);
+	const char* hashstart = data;
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
 	data += sizeof(chdr->prev);
 	// 16-bit version field
@@ -46,13 +48,24 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data, unsig
 	}
 	for(int i = 0 ; i < 19 ; ++i){
 		if(*data){
-			std::ios state(NULL);
-			state.copyfmt(std::cerr);
-			std::cerr << "non-zero reserved byte (" << std::hex << std::setw(2) << std::hex << *data << ")" << std::endl;
-			std::cerr.copyfmt(state);
+			std::cerr << "non-zero reserved byte" << std::endl;
 			return false;
 		}
 		++data;
+	}
+	unsigned char hash[HASHLEN];
+	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
+	if(memcmp(hash, chdr->hash, HASHLEN)){
+		std::cerr << "invalid block hash (wanted ";
+		std::ios state(NULL);
+		state.copyfmt(std::cerr);
+		std::cerr << std::hex;
+		for(int i = 0 ; i < HASHLEN ; ++i){
+			std::cerr << std::setfill('0') << std::setw(2) << (int)hash[i];
+		}
+		std::cerr.copyfmt(state);
+		std::cerr << ")" << std::endl;
+		return false;
 	}
 	return true;
 }
@@ -70,7 +83,6 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 		}
 		data += CatenaBlock::BLOCKHEADERLEN;
 		// FIXME extract data section, stash block
-		// FIXME check hash
 		len -= chdr.totlen;
 		offsets.push_back(totlen);
 		headers.push_back(chdr);
@@ -108,6 +120,7 @@ std::pair<std::unique_ptr<const char[]>, unsigned> CatenaBlock::serializeBlock()
 	*targ++ = BLOCKHEADERLEN / 0x10000;
 	*targ++ = BLOCKHEADERLEN / 0x100;
 	*targ++ = BLOCKHEADERLEN % 0x100;
+	catenaHash(block + HASHLEN, BLOCKHEADERLEN - HASHLEN, block);
 	std::unique_ptr<const char[]> ret(block);
 	return std::make_pair(std::move(ret), len);
 }

@@ -8,8 +8,8 @@
 
 // NOT the on-disk packed format
 struct CatenaBlockHeader {
-	char hash[HASHLEN];
-	char prev[HASHLEN];
+	unsigned char hash[HASHLEN];
+	unsigned char prev[HASHLEN];
 	unsigned version;
 	unsigned totlen;
 	unsigned txcount;
