@@ -131,16 +131,20 @@ bool CatenaBlocks::loadFile(const std::string& fname){
 	return loadData(memblock.get(), size);
 }
 
-std::pair<std::unique_ptr<const char[]>, unsigned> CatenaBlock::serializeBlock(){
+std::pair<std::unique_ptr<const char[]>, unsigned>
+CatenaBlock::serializeBlock(unsigned char* prevhash){
 	auto block = new char[BLOCKHEADERLEN]();
 	unsigned len = BLOCKHEADERLEN;
-	char *targ = block + HASHLEN * 2;
+	char *targ = block + HASHLEN;
+	memcpy(targ, prevhash, HASHLEN);
+	targ += HASHLEN;
 	*targ++ = BLOCKVERSION / 0x100;
 	*targ++ = BLOCKVERSION % 0x100;
 	*targ++ = BLOCKHEADERLEN / 0x10000;
 	*targ++ = BLOCKHEADERLEN / 0x100;
 	*targ++ = BLOCKHEADERLEN % 0x100;
 	catenaHash(block + HASHLEN, BLOCKHEADERLEN - HASHLEN, block);
+	memcpy(prevhash, block, HASHLEN);
 	std::unique_ptr<const char[]> ret(block);
 	return std::make_pair(std::move(ret), len);
 }

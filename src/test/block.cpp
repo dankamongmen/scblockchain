@@ -35,9 +35,10 @@ TEST(CatenaBlocks, CatenaBlocksInvalidZeroes){
 
 // Generate a simple block, and read it back
 TEST(CatenaBlocks, CatenaBlockGenerated){
+	unsigned char prevhash[HASHLEN] = {0};
 	std::unique_ptr<const char[]> block;
 	unsigned size;
-	std::tie(block, size) = CatenaBlock::serializeBlock();
+	std::tie(block, size) = CatenaBlock::serializeBlock(prevhash);
 	ASSERT_TRUE(0 != block);
 	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, size);
 	CatenaBlocks cbs;
@@ -46,12 +47,13 @@ TEST(CatenaBlocks, CatenaBlockGenerated){
 
 // Generate two blocks, and read them back
 TEST(CatenaBlocks, CatenaChainGenerated){
+	unsigned char prevhash[HASHLEN] = {0};
 	std::unique_ptr<const char[]> b1, b2;
 	unsigned s1, s2;
-	std::tie(b1, s1) = CatenaBlock::serializeBlock();
+	std::tie(b1, s1) = CatenaBlock::serializeBlock(prevhash);
 	ASSERT_TRUE(0 != b1);
 	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, s1);
-	std::tie(b2, s2) = CatenaBlock::serializeBlock();
+	std::tie(b2, s2) = CatenaBlock::serializeBlock(prevhash);
 	ASSERT_TRUE(0 != b2);
 	ASSERT_LE(CatenaBlock::BLOCKHEADERLEN, s2);
 	char block[s1 + s2];

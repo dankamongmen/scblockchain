@@ -46,8 +46,10 @@ virtual ~CatenaBlock() = default;
 static const int BLOCKHEADERLEN = 96;
 static const int BLOCKVERSION = 0;
 
-// Returns allocated block with serialized data, and size of serialized data
-static std::pair<std::unique_ptr<const char[]>, unsigned> serializeBlock();
+// Returns allocated block with serialized data, and size of serialized data.
+// Updates prevhash with hash of serialized block.
+static std::pair<std::unique_ptr<const char[]>, unsigned>
+	serializeBlock(unsigned char* prevhash);
 
 static bool extractHeader(CatenaBlockHeader* chdr, const char* data,
 			unsigned len, const unsigned char* prevhash);
