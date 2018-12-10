@@ -14,9 +14,15 @@ bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const char* data, unsigne
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return false;
 	}
-	data += chdr->txcount * 4;
+	for(unsigned i = 0 ; i < chdr->txcount ; ++i){
+		uint32_t offset = 0;
+		for(int byte = 0 ; byte < 4 ; ++byte){
+			offset <<= 8;
+			offset += *data++;
+		}
+	}
 	len -= chdr->txcount * 4;
-	std::cout << len << std::endl; // FIXME
+	// FIXME continue...
 	return true;
 }
 
