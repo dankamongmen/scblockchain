@@ -59,6 +59,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 		chdr->utc <<= 8;
 		chdr->utc += *data++;
 	}
+	// FIXME reject 0 UTC?
 	if(chdr->utc < prevutc){ // allow non-strictly-increasing timestamps?
 		std::cerr << "utc " << chdr->utc << " was less than " << prevutc << std::endl;
 		return false;

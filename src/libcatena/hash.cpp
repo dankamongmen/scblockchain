@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <stdexcept>
 #include <openssl/evp.h>
 #include <libcatena/hash.h>
@@ -18,4 +19,15 @@ void catenaHash(const void* in, unsigned len, void* hash){
 		throw std::runtime_error("error finalizing SHA256");
 	}
 	EVP_MD_CTX_destroy(mdctx);
+}
+
+std::ostream& hashOStream(std::ostream& s, const void* hash){
+	std::ios state(NULL);
+	state.copyfmt(s);
+	s << std::hex;
+	for(int i = 0 ; i < HASHLEN ; ++i){
+		s << std::setfill('0') << std::setw(2) << (int)((const unsigned char *)hash)[i];
+	}
+	s.copyfmt(state);
+	return s;
 }
