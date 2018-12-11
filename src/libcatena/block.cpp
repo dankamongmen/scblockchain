@@ -5,6 +5,7 @@
 #include <iostream>
 #include "libcatena/block.h"
 #include "libcatena/hash.h"
+#include "libcatena/tx.h"
 
 const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
@@ -12,18 +13,39 @@ const int CatenaBlock::BLOCKHEADERLEN;
 bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const char* data, unsigned len){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
-		return false;
+		return true;
 	}
+	uint32_t offsets[chdr->txcount];
 	for(unsigned i = 0 ; i < chdr->txcount ; ++i){
 		uint32_t offset = 0;
 		for(int byte = 0 ; byte < 4 ; ++byte){
 			offset <<= 8;
 			offset += *data++;
 		}
+		if(offset >= len){
+			std::cerr << "no room for offset " << offset << std::endl;
+			return true;
+		}
+		offsets[i] = offset;
 	}
 	len -= chdr->txcount * 4;
-	// FIXME continue...
-	return true;
+	for(unsigned i = 0 ; i < chdr->txcount ; ++i){
+		// extract from offset[i]
+		unsigned txlen;
+		if(i < chdr->txcount - 1){
+			txlen = offsets[i + 1] - offsets[i];
+		}else{
+			txlen = len;
+		}
+		CatenaTX tx;
+		if(tx.extract(data, txlen)){
+			return true;
+		}
+		// do something with transaction?
+		data += txlen;
+		len -= txlen;
+	}
+	return false;
 }
 
 bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
@@ -31,7 +53,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	if(len < CatenaBlock::BLOCKHEADERLEN){
 		std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
 			" bytes, had only " << len << std::endl;
-		return false;
+		return true;
 	}
 	std::memcpy(chdr->hash, data, sizeof(chdr->hash));
 	data += sizeof(chdr->hash);
@@ -40,14 +62,14 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
 		std::cerr << "invalid prev hash (wanted ";
 		hashOStream(std::cerr, prevhash) << ")" << std::endl;
-		return false;
+		return true;
 	}
 	data += sizeof(chdr->prev);
 	chdr->version = *data++ * 0x100; // 16-bit version field
 	chdr->version += *data++;
 	if(chdr->version != CatenaBlock::BLOCKVERSION){
 		std::cerr << "expected version " << CatenaBlock::BLOCKVERSION << ", got " << chdr->version << std::endl;
-		return false;
+		return true;
 	}
 	chdr->totlen = 0;
 	for(int i = 0 ; i < 3 ; ++i){ // 24-bit totlen field
@@ -56,7 +78,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	}
 	if(chdr->totlen < CatenaBlock::BLOCKHEADERLEN || chdr->totlen > len){
 		std::cerr << "invalid totlen " << chdr->totlen << std::endl;
-		return false;
+		return true;
 	}
 	chdr->txcount = 0;
 	for(int i = 0 ; i < 3 ; ++i){
@@ -71,7 +93,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	// FIXME reject 0 UTC?
 	if(chdr->utc < prevutc){ // allow non-strictly-increasing timestamps?
 		std::cerr << "utc " << chdr->utc << " was less than " << prevutc << std::endl;
-		return false;
+		return true;
 	}
 	for(int i = 0 ; i < 19 ; ++i){ // 19 reserved bytes
 		if(*data){
@@ -85,9 +107,9 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	if(memcmp(hash, chdr->hash, HASHLEN)){
 		std::cerr << "invalid block hash (wanted ";
 		hashOStream(std::cerr, hash) << ")" << std::endl;
-		return false;
+		return true;
 	}
-	return true;
+	return false;
 }
 
 int CatenaBlocks::verifyData(const char *data, unsigned len){
@@ -99,7 +121,7 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 	std::vector<CatenaBlockHeader> new_headers;
 	while(len){
 		CatenaBlockHeader chdr;
-		if(!CatenaBlock::extractHeader(&chdr, data, len, prevhash, prevutc)){
+		if(CatenaBlock::extractHeader(&chdr, data, len, prevhash, prevutc)){
 			headers.clear();
 			offsets.clear();
 			return -1;
@@ -107,7 +129,7 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 		data += CatenaBlock::BLOCKHEADERLEN;
 		memcpy(prevhash, chdr.hash, sizeof(prevhash));
 		prevutc = chdr.utc;
-		if(!CatenaBlock::extractBody(&chdr, data, chdr.totlen - CatenaBlock::BLOCKHEADERLEN)){
+		if(CatenaBlock::extractBody(&chdr, data, chdr.totlen - CatenaBlock::BLOCKHEADERLEN)){
 			headers.clear();
 			offsets.clear();
 			return -1;

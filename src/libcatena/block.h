@@ -23,7 +23,7 @@ CatenaBlocks() = default;
 
 // Load blocks from the specified chunk of memory. Returns false on parsing
 // error, or if there were no blocks. Any present blocks are discarded.
-bool loadData(const char *data, unsigned len);
+bool loadData(const char* data, unsigned len);
 // Load blocks from the specified file. Propagates I/O exceptions. Any present
 // blocks are discarded. Return value is the same as loadData.
 bool loadFile(const std::string& s);
@@ -35,7 +35,7 @@ unsigned getBlockCount(){
 private:
 std::vector<unsigned> offsets;
 std::vector<CatenaBlockHeader> headers;
-int verifyData(const char *data, unsigned len);
+int verifyData(const char* data, unsigned len);
 };
 
 // A descriptor of a single block, and logic to serialize blocks
