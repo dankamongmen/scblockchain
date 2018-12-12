@@ -11,11 +11,12 @@ namespace Catena {
 
 class Keypair {
 public:
-Keypair(const char* pubfile);
+Keypair(const char* pubfile, const char* privfile = 0);
 ~Keypair();
 
 private:
 EVP_PKEY* pubkey;
+EVP_PKEY* privkey;
 };
 
 EVP_PKEY* loadPubkey(const char* fname);
