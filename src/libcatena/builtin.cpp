@@ -15,7 +15,7 @@ BuiltinKeys::BuiltinKeys(){
 "c8QhbDlfR85mT+KKpKH6TqQkI990Wm8=\n"
 "-----END PUBLIC KEY-----\n"
 	;
-	keys.emplace_back(key1, sizeof(key1));
+	keys.emplace_back(key1, sizeof(key1) - 1);
 }
 
 }
