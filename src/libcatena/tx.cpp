@@ -69,7 +69,7 @@ enum TXTypes {
 
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
-Transaction* Transaction::lexTX(const unsigned char* data, unsigned len){
+std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
 		std::cerr << "no room for transaction type in " << len << std::endl;
@@ -94,7 +94,7 @@ Transaction* Transaction::lexTX(const unsigned char* data, unsigned len){
 		delete tx;
 		return nullptr;
 	}
-	return tx;
+	return std::unique_ptr<Transaction>(tx);
 }
 
 }

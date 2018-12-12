@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <libcatena/hash.h>
+#include <libcatena/tx.h>
 
 namespace Catena {
 
@@ -56,6 +57,9 @@ static std::pair<std::unique_ptr<const char[]>, unsigned>
 static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
 	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
 static bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len);
+
+private:
+std::vector<Transaction*> transactions;
 };
 
 }
