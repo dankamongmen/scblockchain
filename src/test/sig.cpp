@@ -42,6 +42,7 @@ TEST(CatenaSigs, ECSign){
 		memset(sig, 0, sizeof(sig));
 		size_t siglen = kv.Sign(reinterpret_cast<const unsigned char*>(t->data),
 				strlen(t->data), sig, sizeof(sig));
+		ASSERT_LT(0, siglen);
 		EXPECT_FALSE(kv.Verify(reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, siglen));
 	}

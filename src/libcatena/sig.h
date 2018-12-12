@@ -11,6 +11,7 @@ namespace Catena {
 
 class Keypair {
 public:
+Keypair() = delete;
 Keypair(const char* pubfile, const char* privfile = 0);
 ~Keypair();
 size_t Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen);
