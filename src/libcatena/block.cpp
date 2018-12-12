@@ -10,7 +10,7 @@
 const int CatenaBlock::BLOCKVERSION;
 const int CatenaBlock::BLOCKHEADERLEN;
 
-bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const char* data, unsigned len){
+bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const unsigned char* data, unsigned len){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
@@ -48,7 +48,7 @@ bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const char* data, unsigne
 	return false;
 }
 
-bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
+bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const unsigned char* data,
 		unsigned len, const unsigned char* prevhash, uint64_t prevutc){
 	if(len < CatenaBlock::BLOCKHEADERLEN){
 		std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
@@ -57,7 +57,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	}
 	std::memcpy(chdr->hash, data, sizeof(chdr->hash));
 	data += sizeof(chdr->hash);
-	const char* hashstart = data;
+	unsigned const char* hashstart = data;
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
 	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
 		std::cerr << "invalid prev hash (wanted ";
@@ -112,7 +112,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const char* data,
 	return false;
 }
 
-int CatenaBlocks::verifyData(const char *data, unsigned len){
+int CatenaBlocks::verifyData(const unsigned char *data, unsigned len){
 	unsigned char prevhash[HASHLEN] = {0};
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
@@ -145,10 +145,10 @@ int CatenaBlocks::verifyData(const char *data, unsigned len){
 	return blocknum;
 }
 
-bool CatenaBlocks::loadData(const char *data, unsigned len){
+bool CatenaBlocks::loadData(const void* data, unsigned len){
 	offsets.clear();
 	headers.clear();
-	auto blocknum = verifyData(data, len);
+	auto blocknum = verifyData(static_cast<const unsigned char*>(data), len);
 	if(blocknum <= 0){
 		return false;
 	}
