@@ -39,11 +39,12 @@ bool Block::extractBody(BlockHeader* chdr, const unsigned char* data, unsigned l
 		}else{
 			txlen = len;
 		}
-		Transaction tx;
-		if(tx.extract(data, txlen)){
+		Transaction* tx = Transaction::lexTX(data, txlen);
+		if(tx == nullptr){
 			return true;
 		}
 		// do something with transaction?
+		delete tx;
 		data += txlen;
 		len -= txlen;
 	}

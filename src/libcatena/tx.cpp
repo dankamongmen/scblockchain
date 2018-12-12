@@ -12,7 +12,7 @@ enum ConsortiumSigTypes {
 	LedgerSigner = 0x0001,
 };
 
-bool Transaction::extractConsortiumMember(const unsigned char* data, unsigned len){
+bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	uint16_t sigtype;
 	if(len < sizeof(sigtype)){
 		std::cerr << "no room for consortium sigtype in " << len << std::endl;
@@ -47,38 +47,54 @@ bool Transaction::extractConsortiumMember(const unsigned char* data, unsigned le
 	return false;
 }
 
+bool NoOpTX::extract(const unsigned char* data, unsigned len){
+	uint16_t nooptype;
+	if(len != sizeof(nooptype)){
+		std::cerr << "payload too large for noop: " << len << std::endl;
+		return true;
+	}
+	nooptype = *data++ * 0x100;
+	nooptype += *data;
+	if(nooptype){
+		std::cerr << "warning: invalid noop type " << nooptype << std::endl;
+		return true;
+	}
+	return false;
+}
+
 enum TXTypes {
 	NoOp = 0x0000,
 	ConsortiumMember = 0x0001,
 };
 
-// Each transaction starts with a 16-bit unsigned type. Returns true on any
+// Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
-bool Transaction::extract(const unsigned char* data, unsigned len){
+Transaction* Transaction::lexTX(const unsigned char* data, unsigned len){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
 		std::cerr << "no room for transaction type in " << len << std::endl;
-		return true;
+		return 0;
 	}
 	len -= sizeof(txtype);
 	txtype = *data++ * 0x100;
 	txtype += *data++;
-	// FIXME replace this with a map of the enum to function pointers?
+	Transaction* tx;
 	switch(txtype){
 	case NoOp:
-		uint16_t nooptype;
-		if(len != sizeof(nooptype)){
-			std::cerr << "payload too large for noop: " << len << std::endl;
-			return true;
-		}
+		tx = new NoOpTX;
 		break;
 	case ConsortiumMember:
-		return extractConsortiumMember(data, len);
+		tx = new ConsortiumMemberTX;
+		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;
-		return true;
+		return nullptr;
 	}
-	return false;
+	if(tx->extract(data, len)){
+		delete tx;
+		return nullptr;
+	}
+	return tx;
 }
 
 }

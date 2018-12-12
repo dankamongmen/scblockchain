@@ -2,9 +2,8 @@
 #include "libcatena/tx.h"
 
 TEST(CatenaTransactions, EmptyTX){
-	Catena::Transaction tx;
-	EXPECT_TRUE(tx.extract({}, 0));
-	EXPECT_TRUE(tx.extract({0}, 1));
+	EXPECT_EQ(Catena::Transaction::lexTX({}, 0), nullptr);
+	EXPECT_EQ(Catena::Transaction::lexTX({0}, 1), nullptr);
 }
 
 static inline const unsigned char *uccast(const char* s){
@@ -12,12 +11,14 @@ static inline const unsigned char *uccast(const char* s){
 }
 
 TEST(CatenaTransactions, NoOp){
-	Catena::Transaction tx;
-	EXPECT_FALSE(tx.extract(uccast("\x00\x00\x00\x00"), 4));
+	EXPECT_NE(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00"), 4), nullptr);
 }
 
 TEST(CatenaTransactions, NoOpInvalid){
-	Catena::Transaction tx;
-	EXPECT_TRUE(tx.extract(uccast("\x00\x00\x00"), 3)); // too short
-	EXPECT_TRUE(tx.extract(uccast("\x00\x00\x00\x00\x00"), 5)); // too long
+	// too short
+	EXPECT_EQ(Catena::Transaction::lexTX(uccast("\x00\x00\x00"), 3), nullptr);
+	// too long
+	EXPECT_EQ(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00\x00"), 5), nullptr);
+	// bad noop type
+	EXPECT_EQ(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x01"), 4), nullptr);
 }
