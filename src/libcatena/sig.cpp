@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <iostream>
 #include <openssl/pem.h>
+#include <openssl/evp.h>
 #include "libcatena/sig.h"
 
 namespace Catena {
@@ -57,6 +58,51 @@ Keypair::~Keypair(){
 		EVP_PKEY_free(privkey);
 	}
 	EVP_PKEY_free(pubkey);
+}
+
+size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen){
+	if(!privkey){
+		return 0;
+	}
+	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
+	if(1 != EVP_PKEY_sign_init(ctx)){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error initializing EC ctx");
+	}
+	if(1 != EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256())){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error initializing sha256 EC ctx");
+	}
+	size_t len = 0;
+	if(1 != EVP_PKEY_sign(ctx, NULL, &len, in, inlen) || len > outlen){
+		std::cerr << "len: " << len << " outlen: " << outlen << std::endl;
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error getting EC outlen");
+	}
+	if(1 != EVP_PKEY_sign(ctx, out, &len, in, inlen)){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error EC signing");
+	}
+	EVP_PKEY_CTX_free(ctx);
+	return len;
+}
+
+bool Keypair::Verify(const unsigned char* in, size_t inlen, const unsigned char* sig, size_t siglen){
+	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(pubkey, NULL);
+	if(1 != EVP_PKEY_verify_init(ctx)){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error initializing EC ctx");
+	}
+	if(1 != EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256())){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error initializing sha256 EC ctx");
+	}
+	bool ret = false;
+	if(1 != EVP_PKEY_verify(ctx, sig, siglen, in, inlen)){
+		ret = true;
+	};
+	EVP_PKEY_CTX_free(ctx);
+	return ret;
 }
 
 }
