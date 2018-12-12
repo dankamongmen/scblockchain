@@ -4,7 +4,7 @@
 #include "libcatena/sig.h"
 
 static void usage(std::ostream& os, const char* name){
-	os << "usage: " << name << " [ -u pubkey -v privkey ]" << std::endl;
+	os << "usage: " << name << " [ -h ] [ -u pubkey -v privkey ]" << std::endl;
 }
 
 int main(int argc, char **argv){
