@@ -19,7 +19,6 @@ Keypair::Keypair(const char* pubfile, const char* privfile){
 	}
 	fclose(fp);
 	if(1 != EC_KEY_check_key(ec)){
-		EVP_PKEY_free(pubkey);
 		throw std::runtime_error("error verifying pubkey");
 	}
 	pubkey = EVP_PKEY_new();
@@ -64,7 +63,6 @@ Keypair::Keypair(const unsigned char* pubblob, size_t len){
 		throw std::runtime_error("error extracting pubkey");
 	}
 	if(1 != EC_KEY_check_key(ec)){
-		EVP_PKEY_free(pubkey);
 		throw std::runtime_error("error verifying pubkey");
 	}
 	pubkey = EVP_PKEY_new();
