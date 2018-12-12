@@ -8,6 +8,10 @@ TEST(CatenaSigs, LoadPubkeyFile){
 	Catena::Keypair(PUBLICKEY);
 }
 
+TEST(CatenaSigs, LoadPubkeyFileInvalid){
+	EXPECT_THROW(Catena::Keypair(ECDSAKEY), std::runtime_error);
+}
+
 TEST(CatenaSigs, LoadECMaterialInvalid){
 	EXPECT_THROW(Catena::Keypair(PUBLICKEY, PUBLICKEY), std::runtime_error);
 }

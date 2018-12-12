@@ -18,7 +18,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * Generate ECDSA key at `outfile.pem`: `openssl ecparam -name secp256k1 -genkey -noout -out outfile.pem`
 * Verify ECDSA keypair at `outfile.pem`:
 ```
-openssl ec -in secp256k1.pem -text -noout  -param_enc explicit
+openssl ec -in outfile.pem -text -noout  -param_enc explicit
 read EC key
 Private-Key: (256 bit)
 priv:
