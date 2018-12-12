@@ -59,6 +59,10 @@ Keypair::Keypair(const unsigned char* pubblob, size_t len){
 	if(!ec){
 		throw std::runtime_error("error extracting pubkey");
 	}
+	if(1 != EC_KEY_check_key(ec)){
+		EVP_PKEY_free(pubkey);
+		throw std::runtime_error("error verifying pubkey");
+	}
 	pubkey = EVP_PKEY_new();
 	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec)){
 		EVP_PKEY_free(pubkey);
@@ -89,7 +93,6 @@ size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, 
 	}
 	size_t len = 0;
 	if(1 != EVP_PKEY_sign(ctx, NULL, &len, in, inlen) || len > outlen){
-		std::cerr << "len: " << len << " outlen: " << outlen << std::endl;
 		EVP_PKEY_CTX_free(ctx);
 		throw std::runtime_error("error getting EC outlen");
 	}
