@@ -3,9 +3,28 @@
 
 // We use DER-encoded ECDSA secp256k1 curve for signatures
 
+#define SIGLEN 72 // length of signature outputs in bytes
+
+#include <openssl/evp.h>
+
 namespace Catena {
 
-#define SIGLEN 72 // length of signature outputs in bytes
+class Keypair {
+public:
+Keypair() = delete;
+Keypair(const char* pubfile, const char* privfile = 0);
+// Instantiate a verification-only keypair from memory
+Keypair(const unsigned char* pubblob, size_t len);
+~Keypair();
+size_t Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen);
+bool Verify(const unsigned char* in, size_t inlen, const unsigned char* sig, size_t siglen);
+
+private:
+EVP_PKEY* pubkey;
+EVP_PKEY* privkey;
+};
+
+EVP_PKEY* loadPubkey(const char* fname);
 
 }
 
