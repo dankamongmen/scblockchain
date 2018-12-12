@@ -11,6 +11,12 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * Google Test
 * OpenSSL 1.1+ (libopenssl-dev)
 
+## Running the catena daemon
+
+`catena` should be started with the `-u pubkey` and `-v privkey` options when
+it will be signing and verifying transactions. See the "Key operations" section
+for material regarding creation of local ("Consortium") keys.
+
 ## Key operations
 
 ### Generating ECDSA material
