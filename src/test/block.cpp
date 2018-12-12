@@ -4,19 +4,19 @@
 
 #define GENESISBLOCK_EXTERNAL "test/genesisblock"
 
-TEST(CatenaBlocks, CatenaBlocksGenesisBlock){
+TEST(CatenaBlocks, BlocksGenesisBlock){
 	Catena::Blocks cbs;
 	ASSERT_TRUE(cbs.loadFile(GENESISBLOCK_EXTERNAL));
 	EXPECT_EQ(1, cbs.getBlockCount());
 }
 
-TEST(CatenaBlocks, CatenaBlocksInvalidFile){
+TEST(CatenaBlocks, BlocksInvalidFile){
 	Catena::Blocks cbs;
 	EXPECT_THROW(cbs.loadFile(""), std::ifstream::failure);
 }
 
 // Chunks too small to be a valid block
-TEST(CatenaBlocks, CatenaBlocksInvalidShort){
+TEST(CatenaBlocks, BlocksInvalidShort){
 	Catena::Blocks cbs;
 	// Should fail on 0 bytes
 	EXPECT_FALSE(cbs.loadData("", 0));
@@ -26,7 +26,7 @@ TEST(CatenaBlocks, CatenaBlocksInvalidShort){
 }
 
 // A chunk large enough to be a valid block, but containing all 0s
-TEST(CatenaBlocks, CatenaBlocksInvalidZeroes){
+TEST(CatenaBlocks, BlocksInvalidZeroes){
 	Catena::Blocks cbs;
 	char block[Catena::Block::BLOCKHEADERLEN];
 	memset(block, 0, sizeof(block));
@@ -34,7 +34,7 @@ TEST(CatenaBlocks, CatenaBlocksInvalidZeroes){
 }
 
 // Generate a simple block, and read it back
-TEST(CatenaBlocks, CatenaBlockGenerated){
+TEST(CatenaBlocks, BlockGenerated){
 	unsigned char prevhash[HASHLEN] = {0};
 	std::unique_ptr<const char[]> block;
 	unsigned size;
@@ -46,7 +46,7 @@ TEST(CatenaBlocks, CatenaBlockGenerated){
 }
 
 // Generate a simple block with invalid prev, and read it back
-TEST(CatenaBlocks, CatenaBlockGeneratedBadprev){
+TEST(CatenaBlocks, BlockGeneratedBadprev){
 	unsigned char prevhash[HASHLEN] = {1};
 	std::unique_ptr<const char[]> block;
 	unsigned size;
@@ -58,7 +58,7 @@ TEST(CatenaBlocks, CatenaBlockGeneratedBadprev){
 }
 
 // Generate two blocks, and read them back
-TEST(CatenaBlocks, CatenaChainGenerated){
+TEST(CatenaBlocks, ChainGenerated){
 	unsigned char prevhash[HASHLEN] = {0};
 	std::unique_ptr<const char[]> b1, b2;
 	unsigned s1, s2;
