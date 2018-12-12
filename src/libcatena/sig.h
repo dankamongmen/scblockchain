@@ -3,6 +3,10 @@
 
 // We use DER-encoded ECDSA secp256k1 curve for signatures
 
+namespace Catena {
+
 #define SIGLEN 72 // length of signature outputs in bytes
+
+}
 
 #endif

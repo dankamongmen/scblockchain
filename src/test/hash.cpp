@@ -22,7 +22,7 @@ TEST(CatenaHash, SHA256Vectors){
 	}, *t;
 	for(t = tests ; t->data ; ++t){
 		unsigned char h[HASHLEN];
-		catenaHash(t->data, strlen(t->data), h);
+		Catena::catenaHash(t->data, strlen(t->data), h);
 		EXPECT_EQ(0, memcmp(h, t->hash, sizeof(h)));
 	}
 }
@@ -48,7 +48,7 @@ TEST(CatenaHash, SHA256Serialize){
 	}, *t;
 	for(t = tests ; t->hash ; ++t){
 		std::stringstream ss;
-		hashOStream(ss, t->hash);
+		Catena::hashOStream(ss, t->hash);
 		EXPECT_STREQ(ss.str().c_str(), t->str);
 	}
 }
