@@ -45,5 +45,8 @@ TEST(CatenaSigs, ECSign){
 		ASSERT_LT(0, siglen);
 		EXPECT_FALSE(kv.Verify(reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, siglen));
+		++*sig;
+		EXPECT_TRUE(kv.Verify(reinterpret_cast<const unsigned char *>(t->data),
+				strlen(t->data), sig, siglen));
 	}
 }
