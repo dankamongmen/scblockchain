@@ -6,8 +6,10 @@
 #include <utility>
 #include <libcatena/hash.h>
 
+namespace Catena {
+
 // NOT the on-disk packed format
-struct CatenaBlockHeader {
+struct BlockHeader {
 	unsigned char hash[HASHLEN];
 	unsigned char prev[HASHLEN];
 	unsigned version;
@@ -16,10 +18,10 @@ struct CatenaBlockHeader {
 	uint64_t utc;
 };
 
-// A contiguous chain of zero or more CatenaBlockHeaders
-class CatenaBlocks {
+// A contiguous chain of zero or more BlockHeaders
+class Blocks {
 public:
-CatenaBlocks() = default;
+Blocks() = default;
 
 // Load blocks from the specified chunk of memory. Returns false on parsing
 // error, or if there were no blocks. Any present blocks are discarded.
@@ -34,15 +36,15 @@ unsigned getBlockCount(){
 
 private:
 std::vector<unsigned> offsets;
-std::vector<CatenaBlockHeader> headers;
+std::vector<BlockHeader> headers;
 int verifyData(const unsigned char* data, unsigned len);
 };
 
 // A descriptor of a single block, and logic to serialize blocks
-class CatenaBlock {
+class Block {
 public:
-CatenaBlock() = default;
-virtual ~CatenaBlock() = default;
+Block() = default;
+virtual ~Block() = default;
 static const int BLOCKHEADERLEN = 96;
 static const int BLOCKVERSION = 0;
 
@@ -51,9 +53,11 @@ static const int BLOCKVERSION = 0;
 static std::pair<std::unique_ptr<const char[]>, unsigned>
 	serializeBlock(unsigned char* prevhash);
 
-static bool extractHeader(CatenaBlockHeader* chdr, const unsigned char* data,
+static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
 	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
-static bool extractBody(CatenaBlockHeader* chdr, const unsigned char* data, unsigned len);
+static bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len);
 };
+
+}
 
 #endif

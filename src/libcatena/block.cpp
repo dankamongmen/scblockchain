@@ -7,10 +7,12 @@
 #include "libcatena/hash.h"
 #include "libcatena/tx.h"
 
-const int CatenaBlock::BLOCKVERSION;
-const int CatenaBlock::BLOCKHEADERLEN;
+namespace Catena {
 
-bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const unsigned char* data, unsigned len){
+const int Block::BLOCKVERSION;
+const int Block::BLOCKHEADERLEN;
+
+bool Block::extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
@@ -37,7 +39,7 @@ bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const unsigned char* data
 		}else{
 			txlen = len;
 		}
-		CatenaTX tx;
+		Transaction tx;
 		if(tx.extract(data, txlen)){
 			return true;
 		}
@@ -48,10 +50,10 @@ bool CatenaBlock::extractBody(CatenaBlockHeader* chdr, const unsigned char* data
 	return false;
 }
 
-bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const unsigned char* data,
+bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
 		unsigned len, const unsigned char* prevhash, uint64_t prevutc){
-	if(len < CatenaBlock::BLOCKHEADERLEN){
-		std::cerr << "needed " << CatenaBlock::BLOCKHEADERLEN <<
+	if(len < Block::BLOCKHEADERLEN){
+		std::cerr << "needed " << Block::BLOCKHEADERLEN <<
 			" bytes, had only " << len << std::endl;
 		return true;
 	}
@@ -67,8 +69,8 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const unsigned char* da
 	data += sizeof(chdr->prev);
 	chdr->version = *data++ * 0x100; // 16-bit version field
 	chdr->version += *data++;
-	if(chdr->version != CatenaBlock::BLOCKVERSION){
-		std::cerr << "expected version " << CatenaBlock::BLOCKVERSION << ", got " << chdr->version << std::endl;
+	if(chdr->version != Block::BLOCKVERSION){
+		std::cerr << "expected version " << Block::BLOCKVERSION << ", got " << chdr->version << std::endl;
 		return true;
 	}
 	chdr->totlen = 0;
@@ -76,7 +78,7 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const unsigned char* da
 		chdr->totlen <<= 8;
 		chdr->totlen += *data++;
 	}
-	if(chdr->totlen < CatenaBlock::BLOCKHEADERLEN || chdr->totlen > len){
+	if(chdr->totlen < Block::BLOCKHEADERLEN || chdr->totlen > len){
 		std::cerr << "invalid totlen " << chdr->totlen << std::endl;
 		return true;
 	}
@@ -112,24 +114,24 @@ bool CatenaBlock::extractHeader(CatenaBlockHeader* chdr, const unsigned char* da
 	return false;
 }
 
-int CatenaBlocks::verifyData(const unsigned char *data, unsigned len){
+int Blocks::verifyData(const unsigned char *data, unsigned len){
 	unsigned char prevhash[HASHLEN] = {0};
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
-	std::vector<CatenaBlockHeader> new_headers;
+	std::vector<BlockHeader> new_headers;
 	while(len){
-		CatenaBlockHeader chdr;
-		if(CatenaBlock::extractHeader(&chdr, data, len, prevhash, prevutc)){
+		BlockHeader chdr;
+		if(Block::extractHeader(&chdr, data, len, prevhash, prevutc)){
 			headers.clear();
 			offsets.clear();
 			return -1;
 		}
-		data += CatenaBlock::BLOCKHEADERLEN;
+		data += Block::BLOCKHEADERLEN;
 		memcpy(prevhash, chdr.hash, sizeof(prevhash));
 		prevutc = chdr.utc;
-		if(CatenaBlock::extractBody(&chdr, data, chdr.totlen - CatenaBlock::BLOCKHEADERLEN)){
+		if(Block::extractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN)){
 			headers.clear();
 			offsets.clear();
 			return -1;
@@ -145,7 +147,7 @@ int CatenaBlocks::verifyData(const unsigned char *data, unsigned len){
 	return blocknum;
 }
 
-bool CatenaBlocks::loadData(const void* data, unsigned len){
+bool Blocks::loadData(const void* data, unsigned len){
 	offsets.clear();
 	headers.clear();
 	auto blocknum = verifyData(static_cast<const unsigned char*>(data), len);
@@ -155,7 +157,7 @@ bool CatenaBlocks::loadData(const void* data, unsigned len){
 	return true;
 }
 
-bool CatenaBlocks::loadFile(const std::string& fname){
+bool Blocks::loadFile(const std::string& fname){
 	offsets.clear();
 	headers.clear();
 	std::ifstream f;
@@ -169,7 +171,7 @@ bool CatenaBlocks::loadFile(const std::string& fname){
 }
 
 std::pair<std::unique_ptr<const char[]>, unsigned>
-CatenaBlock::serializeBlock(unsigned char* prevhash){
+Block::serializeBlock(unsigned char* prevhash){
 	auto block = new char[BLOCKHEADERLEN]();
 	unsigned len = BLOCKHEADERLEN;
 	char *targ = block + HASHLEN;
@@ -191,4 +193,6 @@ CatenaBlock::serializeBlock(unsigned char* prevhash){
 	memcpy(prevhash, block, HASHLEN);
 	std::unique_ptr<const char[]> ret(block);
 	return std::make_pair(std::move(ret), len);
+}
+
 }

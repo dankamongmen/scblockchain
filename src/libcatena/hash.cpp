@@ -3,6 +3,8 @@
 #include <openssl/evp.h>
 #include <libcatena/hash.h>
 
+namespace Catena {
+
 // FIXME can we extract these context creations?
 void catenaHash(const void* in, unsigned len, void* hash){
 	auto mdctx = EVP_MD_CTX_create(); // FIXME clean up on all paths
@@ -30,4 +32,6 @@ std::ostream& hashOStream(std::ostream& s, const void* hash){
 	}
 	s.copyfmt(state);
 	return s;
+}
+
 }

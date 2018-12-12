@@ -5,12 +5,14 @@
 #include "libcatena/sig.h"
 #include "libcatena/tx.h"
 
+namespace Catena {
+
 enum ConsortiumSigTypes {
 	InternalSigner = 0x0000,
 	LedgerSigner = 0x0001,
 };
 
-bool CatenaTX::extractConsortiumMember(const unsigned char* data, unsigned len){
+bool Transaction::extractConsortiumMember(const unsigned char* data, unsigned len){
 	uint16_t sigtype;
 	if(len < sizeof(sigtype)){
 		std::cerr << "no room for consortium sigtype in " << len << std::endl;
@@ -52,7 +54,7 @@ enum TXTypes {
 
 // Each transaction starts with a 16-bit unsigned type. Returns true on any
 // failure to parse, or if the length is wrong for the transaction.
-bool CatenaTX::extract(const unsigned char* data, unsigned len){
+bool Transaction::extract(const unsigned char* data, unsigned len){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
 		std::cerr << "no room for transaction type in " << len << std::endl;
@@ -77,4 +79,6 @@ bool CatenaTX::extract(const unsigned char* data, unsigned len){
 		return true;
 	}
 	return false;
+}
+
 }

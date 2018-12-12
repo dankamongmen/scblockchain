@@ -1,13 +1,17 @@
 #ifndef CATENA_LIBCATENA_TX
 #define CATENA_LIBCATENA_TX
 
-class CatenaTX {
+namespace Catena {
+
+class Transaction {
 public:
-CatenaTX() = default;
+Transaction() = default;
 bool extract(const unsigned char* data, unsigned len);
 
 private:
 bool extractConsortiumMember(const unsigned char* data, unsigned len);
 };
+
+}
 
 #endif

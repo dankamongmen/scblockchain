@@ -1,10 +1,14 @@
 #ifndef CATENA_LIBCATENA_CHAIN
 #define CATENA_LIBCATENA_CHAIN
 
+namespace Catena {
+
 // The blockchain (one or more CatenaBlocks on disk) as indexed in memory
-class CatenaChain {
+class Chain {
 public:
-CatenaChain() = default;
+Chain() = default;
 };
+
+}
 
 #endif
