@@ -1,6 +1,8 @@
+#include <cstring>
 #include <cstdint>
 #include <iostream>
 #include "libcatena/hash.h"
+#include "libcatena/sig.h"
 #include "libcatena/tx.h"
 
 enum ConsortiumSigTypes {
@@ -20,14 +22,18 @@ bool CatenaTX::extractConsortiumMember(const unsigned char* data, unsigned len){
 	switch(sigtype){
 	case InternalSigner:{
 		uint32_t signidx; // internal signer index
-		if(len < HASHLEN + sizeof(signidx)){
+		unsigned char sig[SIGLEN];
+		if(len < sizeof(sig) + sizeof(signidx)){
 			std::cerr << "no room for internal signature in " << len << std::endl;
 			return true;
 		}
+		memcpy(sig, data, sizeof(sig));
+		data += sizeof(sig);
+		len -= sizeof(sig);
 		break;
 	}case LedgerSigner:{
 		uint32_t signidx; // ledger signer transaction index
-		if(len < HASHLEN + HASHLEN + sizeof(signidx)){
+		if(len < SIGLEN + HASHLEN + sizeof(signidx)){
 			std::cerr << "no room for ledger signature in " << len << std::endl;
 			return true;
 		}
