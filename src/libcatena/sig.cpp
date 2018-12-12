@@ -52,6 +52,20 @@ Keypair::Keypair(const char* pubfile, const char* privfile){
 	}
 }
 
+Keypair::Keypair(const unsigned char* pubblob, size_t len){
+	BIO* bio = BIO_new_mem_buf(pubblob, len);
+	EC_KEY* ec = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL, NULL);
+	BIO_free(bio);
+	if(!ec){
+		throw std::runtime_error("error extracting pubkey");
+	}
+	pubkey = EVP_PKEY_new();
+	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec)){
+		EVP_PKEY_free(pubkey);
+		throw std::runtime_error("error binding EC pubkey");
+	}
+	privkey = 0;
+}
 
 Keypair::~Keypair(){
 	if(privkey){
