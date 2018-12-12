@@ -18,6 +18,10 @@ Keypair::Keypair(const char* pubfile, const char* privfile){
 		throw std::runtime_error("error loading PEM keyfile");
 	}
 	fclose(fp);
+	if(1 != EC_KEY_check_key(ec)){
+		EVP_PKEY_free(pubkey);
+		throw std::runtime_error("error verifying pubkey");
+	}
 	pubkey = EVP_PKEY_new();
 	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec)){
 		EVP_PKEY_free(pubkey);
