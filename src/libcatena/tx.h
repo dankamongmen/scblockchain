@@ -31,6 +31,7 @@ unsigned char signature[SIGLEN];
 unsigned char signerhash[HASHLEN]; // only used for LedgerSigned
 uint32_t signidx; // transaction idx or internal signing idx
 uint16_t sigtype; // FIXME convert to named enum
+unsigned siglen; // length of signature, up to SIGLEN
 };
 
 }

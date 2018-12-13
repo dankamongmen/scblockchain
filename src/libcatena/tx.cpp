@@ -8,69 +8,37 @@
 
 namespace Catena {
 
-enum ConsortiumSigTypes {
-	InternalSigner = 0x0000,
-	LedgerSigner = 0x0001,
-};
-
 bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
-	uint16_t sigtype;
-	if(len < sizeof(sigtype)){
-		std::cerr << "no room for consortium sigtype in " << len << std::endl;
+	if(len < 2){ // 16-bit signature length
+		std::cerr << "no room for siglen in " << len << std::endl;
 		return true;
 	}
-	sigtype = nbo_to_ulong(data, sizeof(sigtype));
-	data += sizeof(sigtype);
-	len -= sizeof(sigtype);
-	uint32_t signidx;
-	switch(sigtype){
-	case InternalSigner:{
-		if(len < sizeof(signature) + sizeof(signidx)){
-			std::cerr << "no room for internal signature in " << len << std::endl;
-			return true;
-		}
-		memcpy(signature, data, sizeof(signature));
-		data += sizeof(signature);
-		len -= sizeof(signature);
-		signidx = nbo_to_ulong(data, sizeof(signidx));
-		data += sizeof(signidx);
-		len -= sizeof(signidx);
-		break;
-	}case LedgerSigner:{
-		if(len < sizeof(signature) + sizeof(signerhash) + sizeof(signidx)){
-			std::cerr << "no room for ledger signature in " << len << std::endl;
-			return true;
-		}
-		memcpy(signature, data, sizeof(signature));
-		data += sizeof(signature);
-		len -= sizeof(signature);
-		memcpy(signerhash, data, sizeof(signerhash));
-		data += sizeof(signerhash);
-		len -= sizeof(signerhash);
-		signidx = nbo_to_ulong(data, sizeof(signidx));
-		data += sizeof(signidx);
-		len -= sizeof(signidx);
-		break;
-	}default:
-		std::cerr << "unknown consortium sigtype " << sigtype << std::endl;
+	siglen = nbo_to_ulong(data, 2);
+	data += 2;
+	len -= 2;
+	if(len < sizeof(signerhash) + sizeof(signidx)){
+		std::cerr << "no room for sigspec in " << len << std::endl;
 		return true;
 	}
+	memcpy(signerhash, data, sizeof(signerhash));
+	data += sizeof(signerhash);
+	len -= sizeof(signerhash);
+	signidx = nbo_to_ulong(data, sizeof(signidx));
+	data += sizeof(signidx);
+	len -= sizeof(signidx);
+	if(len < siglen){
+		std::cerr << "no room for signature in " << len << std::endl;
+		return true;
+	}
+	memcpy(signature, data, siglen);
+	data += siglen;
+	len -= siglen;
+	// FIXME handle remaning data?
 	return false;
 }
 
-bool NoOpTX::extract(const unsigned char* data, unsigned len){
-	uint16_t nooptype;
-	if(len != sizeof(nooptype)){
-		std::cerr << "payload too large for noop: " << len << std::endl;
-		return true;
-	}
-	nooptype = nbo_to_ulong(data, sizeof(nooptype));
-	data += sizeof(nooptype);
-	len -= sizeof(nooptype);
-	if(nooptype){
-		std::cerr << "warning: invalid noop type " << nooptype << std::endl;
-		return true;
-	}
+bool NoOpTX::extract(const unsigned char* data __attribute__ ((unused)),
+			unsigned len __attribute__ ((unused))){
 	return false;
 }
 

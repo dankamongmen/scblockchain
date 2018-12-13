@@ -92,7 +92,10 @@ publication time of the block. *reserved* ought be set to all zeroes.
 
 A table of 32-bit offsets, one per transaction (*txcount* from the header), is
 followed by transactions of arbitrary length, each prefixed with a 16-bit
-unsigned transaction type.
+unsigned transaction type. We do not attempt to structure these transactions
+with an eye towards alignment, but instead compactness. Lengths are not stored
+within the transactions themselves, since they can be computed from the offset
+table (transactions ought not have trailing padding).
 
 ```
  0                   1                   2                   3
@@ -111,27 +114,28 @@ unsigned transaction type.
 
 #### NoOp
 
-Transaction type 0x0000. Tagged with a 16-bit subtype, of which the only
-one currently supported is 0x0000.
+Transaction type 0x0000, having arbitrary additional trailing data.
+
+```
+ 0                   1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         type (0x0000)         | ...arbitrary data...
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+#### Consortium Member
+
+Transaction type 0x0001, followed by a 16 bit signature length, followed by
+the 256-bit hash and 32-bit index of the signing party, followed by the
+signature. ECDSA SHA256 signatures are 70, 71, or 72 bytes. A signer hash
+of all 1s indicates a builtin key.
 
 ```
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         type (0x0000)         |      noop type (0x0000)       |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-```
-
-#### Consortium Member
-
-Transaction type 0x0001. Tagged with a 16-bit signature type, of which two
-are currently supported, 0x0000 for an internally-signed transaction (one
-signed by a key built into the binary), 0x0001 for a ledger-signed transaction
-(one signed by a key on the ledger).
-
-```
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         type (0x0001)         |        sigtype (0x0000)       |
+|         type (0x0001)         |            siglength          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
 +                                                               +
@@ -140,27 +144,7 @@ signed by a key built into the binary), 0x0001 for a ledger-signed transaction
 |                                                               |
 +                                                               +
 |                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                            signature                          +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
++                           signer hash                         +
 |                                                               |
 +                                                               +
 |                                                               |
@@ -169,67 +153,7 @@ signed by a key built into the binary), 0x0001 for a ledger-signed transaction
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                       internal signing tx                     |
+|                          signer index                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-```
-
-```
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         type (0x0001)         |        sigtype (0x0001)       |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                            signature                          +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                          signing hash                         +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                           signing tx                          |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
+               ...ECDSA signature (70--72 bytes)...
 ```
