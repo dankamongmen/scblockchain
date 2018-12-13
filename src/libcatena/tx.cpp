@@ -1,6 +1,7 @@
 #include <cstring>
 #include <cstdint>
 #include <iostream>
+#include "libcatena/utility.h"
 #include "libcatena/hash.h"
 #include "libcatena/sig.h"
 #include "libcatena/tx.h"
@@ -11,15 +12,6 @@ enum ConsortiumSigTypes {
 	InternalSigner = 0x0000,
 	LedgerSigner = 0x0001,
 };
-
-unsigned long nbo_to_ulong(const unsigned char* data, int bytes){
-	unsigned long ret = 0;
-	while(bytes-- > 0){
-		ret *= 0x100;
-		ret += *data++;
-	}
-	return ret;
-}
 
 bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	uint16_t sigtype;
