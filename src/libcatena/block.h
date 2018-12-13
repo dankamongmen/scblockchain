@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <libcatena/hash.h>
+#include <libcatena/tx.h>
 
 namespace Catena {
 
@@ -22,8 +23,9 @@ struct BlockHeader {
 class Blocks {
 public:
 Blocks() = default;
+virtual ~Blocks() = default;
 
-// Load blocks from the specified chunk of memory. Returns false on parsing
+// Load blocks from the specified chunk of memory. Returns true on parsing
 // error, or if there were no blocks. Any present blocks are discarded.
 bool loadData(const void* data, unsigned len);
 // Load blocks from the specified file. Propagates I/O exceptions. Any present
@@ -55,7 +57,11 @@ static std::pair<std::unique_ptr<const char[]>, unsigned>
 
 static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
 	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
-static bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len);
+
+bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len);
+
+private:
+std::vector<std::unique_ptr<Transaction>> transactions;
 };
 
 }

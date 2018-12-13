@@ -1,6 +1,7 @@
 #include <cstring>
 #include <cstdint>
 #include <iostream>
+#include "libcatena/utility.h"
 #include "libcatena/hash.h"
 #include "libcatena/sig.h"
 #include "libcatena/tx.h"
@@ -12,36 +13,62 @@ enum ConsortiumSigTypes {
 	LedgerSigner = 0x0001,
 };
 
-bool Transaction::extractConsortiumMember(const unsigned char* data, unsigned len){
+bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	uint16_t sigtype;
 	if(len < sizeof(sigtype)){
 		std::cerr << "no room for consortium sigtype in " << len << std::endl;
 		return true;
 	}
+	sigtype = nbo_to_ulong(data, sizeof(sigtype));
+	data += sizeof(sigtype);
 	len -= sizeof(sigtype);
-	sigtype = *data++ * 0x100;
-	sigtype += *data++;
+	uint32_t signidx;
 	switch(sigtype){
 	case InternalSigner:{
-		uint32_t signidx; // internal signer index
-		unsigned char sig[SIGLEN];
-		if(len < sizeof(sig) + sizeof(signidx)){
+		if(len < sizeof(signature) + sizeof(signidx)){
 			std::cerr << "no room for internal signature in " << len << std::endl;
 			return true;
 		}
-		memcpy(sig, data, sizeof(sig));
-		data += sizeof(sig);
-		len -= sizeof(sig);
+		memcpy(signature, data, sizeof(signature));
+		data += sizeof(signature);
+		len -= sizeof(signature);
+		signidx = nbo_to_ulong(data, sizeof(signidx));
+		data += sizeof(signidx);
+		len -= sizeof(signidx);
 		break;
 	}case LedgerSigner:{
-		uint32_t signidx; // ledger signer transaction index
-		if(len < SIGLEN + HASHLEN + sizeof(signidx)){
+		if(len < sizeof(signature) + sizeof(signerhash) + sizeof(signidx)){
 			std::cerr << "no room for ledger signature in " << len << std::endl;
 			return true;
 		}
+		memcpy(signature, data, sizeof(signature));
+		data += sizeof(signature);
+		len -= sizeof(signature);
+		memcpy(signerhash, data, sizeof(signerhash));
+		data += sizeof(signerhash);
+		len -= sizeof(signerhash);
+		signidx = nbo_to_ulong(data, sizeof(signidx));
+		data += sizeof(signidx);
+		len -= sizeof(signidx);
 		break;
 	}default:
 		std::cerr << "unknown consortium sigtype " << sigtype << std::endl;
+		return true;
+	}
+	return false;
+}
+
+bool NoOpTX::extract(const unsigned char* data, unsigned len){
+	uint16_t nooptype;
+	if(len != sizeof(nooptype)){
+		std::cerr << "payload too large for noop: " << len << std::endl;
+		return true;
+	}
+	nooptype = nbo_to_ulong(data, sizeof(nooptype));
+	data += sizeof(nooptype);
+	len -= sizeof(nooptype);
+	if(nooptype){
+		std::cerr << "warning: invalid noop type " << nooptype << std::endl;
 		return true;
 	}
 	return false;
@@ -52,33 +79,34 @@ enum TXTypes {
 	ConsortiumMember = 0x0001,
 };
 
-// Each transaction starts with a 16-bit unsigned type. Returns true on any
+// Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
-bool Transaction::extract(const unsigned char* data, unsigned len){
+std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
 		std::cerr << "no room for transaction type in " << len << std::endl;
-		return true;
+		return 0;
 	}
+	txtype = nbo_to_ulong(data, sizeof(txtype));
 	len -= sizeof(txtype);
-	txtype = *data++ * 0x100;
-	txtype += *data++;
-	// FIXME replace this with a map of the enum to function pointers?
+	data += sizeof(txtype);
+	Transaction* tx;
 	switch(txtype){
 	case NoOp:
-		uint16_t nooptype;
-		if(len != sizeof(nooptype)){
-			std::cerr << "payload too large for noop: " << len << std::endl;
-			return true;
-		}
+		tx = new NoOpTX;
 		break;
 	case ConsortiumMember:
-		return extractConsortiumMember(data, len);
+		tx = new ConsortiumMemberTX;
+		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;
-		return true;
+		return nullptr;
 	}
-	return false;
+	if(tx->extract(data, len)){
+		delete tx;
+		return nullptr;
+	}
+	return std::unique_ptr<Transaction>(tx);
 }
 
 }
