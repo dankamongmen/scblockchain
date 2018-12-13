@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <fstream>
 #include <iostream>
+#include "libcatena/utility.h"
 #include "libcatena/block.h"
 #include "libcatena/hash.h"
 #include "libcatena/tx.h"
@@ -19,11 +20,8 @@ bool Block::extractBody(BlockHeader* chdr, const unsigned char* data, unsigned l
 	}
 	uint32_t offsets[chdr->txcount];
 	for(unsigned i = 0 ; i < chdr->txcount ; ++i){
-		uint32_t offset = 0;
-		for(int byte = 0 ; byte < 4 ; ++byte){
-			offset <<= 8;
-			offset += *data++;
-		}
+		uint32_t offset = nbo_to_ulong(data, sizeof(offset));
+		data += sizeof(offset);
 		if(offset >= len){
 			std::cerr << "no room for offset " << offset << std::endl;
 			return true;
@@ -67,31 +65,22 @@ bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
 		return true;
 	}
 	data += sizeof(chdr->prev);
-	chdr->version = *data++ * 0x100; // 16-bit version field
-	chdr->version += *data++;
+	chdr->version = nbo_to_ulong(data, 2);
+	data += 2; // 16-bit version field
 	if(chdr->version != Block::BLOCKVERSION){
 		std::cerr << "expected version " << Block::BLOCKVERSION << ", got " << chdr->version << std::endl;
 		return true;
 	}
-	chdr->totlen = 0;
-	for(int i = 0 ; i < 3 ; ++i){ // 24-bit totlen field
-		chdr->totlen <<= 8;
-		chdr->totlen += *data++;
-	}
+	chdr->totlen = nbo_to_ulong(data, 3);
+	data += 3; // 24-bit totlen field
 	if(chdr->totlen < Block::BLOCKHEADERLEN || chdr->totlen > len){
 		std::cerr << "invalid totlen " << chdr->totlen << std::endl;
 		return true;
 	}
-	chdr->txcount = 0;
-	for(int i = 0 ; i < 3 ; ++i){
-		chdr->txcount <<= 8;
-		chdr->txcount += *data++;
-	}
-	chdr->utc = 0; // 40-bit UTC field
-	for(int i = 0 ; i < 5 ; ++i){
-		chdr->utc <<= 8;
-		chdr->utc += *data++;
-	}
+	chdr->txcount = nbo_to_ulong(data, 3);
+	data += 3; // 24-bit txcount field
+	chdr->utc = nbo_to_ulong(data, 5);
+	data += 5; // 40-bit UTC field
 	// FIXME reject 0 UTC?
 	if(chdr->utc < prevutc){ // allow non-strictly-increasing timestamps?
 		std::cerr << "utc " << chdr->utc << " was less than " << prevutc << std::endl;
