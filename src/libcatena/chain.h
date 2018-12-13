@@ -36,6 +36,7 @@ unsigned loadData(const void* data, unsigned len);
 private:
 TrustStore tstore;
 Blocks blocks;
+void LoadBuiltinKeys();
 };
 
 }
