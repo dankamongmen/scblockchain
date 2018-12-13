@@ -23,6 +23,7 @@ struct BlockHeader {
 class Blocks {
 public:
 Blocks() = default;
+virtual ~Blocks() = default;
 
 // Load blocks from the specified chunk of memory. Returns false on parsing
 // error, or if there were no blocks. Any present blocks are discarded.
@@ -56,10 +57,11 @@ static std::pair<std::unique_ptr<const char[]>, unsigned>
 
 static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
 	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
-static bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len);
+
+bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len);
 
 private:
-std::vector<Transaction*> transactions;
+std::vector<std::unique_ptr<Transaction>> transactions;
 };
 
 }

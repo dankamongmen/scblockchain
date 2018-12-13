@@ -43,7 +43,7 @@ bool Block::extractBody(BlockHeader* chdr, const unsigned char* data, unsigned l
 		if(tx == nullptr){
 			return true;
 		}
-		// do something with transaction?
+		transactions.push_back(std::move(tx));
 		data += txlen;
 		len -= txlen;
 	}
@@ -122,6 +122,7 @@ int Blocks::verifyData(const unsigned char *data, unsigned len){
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
 	while(len){
+		Block block;
 		BlockHeader chdr;
 		if(Block::extractHeader(&chdr, data, len, prevhash, prevutc)){
 			headers.clear();
@@ -131,7 +132,7 @@ int Blocks::verifyData(const unsigned char *data, unsigned len){
 		data += Block::BLOCKHEADERLEN;
 		memcpy(prevhash, chdr.hash, sizeof(prevhash));
 		prevutc = chdr.utc;
-		if(Block::extractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN)){
+		if(block.extractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN)){
 			headers.clear();
 			offsets.clear();
 			return -1;
