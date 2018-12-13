@@ -12,33 +12,52 @@ enum ConsortiumSigTypes {
 	LedgerSigner = 0x0001,
 };
 
+unsigned long nbo_to_ulong(const unsigned char* data, int bytes){
+	unsigned long ret = 0;
+	while(bytes-- > 0){
+		ret *= 0x100;
+		ret += *data++;
+	}
+	return ret;
+}
+
 bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	uint16_t sigtype;
 	if(len < sizeof(sigtype)){
 		std::cerr << "no room for consortium sigtype in " << len << std::endl;
 		return true;
 	}
+	sigtype = nbo_to_ulong(data, sizeof(sigtype));
+	data += sizeof(sigtype);
 	len -= sizeof(sigtype);
-	sigtype = *data++ * 0x100;
-	sigtype += *data++;
+	uint32_t signidx;
 	switch(sigtype){
 	case InternalSigner:{
-		uint32_t signidx; // internal signer index
-		unsigned char sig[SIGLEN];
-		if(len < sizeof(sig) + sizeof(signidx)){
+		if(len < sizeof(signature) + sizeof(signidx)){
 			std::cerr << "no room for internal signature in " << len << std::endl;
 			return true;
 		}
-		memcpy(sig, data, sizeof(sig));
-		data += sizeof(sig);
-		len -= sizeof(sig);
+		memcpy(signature, data, sizeof(signature));
+		data += sizeof(signature);
+		len -= sizeof(signature);
+		signidx = nbo_to_ulong(data, sizeof(signidx));
+		data += sizeof(signidx);
+		len -= sizeof(signidx);
 		break;
 	}case LedgerSigner:{
-		uint32_t signidx; // ledger signer transaction index
-		if(len < SIGLEN + HASHLEN + sizeof(signidx)){
+		if(len < sizeof(signature) + sizeof(signerhash) + sizeof(signidx)){
 			std::cerr << "no room for ledger signature in " << len << std::endl;
 			return true;
 		}
+		memcpy(signature, data, sizeof(signature));
+		data += sizeof(signature);
+		len -= sizeof(signature);
+		memcpy(signerhash, data, sizeof(signerhash));
+		data += sizeof(signerhash);
+		len -= sizeof(signerhash);
+		signidx = nbo_to_ulong(data, sizeof(signidx));
+		data += sizeof(signidx);
+		len -= sizeof(signidx);
 		break;
 	}default:
 		std::cerr << "unknown consortium sigtype " << sigtype << std::endl;
@@ -53,8 +72,9 @@ bool NoOpTX::extract(const unsigned char* data, unsigned len){
 		std::cerr << "payload too large for noop: " << len << std::endl;
 		return true;
 	}
-	nooptype = *data++ * 0x100;
-	nooptype += *data;
+	nooptype = nbo_to_ulong(data, sizeof(nooptype));
+	data += sizeof(nooptype);
+	len -= sizeof(nooptype);
 	if(nooptype){
 		std::cerr << "warning: invalid noop type " << nooptype << std::endl;
 		return true;
@@ -75,9 +95,9 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 		std::cerr << "no room for transaction type in " << len << std::endl;
 		return 0;
 	}
+	txtype = nbo_to_ulong(data, sizeof(txtype));
 	len -= sizeof(txtype);
-	txtype = *data++ * 0x100;
-	txtype += *data++;
+	data += sizeof(txtype);
 	Transaction* tx;
 	switch(txtype){
 	case NoOp:
