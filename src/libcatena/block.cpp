@@ -153,9 +153,9 @@ bool Blocks::loadData(const void* data, unsigned len){
 	headers.clear();
 	auto blocknum = verifyData(static_cast<const unsigned char*>(data), len);
 	if(blocknum <= 0){
-		return false;
+		return true;
 	}
-	return true;
+	return false;
 }
 
 bool Blocks::loadFile(const std::string& fname){
