@@ -8,10 +8,17 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 ### Build requirements
 
 * C++ compiler and GNU Make
-* Google Test
+* Google Test (libgtest-dev)
 * OpenSSL 1.1+ (libopenssl-dev)
+* GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 
 ## Running the catena daemon
+
+`catena` requires the `-l ledger` option to specify a ledger file. This ledger
+will be validated and imported on startup, and updated during runtime. If the
+ledger cannot be validated, `catena` will refuse to start. An empty file can be
+provided, resulting in complete download of the ledger from a peer.
+
 
 `catena` should be started with the `-u pubkey` and `-v privkey` options when
 it will be signing and verifying transactions. See the "Key operations" section
