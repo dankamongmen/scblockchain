@@ -5,6 +5,7 @@
 
 namespace Catena {
 
+// Called during Chain() constructor
 void Chain::LoadBuiltinKeys(){
 	BuiltinKeys bkeys;
 	bkeys.AddToTrustStore(tstore);
@@ -12,7 +13,7 @@ void Chain::LoadBuiltinKeys(){
 
 Chain::Chain(const std::string& fname){
 	LoadBuiltinKeys();
-	if(blocks.loadFile(fname)){
+	if(blocks.loadFile(fname, tstore)){
 		throw BlockValidationException();
 	}
 }
@@ -20,7 +21,7 @@ Chain::Chain(const std::string& fname){
 // A Chain instantiated from memory will not write out new blocks.
 Chain::Chain(const void* data, unsigned len){
 	LoadBuiltinKeys();
-	if(blocks.loadData(data, len)){
+	if(blocks.loadData(data, len, tstore)){
 		throw BlockValidationException();
 	}
 }

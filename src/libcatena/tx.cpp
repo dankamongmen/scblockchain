@@ -16,13 +16,15 @@ bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	siglen = nbo_to_ulong(data, 2);
 	data += 2;
 	len -= 2;
-	if(len < sizeof(signerhash) + sizeof(signidx)){
+	if(len < HASHLEN + sizeof(signidx)){
 		std::cerr << "no room for sigspec in " << len << std::endl;
 		return true;
 	}
-	memcpy(signerhash, data, sizeof(signerhash));
-	data += sizeof(signerhash);
-	len -= sizeof(signerhash);
+	for(int i = 0 ; i < HASHLEN ; ++i){
+		signerhash[i] = data[i];
+	}
+	data += HASHLEN;
+	len -= HASHLEN;
 	signidx = nbo_to_ulong(data, sizeof(signidx));
 	data += sizeof(signidx);
 	len -= sizeof(signidx);
