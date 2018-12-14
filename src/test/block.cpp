@@ -1,12 +1,15 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include "libcatena/truststore.h"
+#include "libcatena/builtin.h"
 #include "libcatena/block.h"
 
 #define GENESISBLOCK_EXTERNAL "test/genesisblock"
 
 TEST(CatenaBlocks, BlocksGenesisBlock){
 	Catena::TrustStore tstore;
+	Catena::BuiltinKeys bkeys;
+        bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.loadFile(GENESISBLOCK_EXTERNAL, tstore));
 	EXPECT_EQ(1, cbs.getBlockCount());

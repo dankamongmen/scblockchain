@@ -14,7 +14,7 @@ Transaction() = default;
 virtual ~Transaction() = default;
 static std::unique_ptr<Transaction> lexTX(const unsigned char* data, unsigned len);
 virtual bool extract(const unsigned char* data, unsigned len) = 0;
-virtual bool validate(TrustStore& tstore, const unsigned char* data, size_t len) = 0;
+virtual bool validate(TrustStore& tstore) = 0;
 
 private:
 bool extractConsortiumMember(const unsigned char* data, unsigned len);
@@ -23,9 +23,7 @@ bool extractConsortiumMember(const unsigned char* data, unsigned len);
 class NoOpTX : public Transaction {
 public:
 bool extract(const unsigned char* data, unsigned len) override;
-bool validate(TrustStore& tstore __attribute__ ((unused)),
-		const unsigned char* data __attribute__ ((unused)),
-		size_t len __attribute__ ((unused))){
+bool validate(TrustStore& tstore __attribute__ ((unused))){
 	return false;
 }
 };
@@ -33,8 +31,10 @@ bool validate(TrustStore& tstore __attribute__ ((unused)),
 class ConsortiumMemberTX : public Transaction {
 public:
 bool extract(const unsigned char* data, unsigned len) override;
-bool validate(TrustStore& tstore, const unsigned char* data, size_t len){
-	return tstore.Verify({signerhash, signidx}, data, len, signature, siglen);
+bool validate(TrustStore& tstore){
+	// FIXME eventually check extra payload data
+	return tstore.Verify({signerhash, signidx}, reinterpret_cast<const unsigned char*>(""),
+				0, signature, siglen);
 }
 
 private:
