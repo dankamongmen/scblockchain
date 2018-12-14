@@ -129,7 +129,9 @@ Transaction type 0x0000, having arbitrary additional trailing data.
 Transaction type 0x0001, followed by a 16 bit signature length, followed by
 the 256-bit hash and 32-bit index of the signing party, followed by the
 signature. ECDSA SHA256 signatures are 70, 71, or 72 bytes. A signer hash
-of all 1s indicates a builtin key.
+of all 1s indicates a builtin key. The signature is taken over the DSA public
+key (which can later be referred to using the transaction hash+index), and
+a freeform msgpack-encoded payload.
 
 ```
  0                   1                   2                   3
@@ -155,5 +157,9 @@ of all 1s indicates a builtin key.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                          signer index                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-               ...ECDSA signature (70--72 bytes)...
+|              ...ECDSA signature (70--72 bytes)...             |
+|                ...2 bytes for DSA key length...               |
+|                      ...DSA public key...                     |
+|                ...msgpack consortium payload...               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
