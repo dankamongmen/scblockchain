@@ -27,8 +27,8 @@ size_t Count(){
 }
 
 void AddToTrustStore(TrustStore& tstore){
-	unsigned char hash[HASHLEN];
-	memset(hash, 0xffu, sizeof(hash));
+	std::array<unsigned char, HASHLEN> hash;
+	hash.fill(0xffu);
 	for(size_t i = 0 ; i < keys.size() ; ++i){
 		tstore.addKey(&keys[i], {hash, i});
 	}

@@ -28,8 +28,8 @@ TEST(CatenaTrustStore, BuiltinKeys){
 		}
 	}, *t;
 	unsigned char sig[SIGLEN];
-	unsigned char hash[HASHLEN];
-	memset(hash, 0xffu, sizeof(hash));
+	std::array<unsigned char, HASHLEN> hash;
+	hash.fill(0xffu);
 	for(t = tests ; t->data ; ++t){
 		memcpy(sig, t->sig, sizeof(sig));
 		EXPECT_FALSE(tstore.Verify({hash, 0}, reinterpret_cast<const unsigned char *>(t->data),

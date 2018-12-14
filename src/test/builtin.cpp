@@ -36,5 +36,8 @@ TEST(CatenaBuiltin, ECSigVerify){
 		++*sig;
 		EXPECT_TRUE(bkeys.Verify(0, reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, sizeof(sig)));
+		--*sig;
+		EXPECT_FALSE(bkeys.Verify(0, reinterpret_cast<const unsigned char *>(t->data),
+				strlen(t->data), sig, sizeof(sig)));
 	}
 }

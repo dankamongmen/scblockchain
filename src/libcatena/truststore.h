@@ -8,7 +8,7 @@
 
 namespace Catena {
 
-using KeyLookup = std::pair<const unsigned char*, unsigned>;
+using KeyLookup = std::pair<const std::array<unsigned char, HASHLEN>, unsigned>;
 
 struct keylookup_hash {
 	template <class T1, class T2>
@@ -16,14 +16,8 @@ struct keylookup_hash {
 		size_t sha;
 		// FIXME assert sizeof(sha) < KEYLEN
 		// FIXME use back part of sha, since leading bits might be 0s
-		memcpy(&sha, k.first, sizeof(sha));
+		memcpy(&sha, k.first.data(), sizeof(sha));
 		return sha;
-	}
-};
-
-struct keylookup_equal {
-	bool operator()(const KeyLookup& k1, const KeyLookup& k2) const {
-		return !memcmp(k1.first, k2.first, HASHLEN);
 	}
 };
 
@@ -43,13 +37,12 @@ bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 	try{
 		return keys.at(kidx).Verify(in, inlen, sig, siglen);
 	}catch(const std::out_of_range& oor){ // no such key
-std::cerr << "whoa there, no such key little buddy!" << std::endl;
 		return true;
 	}
 }
 
 private:
-std::unordered_map<KeyLookup, Keypair, keylookup_hash, keylookup_equal> keys;
+std::unordered_map<KeyLookup, Keypair, keylookup_hash> keys;
 };
 
 }
