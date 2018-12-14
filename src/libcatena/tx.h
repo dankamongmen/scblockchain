@@ -2,6 +2,7 @@
 #define CATENA_LIBCATENA_TX
 
 #include <memory>
+#include <libcatena/truststore.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
 
@@ -13,6 +14,7 @@ Transaction() = default;
 virtual ~Transaction() = default;
 static std::unique_ptr<Transaction> lexTX(const unsigned char* data, unsigned len);
 virtual bool extract(const unsigned char* data, unsigned len) = 0;
+virtual bool validate(TrustStore& tstore) = 0;
 
 private:
 bool extractConsortiumMember(const unsigned char* data, unsigned len);
@@ -21,16 +23,25 @@ bool extractConsortiumMember(const unsigned char* data, unsigned len);
 class NoOpTX : public Transaction {
 public:
 bool extract(const unsigned char* data, unsigned len) override;
+bool validate(TrustStore& tstore __attribute__ ((unused))){
+	return false;
+}
 };
 
 class ConsortiumMemberTX : public Transaction {
 public:
 bool extract(const unsigned char* data, unsigned len) override;
+bool validate(TrustStore& tstore){
+	// FIXME eventually check extra payload data
+	return tstore.Verify({signerhash, signidx}, reinterpret_cast<const unsigned char*>(""),
+				0, signature, siglen);
+}
+
 private:
 unsigned char signature[SIGLEN];
-unsigned char signerhash[HASHLEN]; // only used for LedgerSigned
+std::array<unsigned char, HASHLEN> signerhash;
 uint32_t signidx; // transaction idx or internal signing idx
-uint16_t sigtype; // FIXME convert to named enum
+size_t siglen; // length of signature, up to SIGLEN
 };
 
 }

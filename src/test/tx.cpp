@@ -13,12 +13,3 @@ static inline const unsigned char *uccast(const char* s){
 TEST(CatenaTransactions, NoOp){
 	EXPECT_NE(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00"), 4), nullptr);
 }
-
-TEST(CatenaTransactions, NoOpInvalid){
-	// too short
-	EXPECT_EQ(Catena::Transaction::lexTX(uccast("\x00\x00\x00"), 3), nullptr);
-	// too long
-	EXPECT_EQ(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00\x00"), 5), nullptr);
-	// bad noop type
-	EXPECT_EQ(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x01"), 4), nullptr);
-}

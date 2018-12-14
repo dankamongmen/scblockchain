@@ -3,7 +3,9 @@
 
 #include <vector>
 #include <iostream>
-#include "libcatena/sig.h"
+#include <libcatena/truststore.h>
+#include <libcatena/hash.h>
+#include <libcatena/sig.h>
 
 namespace Catena {
 
@@ -23,6 +25,15 @@ bool Verify(size_t idx, const unsigned char* in, size_t inlen,
 size_t Count(){
 	return keys.size();
 }
+
+void AddToTrustStore(TrustStore& tstore){
+	std::array<unsigned char, HASHLEN> hash;
+	hash.fill(0xffu);
+	for(size_t i = 0 ; i < keys.size() ; ++i){
+		tstore.addKey(&keys[i], {hash, i});
+	}
+}
+
 private:
 std::vector<Keypair> keys;
 };

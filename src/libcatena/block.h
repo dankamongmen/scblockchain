@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <libcatena/truststore.h>
 #include <libcatena/hash.h>
 #include <libcatena/tx.h>
 
@@ -27,10 +28,10 @@ virtual ~Blocks() = default;
 
 // Load blocks from the specified chunk of memory. Returns true on parsing
 // error, or if there were no blocks. Any present blocks are discarded.
-bool loadData(const void* data, unsigned len);
+bool loadData(const void* data, unsigned len, TrustStore& tstore);
 // Load blocks from the specified file. Propagates I/O exceptions. Any present
 // blocks are discarded. Return value is the same as loadData.
-bool loadFile(const std::string& s);
+bool loadFile(const std::string& s, TrustStore& tstore);
 
 unsigned getBlockCount(){
 	return offsets.size();
@@ -39,7 +40,7 @@ unsigned getBlockCount(){
 private:
 std::vector<unsigned> offsets;
 std::vector<BlockHeader> headers;
-int verifyData(const unsigned char* data, unsigned len);
+int verifyData(const unsigned char* data, unsigned len, TrustStore& tstore);
 };
 
 // A descriptor of a single block, and logic to serialize blocks
@@ -58,7 +59,8 @@ static std::pair<std::unique_ptr<const char[]>, unsigned>
 static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
 	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
 
-bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len);
+bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
+			TrustStore& tstore);
 
 private:
 std::vector<std::unique_ptr<Transaction>> transactions;

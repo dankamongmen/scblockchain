@@ -13,7 +13,8 @@ namespace Catena {
 const int Block::BLOCKVERSION;
 const int Block::BLOCKHEADERLEN;
 
-bool Block::extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len){
+bool Block::extractBody(BlockHeader* chdr, const unsigned char* data,
+			unsigned len, TrustStore& tstore){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
@@ -39,6 +40,9 @@ bool Block::extractBody(BlockHeader* chdr, const unsigned char* data, unsigned l
 		}
 		std::unique_ptr<Transaction> tx(Transaction::lexTX(data, txlen));
 		if(tx == nullptr){
+			return true;
+		}
+		if(tx->validate(tstore)){
 			return true;
 		}
 		transactions.push_back(std::move(tx));
@@ -103,7 +107,7 @@ bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
-int Blocks::verifyData(const unsigned char *data, unsigned len){
+int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
 	unsigned char prevhash[HASHLEN] = {0};
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
@@ -121,7 +125,7 @@ int Blocks::verifyData(const unsigned char *data, unsigned len){
 		data += Block::BLOCKHEADERLEN;
 		memcpy(prevhash, chdr.hash, sizeof(prevhash));
 		prevutc = chdr.utc;
-		if(block.extractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN)){
+		if(block.extractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, tstore)){
 			headers.clear();
 			offsets.clear();
 			return -1;
@@ -137,17 +141,18 @@ int Blocks::verifyData(const unsigned char *data, unsigned len){
 	return blocknum;
 }
 
-bool Blocks::loadData(const void* data, unsigned len){
+bool Blocks::loadData(const void* data, unsigned len, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
-	auto blocknum = verifyData(static_cast<const unsigned char*>(data), len);
+	auto blocknum = verifyData(static_cast<const unsigned char*>(data),
+					len, tstore);
 	if(blocknum <= 0){
 		return true;
 	}
 	return false;
 }
 
-bool Blocks::loadFile(const std::string& fname){
+bool Blocks::loadFile(const std::string& fname, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	std::ifstream f;
@@ -157,7 +162,7 @@ bool Blocks::loadFile(const std::string& fname){
 	std::unique_ptr<char[]> memblock(new char[size]);
 	f.seekg(0, std::ios::beg);
 	f.read(memblock.get(), size);
-	return loadData(memblock.get(), size);
+	return loadData(memblock.get(), size, tstore);
 }
 
 std::pair<std::unique_ptr<const char[]>, unsigned>

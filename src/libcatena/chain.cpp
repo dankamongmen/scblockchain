@@ -1,17 +1,27 @@
+#include <cstring>
+#include "libcatena/builtin.h"
 #include "libcatena/chain.h"
 #include "libcatena/block.h"
 
 namespace Catena {
 
+// Called during Chain() constructor
+void Chain::LoadBuiltinKeys(){
+	BuiltinKeys bkeys;
+	bkeys.AddToTrustStore(tstore);
+}
+
 Chain::Chain(const std::string& fname){
-	if(blocks.loadFile(fname)){
+	LoadBuiltinKeys();
+	if(blocks.loadFile(fname, tstore)){
 		throw BlockValidationException();
 	}
 }
 
 // A Chain instantiated from memory will not write out new blocks.
 Chain::Chain(const void* data, unsigned len){
-	if(blocks.loadData(data, len)){
+	LoadBuiltinKeys();
+	if(blocks.loadData(data, len, tstore)){
 		throw BlockValidationException();
 	}
 }

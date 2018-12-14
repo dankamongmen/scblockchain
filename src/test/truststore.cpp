@@ -1,11 +1,13 @@
 #include <gtest/gtest.h>
-#include "libcatena/builtin.h"
+#include <libcatena/truststore.h>
+#include <libcatena/builtin.h>
+#include <libcatena/hash.h>
+#include <libcatena/sig.h>
 
-TEST(CatenaBuiltin, LoadKeys){
+TEST(CatenaTrustStore, BuiltinKeys){
 	Catena::BuiltinKeys bkeys;
-}
-
-TEST(CatenaBuiltin, ECSigVerify){
+	Catena::TrustStore tstore;
+	bkeys.AddToTrustStore(tstore);
 	static const struct {
 		const char *data;
 		const unsigned char sig[SIGLEN];
@@ -25,19 +27,22 @@ TEST(CatenaBuiltin, ECSigVerify){
 			.sig = { 0 },
 		}
 	}, *t;
-	Catena::BuiltinKeys bkeys;
 	unsigned char sig[SIGLEN];
+	std::array<unsigned char, HASHLEN> hash;
+	hash.fill(0xffu);
 	for(t = tests ; t->data ; ++t){
 		memcpy(sig, t->sig, sizeof(sig));
-		EXPECT_FALSE(bkeys.Verify(0, reinterpret_cast<const unsigned char *>(t->data),
+		EXPECT_FALSE(tstore.Verify({hash, 0}, reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, sizeof(sig)));
-		EXPECT_TRUE(bkeys.Verify(1, reinterpret_cast<const unsigned char *>(t->data),
+		// non-existant key
+		EXPECT_TRUE(tstore.Verify({hash, 1}, reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, sizeof(sig)));
 		++*sig;
-		EXPECT_TRUE(bkeys.Verify(0, reinterpret_cast<const unsigned char *>(t->data),
+		EXPECT_TRUE(tstore.Verify({hash, 0}, reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, sizeof(sig)));
 		--*sig;
-		EXPECT_FALSE(bkeys.Verify(0, reinterpret_cast<const unsigned char *>(t->data),
+		EXPECT_FALSE(tstore.Verify({hash, 0}, reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, sizeof(sig)));
+
 	}
 }
