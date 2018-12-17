@@ -32,9 +32,8 @@ class ConsortiumMemberTX : public Transaction {
 public:
 bool extract(const unsigned char* data, unsigned len) override;
 bool validate(TrustStore& tstore){
-	// FIXME eventually check extra payload data
-	return tstore.Verify({signerhash, signidx}, reinterpret_cast<const unsigned char*>(""),
-				0, signature, siglen);
+	return tstore.Verify({signerhash, signidx}, payload.get(),
+				payloadlen, signature, siglen);
 }
 
 private:
@@ -42,6 +41,8 @@ unsigned char signature[SIGLEN];
 std::array<unsigned char, HASHLEN> signerhash;
 uint32_t signidx; // transaction idx or internal signing idx
 size_t siglen; // length of signature, up to SIGLEN
+std::unique_ptr<unsigned char[]> payload;
+size_t payloadlen;
 };
 
 }
