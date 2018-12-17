@@ -62,7 +62,7 @@ int main(int argc, char **argv){
 		// FIXME daemonize out
 	}else{
 		Catena::ReadlineUI rline;
-		rline.InputLoop();
+		rline.InputLoop(chain);
 	}
 	return EXIT_SUCCESS;
 }
