@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
-#include "libcatena/tx.h"
+#include <libcatena/hash.h>
+#include <libcatena/tx.h>
 
 TEST(CatenaTransactions, EmptyTX){
-	EXPECT_EQ(Catena::Transaction::lexTX({}, 0), nullptr);
-	EXPECT_EQ(Catena::Transaction::lexTX({0}, 1), nullptr);
+	unsigned char hash[HASHLEN];
+	memset(hash, 0, sizeof(hash));
+	EXPECT_EQ(Catena::Transaction::lexTX({}, 0, hash, 0), nullptr);
+	EXPECT_EQ(Catena::Transaction::lexTX({0}, 1, hash, 0), nullptr);
 }
 
 static inline const unsigned char *uccast(const char* s){
@@ -11,5 +14,7 @@ static inline const unsigned char *uccast(const char* s){
 }
 
 TEST(CatenaTransactions, NoOp){
-	EXPECT_NE(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00"), 4), nullptr);
+	unsigned char hash[HASHLEN];
+	memset(hash, 0, sizeof(hash));
+	EXPECT_NE(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00"), 4, hash, 0), nullptr);
 }
