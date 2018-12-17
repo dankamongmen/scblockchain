@@ -15,6 +15,7 @@ private:
 bool cancelled;
 void HandleQuit(Catena::Chain&);
 void HandleShow(Catena::Chain&);
+void HandleTStore(Catena::Chain& chain);
 };
 
 }

@@ -22,6 +22,11 @@ void ReadlineUI::HandleShow(Catena::Chain& chain){
 	std::cout << chain << std::flush;
 }
 
+void ReadlineUI::HandleTStore(Catena::Chain& chain){
+	chain.DumpTrustStore(std::cout);
+	std::cout << std::flush;
+}
+
 void ReadlineUI::InputLoop(Catena::Chain& chain){
 	const struct {
 		const char* cmd;
@@ -30,6 +35,7 @@ void ReadlineUI::InputLoop(Catena::Chain& chain){
 	} cmdtable[] = {
 		{ .cmd = "quit", .fxn = &ReadlineUI::HandleQuit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::HandleShow, .help = "show blocks", },
+		{ .cmd = "tstore", .fxn = &ReadlineUI::HandleTStore, .help = "dump trust store (key info)", },
 		{ .cmd = nullptr, .fxn = nullptr, .help = nullptr, },
 	}, *c;
 	char* line;
@@ -54,7 +60,9 @@ void ReadlineUI::InputLoop(Catena::Chain& chain){
 			std::cout << "help: list commands" << std::endl;
 		}
 		free(line);
-
+	}
+	if(!cancelled){ // got an EOF, probably
+		std::cout << std::endl;
 	}
 }
 
