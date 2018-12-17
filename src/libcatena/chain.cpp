@@ -31,4 +31,8 @@ std::ostream& operator<<(std::ostream& stream, const Chain& chain){
 	return stream;
 }
 
+std::ostream& Chain::DumpTrustStore(std::ostream& s){
+	return s << tstore;
+}
+
 }
