@@ -35,7 +35,9 @@ bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
-	// FIXME handle remaning data?
+	payload = std::make_unique<unsigned char[]>(len);
+	memcpy(payload.get(), data, len);
+	payloadlen = len;
 	return false;
 }
 
