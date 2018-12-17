@@ -16,6 +16,7 @@ HTTPDCFLAGS:=$(shell pkg-config --cflags libmicrohttpd)
 MPACKCFLAGS:=$(shell pkg-config --cflags msgpack)
 SSLLIBS:=$(shell pkg-config --libs openssl)
 SSLCFLAGS:=$(shell pkg-config --cflags openssl)
+READLINELIBS:=-lreadline
 
 CPPSRCDIRS:=$(wildcard $(SRC)/*)
 CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
@@ -34,7 +35,7 @@ CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
 EXTCPPFLAGS:=$(SSLCFLAGS) $(MPACKCFLAGS) $(HTTPDCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
-LIBS:=$(SSLLIBS) $(HTTPDLIBS)
+LIBS:=$(SSLLIBS) $(HTTPDLIBS) $(READLINELIBS)
 
 # FIXME detect this, or let it be specified
 LDLIBSGTEST:=/usr/lib/x86_64-linux-gnu/libgtest.a

@@ -1,20 +1,30 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <iostream>
-#include "libcatena/chain.h"
-#include "libcatena/sig.h"
+#include <libcatena/sig.h>
+#include <libcatena/chain.h>
+#include "catena/readline.h"
 
 static void usage(std::ostream& os, const char* name){
-	os << "usage: " << name << " -h | -l ledger [ -u pubkey -v privkey ]" << std::endl;
+	os << "usage: " << name << " -h | options\n";
+	os << "\t-h: print usage information\n";
+	os << "\t-l ledger: specify ledger file\n";
+	os << "\t-u pubkey -v privkey: provide authentication material\n";
+	os << "\t-d: daemonize\n";
+	os << std::endl;
 }
 
 int main(int argc, char **argv){
 	const char* privkey_file = nullptr;
 	const char* pubkey_file = nullptr;
 	const char* chain_file = nullptr;
+	bool daemonize = false;
 	int c;
-	while(-1 != (c = getopt(argc, argv, "u:v:l:h"))){
+	while(-1 != (c = getopt(argc, argv, "u:v:l:hd"))){
 		switch(c){
+		case 'd':
+			daemonize = true;
+			break;
 		case 'u':
 			pubkey_file = optarg;
 			break;
@@ -47,5 +57,12 @@ int main(int argc, char **argv){
 	}
 	std::cout << "Loading ledger from " << chain_file << std::endl;
 	Catena::Chain chain(chain_file);
+	// FIXME start up web server for HTTP API
+	if(daemonize){
+		// FIXME daemonize out
+	}else{
+		Catena::ReadlineUI rline;
+		rline.InputLoop();
+	}
 	return EXIT_SUCCESS;
 }
