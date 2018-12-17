@@ -165,6 +165,13 @@ bool Blocks::loadFile(const std::string& fname, TrustStore& tstore){
 	return loadData(memblock.get(), size, tstore);
 }
 
+std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
+	for(auto o : blocks.offsets){
+		stream << "offset: " << o << std::endl; // FIXME
+	}
+	return stream;
+}
+
 std::pair<std::unique_ptr<const char[]>, unsigned>
 Block::serializeBlock(unsigned char* prevhash){
 	auto block = new char[BLOCKHEADERLEN]();

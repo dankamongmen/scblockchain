@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <ostream>
 #include <libcatena/truststore.h>
 #include <libcatena/hash.h>
 #include <libcatena/tx.h>
@@ -36,6 +37,8 @@ bool loadFile(const std::string& s, TrustStore& tstore);
 unsigned getBlockCount(){
 	return offsets.size();
 }
+
+friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 
 private:
 std::vector<unsigned> offsets;
