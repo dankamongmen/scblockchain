@@ -10,6 +10,10 @@ BIN:=$(BINOUT)/catena
 TESTBIN:=$(BINOUT)/catenatest
 VALGRIND:=valgrind --tool=memcheck --leak-check=full
 
+HTTPDLIBS:=$(shell pkg-config --libs libmicrohttpd)
+HTTPDCFLAGS:=$(shell pkg-config --cflags libmicrohttpd)
+MPACKLIBS:=$(shell pkg-config --libs msgpack)
+MPACKCFLAGS:=$(shell pkg-config --cflags msgpack)
 SSLLIBS:=$(shell pkg-config --libs openssl)
 SSLCFLAGS:=$(shell pkg-config --cflags openssl)
 
@@ -28,8 +32,9 @@ WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
 CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
-EXTFLAGS:=$(SSLCFLAGS)
-CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS)
+EXTCPPFLAGS:=$(SSLCFLAGS) $(MPACKCFLAGS) $(HTTPDCFLAGS)
+CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
+LIBS:=$(SSLLIBS) $(MPACKLIBS) $(HTTPDLIBS)
 
 # FIXME detect this, or let it be specified
 LDLIBSGTEST:=/usr/lib/x86_64-linux-gnu/libgtest.a
@@ -38,11 +43,11 @@ all: $(TAGS) $(BIN) $(TESTBIN)
 
 $(BINOUT)/catena: $(CATENAOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(SSLLIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
 $(BINOUT)/catenatest: $(CATENATESTOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(LIBS)
 
 $(OUT)/%.o: %.cpp $(CPPINC)
 	@mkdir -p $(@D)
