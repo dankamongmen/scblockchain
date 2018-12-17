@@ -1,6 +1,6 @@
-#include <iomanip>
 #include <stdexcept>
 #include <openssl/evp.h>
+#include <libcatena/utility.h>
 #include <libcatena/hash.h>
 
 namespace Catena {
@@ -24,13 +24,7 @@ void catenaHash(const void* in, unsigned len, void* hash){
 }
 
 std::ostream& hashOStream(std::ostream& s, const void* hash){
-	std::ios state(NULL);
-	state.copyfmt(s);
-	s << std::hex;
-	for(int i = 0 ; i < HASHLEN ; ++i){
-		s << std::setfill('0') << std::setw(2) << (int)((const unsigned char *)hash)[i];
-	}
-	s.copyfmt(state);
+	HexOutput(s, reinterpret_cast<const unsigned char*>(hash), HASHLEN);
 	return s;
 }
 

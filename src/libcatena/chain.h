@@ -33,6 +33,8 @@ Chain(const void* data, unsigned len);
 unsigned loadFile(const std::string& fname);
 unsigned loadData(const void* data, unsigned len);
 
+friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
+
 private:
 TrustStore tstore;
 Blocks blocks;

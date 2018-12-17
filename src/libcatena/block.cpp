@@ -165,6 +165,18 @@ bool Blocks::loadFile(const std::string& fname, TrustStore& tstore){
 	return loadData(memblock.get(), size, tstore);
 }
 
+std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
+	for(auto& h : blocks.headers){
+		stream << "hash: ";
+		hashOStream(stream, h.hash);
+		stream << "\nprev: ";
+		hashOStream(stream, h.prev);
+		stream << "\ntransactions: " << h.txcount <<
+			" " << "bytes: " << h.totlen << "\n";
+	}
+	return stream;
+}
+
 std::pair<std::unique_ptr<const char[]>, unsigned>
 Block::serializeBlock(unsigned char* prevhash){
 	auto block = new char[BLOCKHEADERLEN]();
