@@ -26,4 +26,9 @@ Chain::Chain(const void* data, unsigned len){
 	}
 }
 
+std::ostream& operator<<(std::ostream& stream, const Chain& chain){
+	stream << chain.blocks;
+	return stream;
+}
+
 }
