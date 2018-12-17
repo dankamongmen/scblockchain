@@ -11,6 +11,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * Google Test (libgtest-dev)
 * OpenSSL 1.1+ (libopenssl-dev)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
+* msgpack-c 3.0.1+ (libmsgpack-dev)
 
 ## Running the catena daemon
 
@@ -18,7 +19,6 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 will be validated and imported on startup, and updated during runtime. If the
 ledger cannot be validated, `catena` will refuse to start. An empty file can be
 provided, resulting in complete download of the ledger from a peer.
-
 
 `catena` should be started with the `-u pubkey` and `-v privkey` options when
 it will be signing and verifying transactions. See the "Key operations" section
@@ -28,10 +28,10 @@ for material regarding creation of local ("Consortium") keys.
 
 ### Generating ECDSA material
 
-* Generate ECDSA key at `outfile.pem`: `openssl ecparam -name secp256k1 -genkey -noout -out outfile.pem`
+* Generate ECDSA key at `outfile.pem`: `openssl ecparam -name secp256k1 -genkey -noout -out outfile.pem -param_enc explicit`
 * Verify ECDSA keypair at `outfile.pem`:
 ```
-openssl ec -in outfile.pem -text -noout  -param_enc explicit
+openssl ec -in outfile.pem -text -noout
 read EC key
 Private-Key: (256 bit)
 priv:
