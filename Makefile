@@ -12,7 +12,7 @@ VALGRIND:=valgrind --tool=memcheck --leak-check=full
 
 HTTPDLIBS:=$(shell pkg-config --libs libmicrohttpd)
 HTTPDCFLAGS:=$(shell pkg-config --cflags libmicrohttpd)
-MPACKLIBS:=$(shell pkg-config --libs msgpack)
+# msgpack-c for C++ is a header-only implementation
 MPACKCFLAGS:=$(shell pkg-config --cflags msgpack)
 SSLLIBS:=$(shell pkg-config --libs openssl)
 SSLCFLAGS:=$(shell pkg-config --cflags openssl)
@@ -34,7 +34,7 @@ CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
 EXTCPPFLAGS:=$(SSLCFLAGS) $(MPACKCFLAGS) $(HTTPDCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
-LIBS:=$(SSLLIBS) $(MPACKLIBS) $(HTTPDLIBS)
+LIBS:=$(SSLLIBS) $(HTTPDLIBS)
 
 # FIXME detect this, or let it be specified
 LDLIBSGTEST:=/usr/lib/x86_64-linux-gnu/libgtest.a
