@@ -12,6 +12,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * OpenSSL 1.1+ (libopenssl-dev)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * msgpack-c 3.0.1+ (libmsgpack-dev)
+* GNU Readline 6.3+ (libreadline-dev)
 
 ## Running the catena daemon
 
@@ -23,6 +24,10 @@ provided, resulting in complete download of the ledger from a peer.
 `catena` should be started with the `-u pubkey` and `-v privkey` options when
 it will be signing and verifying transactions. See the "Key operations" section
 for material regarding creation of local ("Consortium") keys.
+
+When started without the `-d` option, the catena agent will remain in the
+foreground, providing a readline-driven text UI. This can be used to examine
+the loaded ledger and issue API requests directly.
 
 ## Key operations
 
