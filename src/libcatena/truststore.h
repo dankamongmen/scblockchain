@@ -41,6 +41,8 @@ bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 	}
 }
 
+friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
+
 private:
 std::unordered_map<KeyLookup, Keypair, keylookup_hash> keys;
 };
