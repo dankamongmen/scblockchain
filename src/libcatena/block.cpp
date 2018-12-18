@@ -202,4 +202,17 @@ Block::serializeBlock(unsigned char* prevhash){
 	return std::make_pair(std::move(ret), len);
 }
 
+void Block::AddTransaction(std::unique_ptr<Transaction> tx){
+	transactions.push_back(std::move(tx));
+}
+
+std::ostream& operator<<(std::ostream& stream, const Block& b){
+	// FIXME reset stream after using setfill/setw
+	for(size_t i = 0 ; i < b.transactions.size() ; ++i){
+		stream << std::setfill('0') << std::setw(5) << i <<
+			" " << b.transactions[i].get() << "\n";
+	}
+	return stream;
+}
+
 }
