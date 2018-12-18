@@ -25,6 +25,12 @@ Keypair(const Keypair& kp) :
 	EVP_PKEY_up_ref(pubkey);
 }
 
+Keypair& operator=(Keypair kp){
+	std::swap(privkey, kp.privkey);
+	std::swap(pubkey, kp.pubkey);
+	return *this;
+}
+
 ~Keypair();
 size_t Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen);
 bool Verify(const unsigned char* in, size_t inlen, const unsigned char* sig, size_t siglen);

@@ -25,4 +25,13 @@ const KeyLookup& TrustStore::GetLookup(const Keypair& kp){
 	throw std::out_of_range("no such public key");
 }
 
+void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
+	auto it = keys.find(kidx);
+	if(it != keys.end()){
+		it->second = *kp;
+	}else{
+		keys.insert({kidx, *kp});
+	}
+}
+
 }

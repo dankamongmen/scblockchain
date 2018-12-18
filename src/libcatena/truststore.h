@@ -28,10 +28,7 @@ virtual ~TrustStore() = default;
 
 // Add the keypair (usually just public key), using the specified hash and
 // index as its source (this is how it will be referenced in the ledger).
-void addKey(const Keypair* kp, const KeyLookup& kidx){
-	keys.erase(kidx); // might not be there
-	keys.insert({kidx, *kp});
-}
+void addKey(const Keypair* kp, const KeyLookup& kidx);
 
 bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 		const unsigned char* sig, size_t siglen){
