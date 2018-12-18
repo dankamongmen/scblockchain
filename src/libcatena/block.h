@@ -29,12 +29,12 @@ virtual ~Blocks() = default;
 
 // Load blocks from the specified chunk of memory. Returns true on parsing
 // error, or if there were no blocks. Any present blocks are discarded.
-bool loadData(const void* data, unsigned len, TrustStore& tstore);
+bool LoadData(const void* data, unsigned len, TrustStore& tstore);
 // Load blocks from the specified file. Propagates I/O exceptions. Any present
 // blocks are discarded. Return value is the same as loadData.
-bool loadFile(const std::string& s, TrustStore& tstore);
+bool LoadFile(const std::string& s, TrustStore& tstore);
 
-unsigned getBlockCount(){
+unsigned getBlockCount() const {
 	return offsets.size();
 }
 

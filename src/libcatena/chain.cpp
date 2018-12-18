@@ -13,7 +13,7 @@ void Chain::LoadBuiltinKeys(){
 
 Chain::Chain(const std::string& fname){
 	LoadBuiltinKeys();
-	if(blocks.loadFile(fname, tstore)){
+	if(blocks.LoadFile(fname, tstore)){
 		throw BlockValidationException();
 	}
 }
@@ -21,7 +21,7 @@ Chain::Chain(const std::string& fname){
 // A Chain instantiated from memory will not write out new blocks.
 Chain::Chain(const void* data, unsigned len){
 	LoadBuiltinKeys();
-	if(blocks.loadData(data, len, tstore)){
+	if(blocks.LoadData(data, len, tstore)){
 		throw BlockValidationException();
 	}
 }

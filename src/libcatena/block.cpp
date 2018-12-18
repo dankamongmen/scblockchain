@@ -141,7 +141,7 @@ int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	return blocknum;
 }
 
-bool Blocks::loadData(const void* data, unsigned len, TrustStore& tstore){
+bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	auto blocknum = verifyData(static_cast<const unsigned char*>(data),
@@ -152,7 +152,7 @@ bool Blocks::loadData(const void* data, unsigned len, TrustStore& tstore){
 	return false;
 }
 
-bool Blocks::loadFile(const std::string& fname, TrustStore& tstore){
+bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	std::ifstream f;
@@ -162,7 +162,7 @@ bool Blocks::loadFile(const std::string& fname, TrustStore& tstore){
 	std::unique_ptr<char[]> memblock(new char[size]);
 	f.seekg(0, std::ios::beg);
 	f.read(memblock.get(), size);
-	return loadData(memblock.get(), size, tstore);
+	return LoadData(memblock.get(), size, tstore);
 }
 
 std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
