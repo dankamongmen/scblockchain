@@ -42,14 +42,6 @@ int main(int argc, char **argv){
 			return EXIT_FAILURE;
 		}
 	}
-	if(pubkey_file || privkey_file){
-		if(!pubkey_file || !privkey_file){
-			std::cerr << "-u must be provided with -v" << std::endl;
-			usage(std::cerr, argv[0]);
-			return EXIT_FAILURE;
-		}
-		Catena::Keypair kp(pubkey_file, privkey_file);
-	}
 	if(chain_file == nullptr){
 		std::cerr << "ledger must be specified with -l" << std::endl;
 		usage(std::cerr, argv[0]);
@@ -57,6 +49,15 @@ int main(int argc, char **argv){
 	}
 	std::cout << "Loading ledger from " << chain_file << std::endl;
 	Catena::Chain chain(chain_file);
+	if(pubkey_file || privkey_file){
+		if(!pubkey_file || !privkey_file){
+			std::cerr << "-u must be provided with -v" << std::endl;
+			usage(std::cerr, argv[0]);
+			return EXIT_FAILURE;
+		}
+		Catena::Keypair kp(pubkey_file, privkey_file);
+		chain.AddSigningKey(kp);
+	}
 	// FIXME start up web server for HTTP API
 	if(daemonize){
 		// FIXME daemonize out

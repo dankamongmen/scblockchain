@@ -46,3 +46,5 @@ TEST(CatenaTrustStore, BuiltinKeys){
 
 	}
 }
+
+// FIXME add test using test keys + addKey() for full sign + verify loop
