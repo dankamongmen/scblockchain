@@ -1,3 +1,4 @@
+#include <cctype>
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
@@ -9,38 +10,90 @@
 
 namespace Catena {
 
-ReadlineUI::ReadlineUI():
-	cancelled(false) {
+ReadlineUI::ReadlineUI(Catena::Chain& chain):
+	cancelled(false),
+	chain(chain) {
 	// disable tab-completion and restore standard behavior
 	rl_bind_key('\t', rl_insert);
 }
 
-void ReadlineUI::HandleQuit(Catena::Chain& chain __attribute__ ((unused))){
+template <typename Iterator>
+int ReadlineUI::HandleQuit(Iterator start, Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
 	cancelled = true;
+	return 0;
 }
 
-void ReadlineUI::HandleShow(Catena::Chain& chain){
+template <typename Iterator>
+int ReadlineUI::HandleShow(Iterator start, Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
 	std::cout << chain << std::flush;
+	return 0;
 }
 
-void ReadlineUI::HandleTStore(Catena::Chain& chain){
+template <typename Iterator>
+int ReadlineUI::HandleTStore(Iterator start, Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
 	chain.DumpTrustStore(std::cout);
 	std::cout << std::flush;
+	return 0;
 }
 
-void ReadlineUI::HandleNoOp(Catena::Chain& chain){
+template <typename Iterator>
+int ReadlineUI::HandleNoOp(Iterator start, Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
 	chain.AddNoOp();
+	return 0;
 }
 
-void ReadlineUI::HandleNewMember(Catena::Chain& chain){
+template <typename Iterator>
+int ReadlineUI::HandleNewMember(Iterator start, Iterator end){
+	while(start != end){
+		++start;
+	}
 	// FIXME construct new TX
 	chain.AddConsortiumMember(/*FIXME*/);
+	return 0;
 }
 
-void ReadlineUI::InputLoop(Catena::Chain& chain){
+std::vector<std::string> ReadlineUI::SplitInput(const char* line) const {
+	std::vector<std::string> tokens;
+	int soffset = -1, offset = 0;
+	char c;
+	while( (c = line[offset]) ){
+		if(isspace(c)){
+			if(soffset != -1){
+				tokens.emplace_back(line + soffset, offset - soffset);
+				soffset = -1;
+			}
+		}else if(soffset == -1){
+			soffset = offset;
+		}
+		++offset;
+	}
+	if(soffset != -1){
+		tokens.emplace_back(line + soffset, offset - soffset);
+	}
+	return tokens;
+}
+
+void ReadlineUI::InputLoop(){
 	const struct {
-		const char* cmd;
-		void (Catena::ReadlineUI::* fxn)(Catena::Chain&);
+		const std::string cmd;
+		int (Catena::ReadlineUI::* fxn)(std::vector<std::string>::iterator,
+						std::vector<std::string>::iterator);
 		const char* help;
 	} cmdtable[] = {
 		{ .cmd = "quit", .fxn = &ReadlineUI::HandleQuit, .help = "exit catena", },
@@ -48,7 +101,7 @@ void ReadlineUI::InputLoop(Catena::Chain& chain){
 		{ .cmd = "tstore", .fxn = &ReadlineUI::HandleTStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::HandleNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::HandleNewMember, .help = "create new ConsortiumMember transaction", },
-		{ .cmd = nullptr, .fxn = nullptr, .help = nullptr, },
+		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;
 	while(!cancelled){
@@ -56,17 +109,21 @@ void ReadlineUI::InputLoop(Catena::Chain& chain){
 		if(line == nullptr){
 			break;
 		}
+		auto tokens = SplitInput(line);
+		if(tokens.size() == 0){
+			continue;
+		}
 		add_history(line);
-		for(c = cmdtable ; c->cmd ; ++c){
-			if(strcmp(line, c->cmd) == 0){
-				(*this.*(c->fxn))(chain);
+		for(c = cmdtable ; c->fxn ; ++c){
+			if(c->cmd == tokens[0]){
+				(*this.*(c->fxn))(tokens.begin() + 1, tokens.end());
 				break;
 			}
 		}
-		if(c->cmd == nullptr && strcmp(line, "help")){
-			std::cerr << "unknown command: " << line << std::endl;
-		}else if(c->cmd == nullptr){
-			for(c = cmdtable ; c->cmd ; ++c){
+		if(c->fxn == nullptr && tokens[0] != "help"){
+			std::cerr << "unknown command: " << tokens[0] << std::endl;
+		}else if(c->fxn == nullptr){ // display help
+			for(c = cmdtable ; c->fxn ; ++c){
 				std::cout << c->cmd << ": " << c->help << '\n';
 			}
 			std::cout << "help: list commands" << std::endl;

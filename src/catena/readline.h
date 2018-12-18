@@ -7,17 +7,20 @@ namespace Catena {
 
 class ReadlineUI {
 public:
-ReadlineUI();
+ReadlineUI() = delete;
+ReadlineUI(Catena::Chain&);
 ~ReadlineUI() = default;
-void InputLoop(Catena::Chain&);
+void InputLoop();
 
 private:
 bool cancelled;
-void HandleQuit(Catena::Chain&);
-void HandleShow(Catena::Chain&);
-void HandleTStore(Catena::Chain&);
-void HandleNewMember(Catena::Chain&);
-void HandleNoOp(Catena::Chain&);
+Catena::Chain& chain;
+template <typename Iterator> int HandleQuit(Iterator start, Iterator end);
+template <typename Iterator> int HandleShow(Iterator start, Iterator end);
+template <typename Iterator> int HandleTStore(Iterator start, Iterator end);
+template <typename Iterator> int HandleNewMember(Iterator start, Iterator end);
+template <typename Iterator> int HandleNoOp(Iterator start, Iterator end);
+std::vector<std::string> SplitInput(const char* line) const;
 };
 
 }
