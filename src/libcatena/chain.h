@@ -34,7 +34,13 @@ Chain(const void* data, unsigned len);
 unsigned loadFile(const std::string& fname);
 unsigned loadData(const void* data, unsigned len);
 
-std::ostream& DumpTrustStore(std::ostream& s);
+// Dump the trust store contents in a human-readable format
+std::ostream& DumpTrustStore(std::ostream& s) const {
+	return s << tstore;
+}
+
+// Dump outstanding transactions in a human-readable format
+std::ostream& DumpOutstanding(std::ostream& s) const;
 
 void AddSigningKey(const Keypair& kp);
 
@@ -47,6 +53,7 @@ friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 private:
 TrustStore tstore;
 Blocks blocks;
+Block outstanding;
 void LoadBuiltinKeys();
 };
 

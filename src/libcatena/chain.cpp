@@ -2,6 +2,7 @@
 #include "libcatena/builtin.h"
 #include "libcatena/chain.h"
 #include "libcatena/block.h"
+#include "libcatena/tx.h"
 
 namespace Catena {
 
@@ -31,8 +32,9 @@ std::ostream& operator<<(std::ostream& stream, const Chain& chain){
 	return stream;
 }
 
-std::ostream& Chain::DumpTrustStore(std::ostream& s){
-	return s << tstore;
+std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
+	s << outstanding;
+	return s;
 }
 
 void Chain::AddSigningKey(const Keypair& kp){
@@ -41,6 +43,7 @@ void Chain::AddSigningKey(const Keypair& kp){
 }
 
 void Chain::AddNoOp(){
+	outstanding.AddTransaction(std::make_unique<NoOpTX>());
 }
 
 void Chain::AddConsortiumMember(){
