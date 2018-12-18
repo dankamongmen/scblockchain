@@ -38,6 +38,10 @@ std::ostream& DumpTrustStore(std::ostream& s);
 
 void AddSigningKey(const Keypair& kp);
 
+// Generate and sign new transactions, to be added to the ledger.
+void AddNoOp();
+void AddConsortiumMember();
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:

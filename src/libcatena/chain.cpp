@@ -40,4 +40,10 @@ void Chain::AddSigningKey(const Keypair& kp){
 	tstore.addKey(&kp, kl);
 }
 
+void Chain::AddNoOp(){
+}
+
+void Chain::AddConsortiumMember(){
+}
+
 }
