@@ -15,7 +15,9 @@ private:
 bool cancelled;
 void HandleQuit(Catena::Chain&);
 void HandleShow(Catena::Chain&);
-void HandleTStore(Catena::Chain& chain);
+void HandleTStore(Catena::Chain&);
+void HandleNewMember(Catena::Chain&);
+void HandleNoOp(Catena::Chain&);
 };
 
 }

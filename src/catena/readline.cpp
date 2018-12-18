@@ -1,10 +1,11 @@
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
+#include <libcatena/tx.h>
 #include <libcatena/chain.h>
-#include <catena/readline.h>
 #include <readline/history.h>
 #include <readline/readline.h>
+#include <catena/readline.h>
 
 namespace Catena {
 
@@ -27,6 +28,15 @@ void ReadlineUI::HandleTStore(Catena::Chain& chain){
 	std::cout << std::flush;
 }
 
+void ReadlineUI::HandleNoOp(Catena::Chain& chain){
+	chain.AddNoOp();
+}
+
+void ReadlineUI::HandleNewMember(Catena::Chain& chain){
+	// FIXME construct new TX
+	chain.AddConsortiumMember(/*FIXME*/);
+}
+
 void ReadlineUI::InputLoop(Catena::Chain& chain){
 	const struct {
 		const char* cmd;
@@ -36,6 +46,8 @@ void ReadlineUI::InputLoop(Catena::Chain& chain){
 		{ .cmd = "quit", .fxn = &ReadlineUI::HandleQuit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::HandleShow, .help = "show blocks", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::HandleTStore, .help = "dump trust store (key info)", },
+		{ .cmd = "noop", .fxn = &ReadlineUI::HandleNoOp, .help = "create new NoOp transaction", },
+		{ .cmd = "member", .fxn = &ReadlineUI::HandleNewMember, .help = "create new ConsortiumMember transaction", },
 		{ .cmd = nullptr, .fxn = nullptr, .help = nullptr, },
 	}, *c;
 	char* line;
