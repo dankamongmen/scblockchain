@@ -11,7 +11,7 @@ namespace Catena {
 
 class Transaction {
 public:
-Transaction() = delete;
+Transaction() = default;
 Transaction(const unsigned char* hash, unsigned idx){
 	txidx = idx;
 	memcpy(blockhash, hash, sizeof(blockhash));
@@ -20,6 +20,13 @@ Transaction(const unsigned char* hash, unsigned idx){
 virtual ~Transaction() = default;
 virtual bool extract(const unsigned char* data, unsigned len) = 0;
 virtual bool validate(TrustStore& tstore) = 0;
+
+// Send oneself to an ostream
+virtual std::ostream& TXOStream(std::ostream& s) const = 0;
+
+friend std::ostream& operator<<(std::ostream& s, Transaction* t){
+	return t->TXOStream(s);
+}
 
 static std::unique_ptr<Transaction>
 lexTX(const unsigned char* data, unsigned len,
@@ -37,18 +44,22 @@ unsigned char blockhash[HASHLEN]; // containing block hash
 
 class NoOpTX : public Transaction {
 public:
+NoOpTX() = default;
 NoOpTX(const unsigned char* hash, unsigned idx) : Transaction(hash, idx) {}
 bool extract(const unsigned char* data, unsigned len) override;
 bool validate(TrustStore& tstore __attribute__ ((unused))){
 	return false;
 }
+std::ostream& TXOStream(std::ostream& s) const override;
 };
 
 class ConsortiumMemberTX : public Transaction {
 public:
+ConsortiumMemberTX() = default;
 ConsortiumMemberTX(const unsigned char* hash, unsigned idx) : Transaction(hash, idx) {}
 bool extract(const unsigned char* data, unsigned len) override;
 bool validate(TrustStore& tstore) override;
+std::ostream& TXOStream(std::ostream& s) const override;
 
 private:
 unsigned char signature[SIGLEN];

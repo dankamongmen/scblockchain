@@ -67,6 +67,14 @@ bool NoOpTX::extract(const unsigned char* data __attribute__ ((unused)),
 	return false;
 }
 
+std::ostream& NoOpTX::TXOStream(std::ostream& s) const {
+	return s << "NoOp";
+}
+
+std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
+	return s << "ConsortiumMember"; // FIXME
+}
+
 enum TXTypes {
 	NoOp = 0x0000,
 	ConsortiumMember = 0x0001,
