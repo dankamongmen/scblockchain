@@ -38,13 +38,22 @@ int ReadlineUI::HandleShow(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::HandleOutstanding(Iterator start, Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+	chain.DumpOutstanding(std::cout) << std::flush;
+	return 0;
+}
+
+template <typename Iterator>
 int ReadlineUI::HandleTStore(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
-	chain.DumpTrustStore(std::cout);
-	std::cout << std::flush;
+	chain.DumpTrustStore(std::cout) << std::flush;
 	return 0;
 }
 
@@ -98,6 +107,7 @@ void ReadlineUI::InputLoop(){
 	} cmdtable[] = {
 		{ .cmd = "quit", .fxn = &ReadlineUI::HandleQuit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::HandleShow, .help = "show blocks", },
+		{ .cmd = "outstanding", .fxn = &ReadlineUI::HandleOutstanding, .help = "show outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::HandleTStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::HandleNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::HandleNewMember, .help = "create new ConsortiumMember transaction", },

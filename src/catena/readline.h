@@ -17,6 +17,7 @@ bool cancelled;
 Catena::Chain& chain;
 template <typename Iterator> int HandleQuit(Iterator start, Iterator end);
 template <typename Iterator> int HandleShow(Iterator start, Iterator end);
+template <typename Iterator> int HandleOutstanding(Iterator start, Iterator end);
 template <typename Iterator> int HandleTStore(Iterator start, Iterator end);
 template <typename Iterator> int HandleNewMember(Iterator start, Iterator end);
 template <typename Iterator> int HandleNoOp(Iterator start, Iterator end);
