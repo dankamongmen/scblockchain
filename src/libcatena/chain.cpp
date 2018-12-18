@@ -35,4 +35,9 @@ std::ostream& Chain::DumpTrustStore(std::ostream& s){
 	return s << tstore;
 }
 
+void Chain::AddSigningKey(const Keypair& kp){
+	const KeyLookup& kl = tstore.GetLookup(kp);
+	tstore.addKey(&kp, kl);
+}
+
 }
