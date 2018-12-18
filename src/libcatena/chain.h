@@ -3,6 +3,7 @@
 
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
+#include <libcatena/sig.h>
 
 namespace Catena {
 
@@ -32,6 +33,10 @@ Chain(const void* data, unsigned len);
 // added blocks.
 unsigned loadFile(const std::string& fname);
 unsigned loadData(const void* data, unsigned len);
+
+std::ostream& DumpTrustStore(std::ostream& s);
+
+void AddSigningKey(const Keypair& kp);
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 

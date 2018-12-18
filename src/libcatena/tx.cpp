@@ -41,6 +41,27 @@ bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	return false;
 }
 
+bool ConsortiumMemberTX::validate(TrustStore& tstore){
+	if(tstore.Verify({signerhash, signidx}, payload.get(),
+				payloadlen, signature, siglen)){
+		return true;
+	}
+	const unsigned char* data = payload.get();
+	size_t len = payloadlen;
+	uint16_t keylen;
+	if(len < sizeof(keylen)){
+		return true;
+	}
+	keylen = nbo_to_ulong(data, sizeof(keylen));
+	len -= sizeof(keylen);
+	data += sizeof(keylen);
+	std::array<unsigned char, sizeof(blockhash)> bhash;
+	memcpy(bhash.data(), blockhash, sizeof(blockhash));
+	Keypair kp(data, keylen);
+	tstore.addKey(&kp, {bhash, txidx});
+	return false;
+}
+
 bool NoOpTX::extract(const unsigned char* data __attribute__ ((unused)),
 			unsigned len __attribute__ ((unused))){
 	return false;
@@ -53,7 +74,8 @@ enum TXTypes {
 
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
-std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len){
+std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len,
+					const unsigned char* hash, unsigned idx){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
 		std::cerr << "no room for transaction type in " << len << std::endl;
@@ -65,10 +87,10 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 	Transaction* tx;
 	switch(txtype){
 	case NoOp:
-		tx = new NoOpTX;
+		tx = new NoOpTX(hash, idx);
 		break;
 	case ConsortiumMember:
-		tx = new ConsortiumMemberTX;
+		tx = new ConsortiumMemberTX(hash, idx);
 		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;

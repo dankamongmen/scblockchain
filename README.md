@@ -22,8 +22,9 @@ ledger cannot be validated, `catena` will refuse to start. An empty file can be
 provided, resulting in complete download of the ledger from a peer.
 
 `catena` should be started with the `-u pubkey` and `-v privkey` options when
-it will be signing and verifying transactions. See the "Key operations" section
-for material regarding creation of local ("Consortium") keys.
+it will be signing transactions. See the "Key operations" section for material
+regarding creation of local ("Consortium") keys. The provided public key must
+match either a built-in or an on-ledger key.
 
 When started without the `-d` option, the catena agent will remain in the
 foreground, providing a readline-driven text UI. This can be used to examine

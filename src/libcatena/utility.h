@@ -15,7 +15,7 @@ inline unsigned long nbo_to_ulong(const unsigned char* data, int bytes){
 	return ret;
 }
 
-inline void HexOutput(std::ostream& s, const unsigned char* data, size_t len){
+inline std::ostream& HexOutput(std::ostream& s, const unsigned char* data, size_t len){
 	std::ios state(NULL);
 	state.copyfmt(s);
 	s << std::hex;
@@ -23,6 +23,19 @@ inline void HexOutput(std::ostream& s, const unsigned char* data, size_t len){
 		s << std::setfill('0') << std::setw(2) << (int)data[i];
 	}
 	s.copyfmt(state);
+	return s;
+}
+
+template<size_t SIZE>
+std::ostream& HexOutput(std::ostream& s, const std::array<unsigned char, SIZE>& data){
+	std::ios state(NULL);
+	state.copyfmt(s);
+	s << std::hex;
+	for(auto& e : data){
+		s << std::setfill('0') << std::setw(2) << (int)e;
+	}
+	s.copyfmt(state);
+	return s;
 }
 
 }
