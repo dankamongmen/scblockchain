@@ -52,7 +52,8 @@ TEST(CatenaBlocks, BlockGenerated){
 	unsigned char prevhash[HASHLEN] = {0};
 	std::unique_ptr<const unsigned char[]> block;
 	size_t size;
-	std::tie(block, size) = Catena::Block::serializeBlock(prevhash);
+	Catena::Block b;
+	std::tie(block, size) = b.serializeBlock(prevhash);
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
@@ -65,7 +66,8 @@ TEST(CatenaBlocks, BlockGeneratedBadprev){
 	unsigned char prevhash[HASHLEN] = {1};
 	std::unique_ptr<const unsigned char[]> block;
 	size_t size;
-	std::tie(block, size) = Catena::Block::serializeBlock(prevhash);
+	Catena::Block b;
+	std::tie(block, size) = b.serializeBlock(prevhash);
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
@@ -78,10 +80,11 @@ TEST(CatenaBlocks, ChainGenerated){
 	unsigned char prevhash[HASHLEN] = {0};
 	std::unique_ptr<const unsigned char[]> b1, b2;
 	size_t s1, s2;
-	std::tie(b1, s1) = Catena::Block::serializeBlock(prevhash);
+	Catena::Block blk1, blk2;
+	std::tie(b1, s1) = blk1.serializeBlock(prevhash);
 	ASSERT_NE(nullptr, b1);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s1);
-	std::tie(b2, s2) = Catena::Block::serializeBlock(prevhash);
+	std::tie(b2, s2) = blk2.serializeBlock(prevhash);
 	ASSERT_NE(nullptr, b2);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s2);
 	char block[s1 + s2];
