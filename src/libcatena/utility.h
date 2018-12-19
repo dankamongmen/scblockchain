@@ -1,6 +1,7 @@
 #ifndef CATENA_LIBCATENA_UTILITY
 #define CATENA_LIBCATENA_UTILITY
 
+#include <fstream>
 #include <iomanip>
 #include <ostream>
 #include <iostream>
@@ -53,6 +54,17 @@ std::ostream& HexOutput(std::ostream& s, const std::array<unsigned char, SIZE>& 
 	}
 	s.copyfmt(state);
 	return s;
+}
+
+inline std::unique_ptr<char[]> ReadBinaryFile(const std::string& fname, size_t *len){
+	std::ifstream f;
+	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
+	*len = f.tellg();
+	std::unique_ptr<char[]> memblock(new char[*len]);
+	f.seekg(0, std::ios::beg);
+	f.read(memblock.get(), *len);
+	return memblock;
 }
 
 }
