@@ -49,11 +49,10 @@ int ReadlineUI::Outstanding(Iterator start, Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
-	if(start == end || start + 1 != end){
-		std::cerr << "command requires one argument" << std::endl;
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
-std::cout << "will write to " << *start << std::endl; // FIXME
 	chain.SerializeOutstanding();
 	return 0;
 }
@@ -122,7 +121,7 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
-		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush outstanding transactions to a file", },
+		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },

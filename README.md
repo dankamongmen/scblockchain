@@ -39,8 +39,7 @@ list can be accessed by running the `help` command):
 * `show`: print the chain in a human-readable format
 * `tstore`: print the trust store (known keys) in a human-readable format
 * `outstanding`: print outstanding transactions in a human-readable format
-* `flush`: flush outstanding transactions, as a block, to disk. takes a filename
-as its argument.
+* `flush`: flush outstanding transactions, as a block
 * `noop`: generate a NoOp transaction
 * `member`: generate a ConsortiumMember transaction. takes as its argument a
 filename containing the new member's public key, and an arbitrary JSON-encoded
