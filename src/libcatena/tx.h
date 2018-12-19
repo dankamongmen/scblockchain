@@ -24,6 +24,9 @@ virtual bool validate(TrustStore& tstore) = 0;
 // Send oneself to an ostream
 virtual std::ostream& TXOStream(std::ostream& s) const = 0;
 
+// Serialize oneself
+virtual std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const = 0;
+
 friend std::ostream& operator<<(std::ostream& s, Transaction* t){
 	return t->TXOStream(s);
 }
@@ -51,6 +54,7 @@ bool validate(TrustStore& tstore __attribute__ ((unused))){
 	return false;
 }
 std::ostream& TXOStream(std::ostream& s) const override;
+std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 };
 
 class ConsortiumMemberTX : public Transaction {
@@ -60,6 +64,7 @@ ConsortiumMemberTX(const unsigned char* hash, unsigned idx) : Transaction(hash, 
 bool extract(const unsigned char* data, unsigned len) override;
 bool validate(TrustStore& tstore) override;
 std::ostream& TXOStream(std::ostream& s) const override;
+std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 
 private:
 unsigned char signature[SIGLEN];

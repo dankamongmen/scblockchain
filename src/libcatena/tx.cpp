@@ -8,6 +8,11 @@
 
 namespace Catena {
 
+enum TXTypes {
+	NoOp = 0x0000,
+	ConsortiumMember = 0x0001,
+};
+
 bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	if(len < 2){ // 16-bit signature length
 		std::cerr << "no room for siglen in " << len << std::endl;
@@ -71,14 +76,26 @@ std::ostream& NoOpTX::TXOStream(std::ostream& s) const {
 	return s << "NoOp";
 }
 
+std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
+	std::unique_ptr<unsigned char[]> ret(new unsigned char[2]);
+	ulong_to_nbo(NoOp, ret.get(), 2);
+	return std::make_pair(std::move(ret), 2);
+}
+
 std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
 	return s << "ConsortiumMember"; // FIXME
 }
 
-enum TXTypes {
-	NoOp = 0x0000,
-	ConsortiumMember = 0x0001,
-};
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+ConsortiumMemberTX::Serialize() const {
+	size_t len = 4 + siglen + sizeof(signerhash) + sizeof(signidx) +
+		payloadlen;
+	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
+	auto data = ulong_to_nbo(ConsortiumMember, ret.get(), 2);
+	data = ulong_to_nbo(siglen, data, 2);
+	// FIXME
+	return std::make_pair(std::move(ret), len);
+}
 
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
