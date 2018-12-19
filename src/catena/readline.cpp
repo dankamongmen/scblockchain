@@ -86,13 +86,17 @@ int ReadlineUI::NewMember(Iterator start, Iterator end){
 		return -1;
 	}
 	size_t plen;
-	auto payload = nlohmann::json::parse(start[1]);
 	try{
-		auto pkey = Catena::ReadBinaryFile(start[0], &plen);
-		chain.AddConsortiumMember(reinterpret_cast<unsigned char*>(pkey.get()), plen, payload);
-	}catch(std::ifstream::failure& e){
-		std::cerr << "couldn't read a public key from " << start[0] << std::endl;
-		return -1;
+		auto payload = nlohmann::json::parse(start[1]);
+		try{
+			auto pkey = Catena::ReadBinaryFile(start[0], &plen);
+			chain.AddConsortiumMember(reinterpret_cast<unsigned char*>(pkey.get()), plen, payload);
+		}catch(std::ifstream::failure& e){
+			std::cerr << "couldn't read a public key from " << start[0] << std::endl;
+			return -1;
+		}
+	}catch(nlohmann::detail::parse_error &e){
+		std::cerr << "couldn't parse JSON from '" << start[1] << "'" << std::endl;
 	}
 	return 0;
 }
