@@ -13,6 +13,10 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 
+External projects included in this project include:
+
+* nlohmann\_json (https://github.com/nlohmann/json) version 3.4.0 (released 2018-10-30, MIT)
+
 ## Running the catena daemon
 
 `catena` requires the `-l ledger` option to specify a ledger file. This ledger
@@ -43,7 +47,8 @@ list can be accessed by running the `help` command):
 * `noop`: generate a NoOp transaction
 * `member`: generate a ConsortiumMember transaction. takes as its argument a
 filename containing the new member's public key, and an arbitrary JSON-encoded
-payload. Use double quotes to enclose the payload.
+payload. Use single quotes to enclose the payload, escaping any single quotes
+within the payload.
 
 Use of the `member` command requires a private key having been loaded with the
 `-u` option.
