@@ -15,10 +15,7 @@ namespace Catena {
 
 ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	cancelled(false),
-	chain(chain) {
-	// disable tab-completion and restore standard behavior
-	rl_bind_key('\t', rl_insert);
-}
+	chain(chain) { }
 
 template <typename Iterator>
 int ReadlineUI::HandleQuit(Iterator start, Iterator end){
