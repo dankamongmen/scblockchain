@@ -18,7 +18,7 @@ ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	chain(chain) { }
 
 template <typename Iterator>
-int ReadlineUI::HandleQuit(Iterator start, Iterator end){
+int ReadlineUI::Quit(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -28,7 +28,7 @@ int ReadlineUI::HandleQuit(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::HandleShow(Iterator start, Iterator end){
+int ReadlineUI::Show(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -38,7 +38,7 @@ int ReadlineUI::HandleShow(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::HandleOutstanding(Iterator start, Iterator end){
+int ReadlineUI::Outstanding(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -48,7 +48,18 @@ int ReadlineUI::HandleOutstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::HandleTStore(Iterator start, Iterator end){
+int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
+	if(start == end || start + 1 != end){
+		std::cerr << "command requires one argument" << std::endl;
+		return -1;
+	}
+std::cout << "will write to " << *start << std::endl; // FIXME
+	chain.SerializeOutstanding();
+	return 0;
+}
+
+template <typename Iterator>
+int ReadlineUI::TStore(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -58,7 +69,7 @@ int ReadlineUI::HandleTStore(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::HandleNoOp(Iterator start, Iterator end){
+int ReadlineUI::NoOp(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -68,7 +79,7 @@ int ReadlineUI::HandleNoOp(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::HandleNewMember(Iterator start, Iterator end){
+int ReadlineUI::NewMember(Iterator start, Iterator end){
 	while(start != end){
 		++start;
 	}
@@ -108,12 +119,13 @@ void ReadlineUI::InputLoop(){
 						std::vector<std::string>::iterator);
 		const char* help;
 	} cmdtable[] = {
-		{ .cmd = "quit", .fxn = &ReadlineUI::HandleQuit, .help = "exit catena", },
-		{ .cmd = "show", .fxn = &ReadlineUI::HandleShow, .help = "show blocks", },
-		{ .cmd = "outstanding", .fxn = &ReadlineUI::HandleOutstanding, .help = "show outstanding transactions", },
-		{ .cmd = "tstore", .fxn = &ReadlineUI::HandleTStore, .help = "dump trust store (key info)", },
-		{ .cmd = "noop", .fxn = &ReadlineUI::HandleNoOp, .help = "create new NoOp transaction", },
-		{ .cmd = "member", .fxn = &ReadlineUI::HandleNewMember, .help = "create new ConsortiumMember transaction", },
+		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
+		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
+		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
+		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush outstanding transactions to a file", },
+		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
+		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },
+		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;

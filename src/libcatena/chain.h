@@ -23,7 +23,7 @@ virtual ~Chain() = default;
 
 // Constructing a Chain requires lexing and validating blocks. On a logic error
 // within the chain, a BlockValidationException exception is thrown. Exceptions
-// can also be thrown for file I/O error.
+// can also be thrown for file I/O error. An empty file is acceptable.
 Chain(const std::string& fname);
 
 // A Chain instantiated from memory will not write out new blocks.
