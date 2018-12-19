@@ -187,26 +187,40 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 Block::serializeBlock(unsigned char* prevhash){
-	auto block = new unsigned char[BLOCKHEADERLEN]();
-	size_t len = BLOCKHEADERLEN;
-	unsigned char *targ = block + HASHLEN;
-	memcpy(targ, prevhash, HASHLEN);
-	targ += HASHLEN;
-	*targ++ = BLOCKVERSION / 0x100;
-	*targ++ = BLOCKVERSION % 0x100;
-	*targ++ = BLOCKHEADERLEN / 0x10000;
-	*targ++ = BLOCKHEADERLEN / 0x100;
-	*targ++ = BLOCKHEADERLEN % 0x100;
-	targ += 3; // txcount
-	time_t now = time(NULL);
-	++targ; // first byte of utc
-	*targ++ = (now & 0xff000000) >> 24u;
-	*targ++ = (now & 0x00ff0000) >> 16u;
-	*targ++ = (now & 0x0000ff00) >> 8u;
-	*targ++ = (now & 0x000000ff);
-	catenaHash(block + HASHLEN, BLOCKHEADERLEN - HASHLEN, block);
-	memcpy(prevhash, block, HASHLEN);
+	std::vector<std::pair<std::unique_ptr<unsigned char[]>, size_t>> txserials;
+	std::vector<size_t> offsets;
+	size_t txoffset = 0;
+	size_t len = 0;
+	for(const auto& txp : transactions){
+		const auto& tx = txp.get();
+		txserials.push_back(tx->Serialize());
+		offsets.push_back(txoffset);
+		txoffset += txserials.back().second;
+		len += txserials.back().second + 4; // 4 for offset table entry
+	}
+	len += BLOCKHEADERLEN;
+	auto block = new unsigned char[len]();
 	std::unique_ptr<const unsigned char[]> ret(block);
+	unsigned char *targ = block + HASHLEN; // leave hash aside for now
+	memcpy(targ, prevhash, HASHLEN); // copy in previous hash
+	targ += HASHLEN;
+	targ = ulong_to_nbo(BLOCKVERSION, targ, 2);
+	targ = ulong_to_nbo(len, targ, 3);
+	targ = ulong_to_nbo(transactions.size(), targ, 3);
+	time_t now = time(NULL); // FIXME throw exception on result < 0?
+	targ = ulong_to_nbo(now, targ, 5); // 40 bits for UTC
+	memset(targ, 0x00, 19); // reserved bytes
+	targ += 19;
+	auto offtable = targ;
+	auto txtable = offtable + 4 * txserials.size();
+	for(auto i = 0u ; i < txserials.size() ; ++i){
+		const auto& txp = txserials[i];
+		offtable = ulong_to_nbo(offsets[i], offtable, 4);
+		memcpy(txtable, txp.first.get(), txp.second);
+		txtable += txp.second;
+	}
+	catenaHash(block + HASHLEN, len - HASHLEN, block);
+	memcpy(prevhash, block, HASHLEN);
 	return std::make_pair(std::move(ret), len);
 }
 
