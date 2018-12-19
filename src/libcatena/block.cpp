@@ -185,11 +185,11 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 	return stream;
 }
 
-std::pair<std::unique_ptr<const char[]>, unsigned>
+std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 Block::serializeBlock(unsigned char* prevhash){
-	auto block = new char[BLOCKHEADERLEN]();
-	unsigned len = BLOCKHEADERLEN;
-	char *targ = block + HASHLEN;
+	auto block = new unsigned char[BLOCKHEADERLEN]();
+	size_t len = BLOCKHEADERLEN;
+	unsigned char *targ = block + HASHLEN;
 	memcpy(targ, prevhash, HASHLEN);
 	targ += HASHLEN;
 	*targ++ = BLOCKVERSION / 0x100;
@@ -206,7 +206,7 @@ Block::serializeBlock(unsigned char* prevhash){
 	*targ++ = (now & 0x000000ff);
 	catenaHash(block + HASHLEN, BLOCKHEADERLEN - HASHLEN, block);
 	memcpy(prevhash, block, HASHLEN);
-	std::unique_ptr<const char[]> ret(block);
+	std::unique_ptr<const unsigned char[]> ret(block);
 	return std::make_pair(std::move(ret), len);
 }
 

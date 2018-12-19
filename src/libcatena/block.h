@@ -58,7 +58,7 @@ static const int BLOCKVERSION = 0;
 
 // Returns allocated block with serialized data, and size of serialized data.
 // Updates prevhash with hash of serialized block.
-static std::pair<std::unique_ptr<const char[]>, unsigned>
+static std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 	serializeBlock(unsigned char* prevhash);
 
 static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
