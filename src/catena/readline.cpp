@@ -10,6 +10,7 @@
 #include <libcatena/chain.h>
 #include <readline/history.h>
 #include <readline/readline.h>
+#include <libcatena/utility.h>
 #include <catena/readline.h>
 
 namespace Catena {
@@ -84,8 +85,10 @@ int ReadlineUI::NewMember(Iterator start, Iterator end){
 		std::cerr << "command requires two arguments, a public key file and a JSON payload" << std::endl;
 		return -1;
 	}
+	size_t plen;
 	auto payload = nlohmann::json::parse(start[1]);
-	chain.AddConsortiumMember(start[0], payload);
+	auto pkey = Catena::ReadBinaryFile(start[0], &plen);
+	chain.AddConsortiumMember(reinterpret_cast<unsigned char*>(pkey.get()), plen, payload);
 	return 0;
 }
 

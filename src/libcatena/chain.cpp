@@ -57,8 +57,10 @@ void Chain::AddNoOp(){
 	outstanding.AddTransaction(std::make_unique<NoOpTX>());
 }
 
-void Chain::AddConsortiumMember(const std::string& pubfname, nlohmann::json& payload){
-	std::cout << "fname: " << pubfname << " payload: " << payload << "\n";
+void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload){
+	std::cout << "payload: " << payload << "\n";
+	(void)pkey;
+	(void)plen;
 	// FIXME
 }
 

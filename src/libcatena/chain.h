@@ -50,7 +50,7 @@ void AddSigningKey(const Keypair& kp);
 
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
-void AddConsortiumMember(const std::string& pubfname, nlohmann::json& payload);
+void AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload);
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 

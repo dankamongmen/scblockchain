@@ -1,8 +1,5 @@
 #include <memory>
 #include <cstring>
-#include <iomanip>
-#include <fstream>
-#include <iostream>
 #include "libcatena/utility.h"
 #include "libcatena/block.h"
 #include "libcatena/hash.h"
@@ -155,13 +152,8 @@ bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
-	std::ifstream f;
-	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
-	auto size = f.tellg();
-	std::unique_ptr<char[]> memblock(new char[size]);
-	f.seekg(0, std::ios::beg);
-	f.read(memblock.get(), size);
+	size_t size;
+	auto memblock = ReadBinaryFile(fname, &size);
 	return LoadData(memblock.get(), size, tstore);
 }
 
