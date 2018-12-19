@@ -60,6 +60,25 @@ TEST(CatenaBlocks, BlockGenerated){
 	EXPECT_FALSE(cbs.LoadData(block.get(), size, tstore));
 }
 
+// Generate a block with some NoOps, and read it back
+TEST(CatenaBlocks, BlockGeneratedNoOps){
+	Catena::TrustStore tstore;
+	for(auto i = 0 ; i < 4096 ; i += 16){
+		unsigned char prevhash[HASHLEN] = {0};
+		Catena::Block b;
+		for(auto j = 0 ; j < i + 1 ; ++j){
+			b.AddTransaction(std::make_unique<Catena::NoOpTX>());
+		}
+		std::unique_ptr<const unsigned char[]> block;
+		size_t size;
+		std::tie(block, size) = b.serializeBlock(prevhash);
+		ASSERT_NE(nullptr, block);
+		ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
+		Catena::Blocks cbs;
+		EXPECT_FALSE(cbs.LoadData(block.get(), size, tstore));
+	}
+}
+
 // Generate a simple block with invalid prev, and read it back
 TEST(CatenaBlocks, BlockGeneratedBadprev){
 	Catena::TrustStore tstore;
