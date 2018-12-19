@@ -1,5 +1,6 @@
 #include <cstring>
 #include "libcatena/builtin.h"
+#include "libcatena/utility.h"
 #include "libcatena/chain.h"
 #include "libcatena/block.h"
 #include "libcatena/tx.h"
@@ -35,6 +36,18 @@ std::ostream& operator<<(std::ostream& stream, const Chain& chain){
 std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
 	s << outstanding;
 	return s;
+}
+
+std::pair<std::unique_ptr<const unsigned char[]>, size_t>
+Chain::SerializeOutstanding(){
+	unsigned char lasthash[HASHLEN];
+	blocks.GetLastHash(lasthash);
+	// FIXME needs be called on (outstanding.)
+	auto p = Block::serializeBlock(lasthash);
+	HexOutput(std::cout, p.first.get(), p.second);
+		//std::pair<std::unique_ptr<const char[]>, unsigned>
+	return p;
+	// FIXME need kill off outstanding
 }
 
 void Chain::AddSigningKey(const Keypair& kp){

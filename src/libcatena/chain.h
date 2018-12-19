@@ -42,6 +42,9 @@ std::ostream& DumpTrustStore(std::ostream& s) const {
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
+// serialize and flush outstanding transactions
+std::pair<std::unique_ptr<const unsigned char[]>, size_t> SerializeOutstanding();
+
 void AddSigningKey(const Keypair& kp);
 
 // Generate and sign new transactions, to be added to the ledger.
@@ -54,6 +57,7 @@ private:
 TrustStore tstore;
 Blocks blocks;
 Block outstanding;
+
 void LoadBuiltinKeys();
 };
 
