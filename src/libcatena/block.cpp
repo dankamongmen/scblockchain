@@ -165,6 +165,14 @@ bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	return LoadData(memblock.get(), size, tstore);
 }
 
+void Blocks::GetLastHash(unsigned char* hash) const {
+	if(headers.empty()){ // will be genesis block
+		memset(hash, 0xff, HASHLEN);
+	}else{
+		memcpy(hash, headers.back().hash, HASHLEN);
+	}
+}
+
 std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 	for(auto& h : blocks.headers){
 		stream << "hash: ";

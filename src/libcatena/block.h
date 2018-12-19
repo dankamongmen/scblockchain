@@ -38,6 +38,8 @@ unsigned getBlockCount() const {
 	return offsets.size();
 }
 
+void GetLastHash(unsigned char* hash) const;
+
 friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 
 private:
