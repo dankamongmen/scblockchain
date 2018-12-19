@@ -67,6 +67,10 @@ static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
 bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
 			TrustStore& tstore);
 
+int TransactionCount() const {
+	return transactions.size();
+}
+
 void AddTransaction(std::unique_ptr<Transaction> tx);
 
 friend std::ostream& operator<<(std::ostream& stream, const Block& b);

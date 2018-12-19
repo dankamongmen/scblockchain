@@ -69,6 +69,7 @@ TEST(CatenaBlocks, BlockGeneratedNoOps){
 		for(auto j = 0 ; j < i + 1 ; ++j){
 			b.AddTransaction(std::make_unique<Catena::NoOpTX>());
 		}
+		EXPECT_EQ(i + 1, b.TransactionCount());
 		std::unique_ptr<const unsigned char[]> block;
 		size_t size;
 		std::tie(block, size) = b.serializeBlock(prevhash);
