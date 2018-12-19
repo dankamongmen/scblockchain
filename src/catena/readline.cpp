@@ -1,3 +1,6 @@
+#include <term.h>
+#include <unistd.h>
+#include <ncurses.h>
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
@@ -10,7 +13,7 @@
 
 namespace Catena {
 
-ReadlineUI::ReadlineUI(Catena::Chain& chain):
+ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	cancelled(false),
 	chain(chain) {
 	// disable tab-completion and restore standard behavior
@@ -98,6 +101,9 @@ std::vector<std::string> ReadlineUI::SplitInput(const char* line) const {
 	return tokens;
 }
 
+#define RL_START "\x01" // RL_PROMPT_START_IGNORE
+#define RL_END "\x02"   // RL_PROMPT_END_IGNORE
+
 void ReadlineUI::InputLoop(){
 	const struct {
 		const std::string cmd;
@@ -115,7 +121,10 @@ void ReadlineUI::InputLoop(){
 	}, *c;
 	char* line;
 	while(!cancelled){
-		line = readline("catena] ");
+		line = readline(RL_START "\033[0;35m" RL_END
+				"[" RL_START "\033[0;36m" RL_END
+				"catena" RL_START "\033[0;35m" RL_END
+				"] " RL_START "\033[1;37m" RL_END);
 		if(line == nullptr){
 			break;
 		}
