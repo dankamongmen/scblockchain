@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
+#include <json.hpp>
 #include <libcatena/tx.h>
 #include <libcatena/chain.h>
 #include <readline/history.h>
@@ -79,11 +80,12 @@ int ReadlineUI::NoOp(Iterator start, Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewMember(Iterator start, Iterator end){
-	while(start != end){
-		++start;
+	if(end - start != 2){
+		std::cerr << "command requires two arguments, a public key file and a JSON payload" << std::endl;
+		return -1;
 	}
-	// FIXME construct new TX
-	chain.AddConsortiumMember(/*FIXME*/);
+	auto payload = nlohmann::json::parse(start[1]);
+	chain.AddConsortiumMember(start[0], payload);
 	return 0;
 }
 
