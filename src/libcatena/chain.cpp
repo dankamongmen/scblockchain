@@ -44,8 +44,7 @@ Chain::SerializeOutstanding(){
 	blocks.GetLastHash(lasthash);
 	// FIXME needs be called on (outstanding.)
 	auto p = Block::serializeBlock(lasthash);
-	HexOutput(std::cout, p.first.get(), p.second);
-		//std::pair<std::unique_ptr<const char[]>, unsigned>
+	HexOutput(std::cout, p.first.get(), p.second) << std::endl;
 	return p;
 	// FIXME need kill off outstanding
 }

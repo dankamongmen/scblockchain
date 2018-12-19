@@ -46,6 +46,9 @@ as its argument.
 filename containing the new member's public key, and an arbitrary JSON-encoded
 payload. Use double quotes to enclose the payload.
 
+Use of the `member` command requires a private key having been loaded with the
+`-u` option.
+
 ## Key operations
 
 ### Generating ECDSA material
