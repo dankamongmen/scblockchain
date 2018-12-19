@@ -1,6 +1,7 @@
 #ifndef CATENA_LIBCATENA_CHAIN
 #define CATENA_LIBCATENA_CHAIN
 
+#include <json.hpp>
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
@@ -49,7 +50,7 @@ void AddSigningKey(const Keypair& kp);
 
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
-void AddConsortiumMember();
+void AddConsortiumMember(const std::string& pubfname, nlohmann::json& payload);
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
