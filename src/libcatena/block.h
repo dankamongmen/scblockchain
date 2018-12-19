@@ -28,7 +28,7 @@ Blocks() = default;
 virtual ~Blocks() = default;
 
 // Load blocks from the specified chunk of memory. Returns true on parsing
-// error, or if there were no blocks. Any present blocks are discarded.
+// error. Any present blocks are discarded.
 bool LoadData(const void* data, unsigned len, TrustStore& tstore);
 // Load blocks from the specified file. Propagates I/O exceptions. Any present
 // blocks are discarded. Return value is the same as loadData.

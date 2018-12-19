@@ -21,12 +21,17 @@ TEST(CatenaBlocks, BlocksInvalidFile){
 	EXPECT_THROW(cbs.LoadFile("", tstore), std::ifstream::failure);
 }
 
+TEST(CatenaBlocks, EmptyBlock){
+	Catena::TrustStore tstore;
+	Catena::Blocks cbs;
+	// Should pass on 0 bytes
+	EXPECT_FALSE(cbs.LoadData("", 0, tstore));
+}
+
 // Chunks too small to be a valid block
 TEST(CatenaBlocks, BlocksInvalidShort){
 	Catena::TrustStore tstore;
 	Catena::Blocks cbs;
-	// Should fail on 0 bytes
-	EXPECT_TRUE(cbs.LoadData("", 0, tstore));
 	char block[Catena::Block::BLOCKHEADERLEN];
 	// Should fail on fewer bytes than the minimum
 	EXPECT_TRUE(cbs.LoadData(block, sizeof(block) - 1, tstore));

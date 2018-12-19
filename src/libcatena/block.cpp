@@ -146,7 +146,7 @@ bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 	headers.clear();
 	auto blocknum = verifyData(static_cast<const unsigned char*>(data),
 					len, tstore);
-	if(blocknum <= 0){
+	if(blocknum < 0){
 		return true;
 	}
 	return false;
