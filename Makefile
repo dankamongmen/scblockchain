@@ -12,8 +12,6 @@ VALGRIND:=valgrind --tool=memcheck --leak-check=full
 
 HTTPDLIBS:=$(shell pkg-config --libs libmicrohttpd)
 HTTPDCFLAGS:=$(shell pkg-config --cflags libmicrohttpd)
-# msgpack-c for C++ is a header-only implementation
-MPACKCFLAGS:=$(shell pkg-config --cflags msgpack)
 SSLLIBS:=$(shell pkg-config --libs openssl)
 SSLCFLAGS:=$(shell pkg-config --cflags openssl)
 READLINELIBS:=-lreadline
@@ -33,7 +31,7 @@ WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
 CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
-EXTCPPFLAGS:=$(SSLCFLAGS) $(MPACKCFLAGS) $(HTTPDCFLAGS)
+EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
 LIBS:=$(SSLLIBS) $(HTTPDLIBS) $(READLINELIBS)
 
