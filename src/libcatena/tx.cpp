@@ -93,7 +93,11 @@ ConsortiumMemberTX::Serialize() const {
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
 	auto data = ulong_to_nbo(ConsortiumMember, ret.get(), 2);
 	data = ulong_to_nbo(siglen, data, 2);
-	// FIXME
+	memcpy(data, signature, siglen);
+	data += siglen;
+	data = ulong_to_nbo(signidx, data, 4);
+	data = ulong_to_nbo(payloadlen, data, 2); // only want length of key
+	memcpy(data, payload.get(), payloadlen);
 	return std::make_pair(std::move(ret), len);
 }
 
