@@ -59,12 +59,12 @@ static const int BLOCKVERSION = 0;
 // Returns allocated block with serialized data, and size of serialized data.
 // Updates prevhash with hash of serialized block.
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-	serializeBlock(unsigned char* prevhash);
+	SerializeBlock(unsigned char* prevhash);
 
-static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
+static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
 
-bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
+bool ExtractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
 			TrustStore& tstore);
 
 int TransactionCount() const {

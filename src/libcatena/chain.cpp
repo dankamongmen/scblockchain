@@ -42,7 +42,7 @@ std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 Chain::SerializeOutstanding(){
 	unsigned char lasthash[HASHLEN];
 	blocks.GetLastHash(lasthash);
-	auto p = outstanding.serializeBlock(lasthash);
+	auto p = outstanding.SerializeBlock(lasthash);
 	HexOutput(std::cout, p.first.get(), p.second) << std::endl;
 	return p;
 	// FIXME need kill off outstanding

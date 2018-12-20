@@ -10,7 +10,7 @@ namespace Catena {
 const int Block::BLOCKVERSION;
 const int Block::BLOCKHEADERLEN;
 
-bool Block::extractBody(BlockHeader* chdr, const unsigned char* data,
+bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
 			unsigned len, TrustStore& tstore){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
@@ -49,7 +49,7 @@ bool Block::extractBody(BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
-bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
+bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		unsigned len, const unsigned char* prevhash, uint64_t prevutc){
 	if(len < Block::BLOCKHEADERLEN){
 		std::cerr << "needed " << Block::BLOCKHEADERLEN <<
@@ -115,7 +115,7 @@ int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	while(len){
 		Block block;
 		BlockHeader chdr;
-		if(Block::extractHeader(&chdr, data, len, prevhash, prevutc)){
+		if(Block::ExtractHeader(&chdr, data, len, prevhash, prevutc)){
 			headers.clear();
 			offsets.clear();
 			return -1;
@@ -123,7 +123,7 @@ int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		data += Block::BLOCKHEADERLEN;
 		memcpy(prevhash, chdr.hash, sizeof(prevhash));
 		prevutc = chdr.utc;
-		if(block.extractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, tstore)){
+		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, tstore)){
 			headers.clear();
 			offsets.clear();
 			return -1;
@@ -180,7 +180,7 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-Block::serializeBlock(unsigned char* prevhash){
+Block::SerializeBlock(unsigned char* prevhash){
 	std::vector<std::pair<std::unique_ptr<unsigned char[]>, size_t>> txserials;
 	std::vector<size_t> offsets;
 	size_t txoffset = 0;
