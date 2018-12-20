@@ -42,6 +42,9 @@ bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 
 const KeyLookup& GetLookup(const Keypair& kp);
 
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+Sign(const unsigned char* in, size_t inlen) const;
+
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 
 private:

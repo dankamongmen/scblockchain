@@ -37,4 +37,17 @@ void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
 	}
 }
 
+// FIXME should probably throw exceptions on errors
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+TrustStore::Sign(const unsigned char* in, size_t inlen) const {
+	if(signingkey == nullptr){
+		return std::make_pair(nullptr, 0);
+	}
+	const auto& it = keys.find(*signingkey.get());
+	if(it == keys.end()){
+		return std::make_pair(nullptr, 0);
+	}
+	return it->second.Sign(in, inlen);
+}
+
 }
