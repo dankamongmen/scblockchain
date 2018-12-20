@@ -2,5 +2,9 @@
 #include <libcatena/chain.h>
 
 TEST(CatenaChain, ChainGenesisBlock){
-	Catena::Chain("test/genesisblock");
+	Catena::Chain("genesisblock");
+}
+
+TEST(CatenaChain, ChainGenesisMock){
+	Catena::Chain("test/genesisblock-test");
 }

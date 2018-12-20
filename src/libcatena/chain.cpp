@@ -69,16 +69,17 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf, len);
+	KeyLookup signer;
+	auto sig = tstore.Sign(buf, len, &signer);
 	if(sig.second == 0){
 		return; // FIXME throw exception? make Sign throw exception?
 	}
-	// FIXME need to get signer hash and signer idx
 	size_t totlen = len + sig.second + 4 + HASHLEN + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2);
-memset(targ, 0, HASHLEN + 4);
-targ += HASHLEN + 4; // FIXME need signer hash/idx!
+	memcpy(targ, signer.first.data(), HASHLEN);
+	targ += HASHLEN;
+	targ = ulong_to_nbo(signer.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
 	memcpy(targ, buf, len);

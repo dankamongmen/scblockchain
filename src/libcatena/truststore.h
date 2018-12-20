@@ -9,7 +9,7 @@
 
 namespace Catena {
 
-using KeyLookup = std::pair<const std::array<unsigned char, HASHLEN>, unsigned>;
+using KeyLookup = std::pair<std::array<unsigned char, HASHLEN>, unsigned>;
 
 struct keylookup_hash {
 	template <class T1, class T2>
@@ -43,7 +43,7 @@ bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 const KeyLookup& GetLookup(const Keypair& kp);
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
-Sign(const unsigned char* in, size_t inlen) const;
+Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const;
 
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 

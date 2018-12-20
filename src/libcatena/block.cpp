@@ -105,12 +105,13 @@ bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
 }
 
 int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
-	unsigned char prevhash[HASHLEN] = {0};
+	unsigned char prevhash[HASHLEN];
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
+	memset(prevhash, 0xff, sizeof(prevhash));
 	while(len){
 		Block block;
 		BlockHeader chdr;
@@ -153,7 +154,8 @@ bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	size_t size;
-	auto memblock = ReadBinaryFile(fname, &size);
+	// Returns nullptr on zero-byte file, but LoadData handles that fine
+	const auto& memblock = ReadBinaryFile(fname, &size);
 	return LoadData(memblock.get(), size, tstore);
 }
 

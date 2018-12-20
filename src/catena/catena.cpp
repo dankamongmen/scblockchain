@@ -48,6 +48,7 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 	std::cout << "Loading ledger from " << chain_file << std::endl;
+	// FIXME throw this in a try block and handle file errors more nicely
 	Catena::Chain chain(chain_file);
 	if(pubkey_file || privkey_file){
 		if(!pubkey_file || !privkey_file){
