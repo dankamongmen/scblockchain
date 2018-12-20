@@ -27,8 +27,13 @@ ReadBinaryFile(const std::string& fname, size_t *len){
 		close(fd);
 		return nullptr;
 	}
-	// FIXME could throw, leaking file descriptor!
-	std::unique_ptr<unsigned char[]> memblock(new unsigned char[*len]);
+	std::unique_ptr<unsigned char[]> memblock;
+	try{
+		memblock = std::make_unique<unsigned char[]>(*len);
+	}catch(...){
+		close(fd);
+		throw;
+	}
 	auto r = read(fd, memblock.get(), *len);
 	close(fd);
 	if(r < 0 || r != flen){
