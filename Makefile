@@ -59,7 +59,7 @@ $(TAGS): $(CPPSRC) $(CPPINC)
 
 bin: $(BIN)
 
-check: test
+check: $(TAGS) test
 
 test: $(TESTBIN) $(TESTDATA)
 	$(BINOUT)/catenatest
