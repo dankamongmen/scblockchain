@@ -5,6 +5,7 @@
 
 #define SIGLEN 72 // maximum length of signature outputs in bytes
 
+#include <memory>
 #include <openssl/evp.h>
 
 namespace Catena {
@@ -32,7 +33,13 @@ Keypair& operator=(Keypair kp){
 }
 
 ~Keypair();
-size_t Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen);
+
+size_t Sign(const unsigned char* in, size_t inlen,
+		unsigned char* out, size_t outlen) const;
+
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+Sign(const unsigned char* in, size_t inlen) const;
+
 bool Verify(const unsigned char* in, size_t inlen, const unsigned char* sig, size_t siglen);
 
 inline bool operator==(const Keypair& rhs) const {

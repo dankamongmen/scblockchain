@@ -80,7 +80,7 @@ Keypair::~Keypair(){
 	EVP_PKEY_free(pubkey);
 }
 
-size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen){
+size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen) const {
 	if(!privkey){
 		return 0;
 	}
@@ -104,6 +104,34 @@ size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, 
 	}
 	EVP_PKEY_CTX_free(ctx);
 	return len;
+}
+
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+Keypair::Sign(const unsigned char* in, size_t inlen) const {
+	if(!privkey){
+		return std::make_pair(nullptr, 0);
+	}
+	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
+	if(1 != EVP_PKEY_sign_init(ctx)){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error initializing EC ctx");
+	}
+	if(1 != EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256())){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error initializing sha256 EC ctx");
+	}
+	size_t len = 0;
+	if(1 != EVP_PKEY_sign(ctx, NULL, &len, in, inlen)){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error getting EC outlen");
+	}
+	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
+	if(1 != EVP_PKEY_sign(ctx, ret.get(), &len, in, inlen)){
+		EVP_PKEY_CTX_free(ctx);
+		throw std::runtime_error("error EC signing");
+	}
+	EVP_PKEY_CTX_free(ctx);
+	return std::make_pair(std::move(ret), len);
 }
 
 bool Keypair::Verify(const unsigned char* in, size_t inlen, const unsigned char* sig, size_t siglen){
