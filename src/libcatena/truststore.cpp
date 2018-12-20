@@ -28,6 +28,9 @@ const KeyLookup& TrustStore::GetLookup(const Keypair& kp){
 void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
 	auto it = keys.find(kidx);
 	if(it != keys.end()){
+		if(kp->HasPrivateKey() && !signingkey){
+			signingkey = std::make_unique<KeyLookup>(kidx);
+		}
 		it->second = *kp;
 	}else{
 		keys.insert({kidx, *kp});

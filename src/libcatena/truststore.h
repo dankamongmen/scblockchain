@@ -1,6 +1,7 @@
 #ifndef CATENA_LIBCATENA_TRUSTSTORE
 #define CATENA_LIBCATENA_TRUSTSTORE
 
+#include <memory>
 #include <cstring>
 #include <unordered_map>
 #include <libcatena/hash.h>
@@ -23,7 +24,7 @@ struct keylookup_hash {
 
 class TrustStore {
 public:
-TrustStore() = default;
+TrustStore() : signingkey(nullptr) {}
 virtual ~TrustStore() = default;
 
 // Add the keypair (usually just public key), using the specified hash and
@@ -45,6 +46,7 @@ friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 
 private:
 std::unordered_map<KeyLookup, Keypair, keylookup_hash> keys;
+std::unique_ptr<KeyLookup> signingkey;
 };
 
 }
