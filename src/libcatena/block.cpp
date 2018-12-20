@@ -39,7 +39,7 @@ bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
 		if(tx == nullptr){
 			return true;
 		}
-		if(tx->validate(tstore)){
+		if(tx->Validate(tstore)){
 			return true;
 		}
 		transactions.push_back(std::move(tx));

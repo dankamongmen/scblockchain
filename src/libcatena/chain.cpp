@@ -84,7 +84,7 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	targ += sig.second;
 	memcpy(targ, buf, len);
 	auto tx = std::unique_ptr<ConsortiumMemberTX>(new ConsortiumMemberTX());
-	if(tx.get()->extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf, totlen)){
 		return; // FIXME throw exception?
 	}
 	outstanding.AddTransaction(std::move(tx));
