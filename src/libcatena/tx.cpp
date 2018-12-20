@@ -40,7 +40,7 @@ bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
-	payload = std::make_unique<unsigned char[]>(len);
+	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
 	payloadlen = len;
 	return false;
@@ -88,16 +88,18 @@ std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 ConsortiumMemberTX::Serialize() const {
-	size_t len = 4 + siglen + sizeof(signerhash) + sizeof(signidx) +
+	size_t len = 4 + siglen + signerhash.size() + sizeof(signidx) +
 		payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
 	auto data = ulong_to_nbo(ConsortiumMember, ret.get(), 2);
 	data = ulong_to_nbo(siglen, data, 2);
+	memcpy(data, signerhash.data(), signerhash.size());
+	data += signerhash.size();
+	data = ulong_to_nbo(signidx, data, 4);
 	memcpy(data, signature, siglen);
 	data += siglen;
-	data = ulong_to_nbo(signidx, data, 4);
-	data = ulong_to_nbo(payloadlen, data, 2); // only want length of key
 	memcpy(data, payload.get(), payloadlen);
+	data += payloadlen;
 	return std::make_pair(std::move(ret), len);
 }
 
