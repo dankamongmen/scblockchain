@@ -104,7 +104,7 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
-int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
+int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
 	unsigned char prevhash[HASHLEN];
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
@@ -142,7 +142,7 @@ int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
-	auto blocknum = verifyData(static_cast<const unsigned char*>(data),
+	auto blocknum = VerifyData(static_cast<const unsigned char*>(data),
 					len, tstore);
 	if(blocknum < 0){
 		return true;

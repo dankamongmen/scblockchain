@@ -34,7 +34,7 @@ bool LoadData(const void* data, unsigned len, TrustStore& tstore);
 // blocks are discarded. Return value is the same as loadData.
 bool LoadFile(const std::string& s, TrustStore& tstore);
 
-unsigned getBlockCount() const {
+unsigned GetBlockCount() const {
 	return offsets.size();
 }
 
@@ -45,7 +45,7 @@ friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 private:
 std::vector<unsigned> offsets;
 std::vector<BlockHeader> headers;
-int verifyData(const unsigned char* data, unsigned len, TrustStore& tstore);
+int VerifyData(const unsigned char* data, unsigned len, TrustStore& tstore);
 };
 
 // A descriptor of a single block, and logic to serialize blocks

@@ -13,7 +13,7 @@ TEST(CatenaBlocks, BlocksGenesisBlock){
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCK_EXTERNAL, tstore));
-	EXPECT_EQ(1, cbs.getBlockCount());
+	EXPECT_EQ(1, cbs.GetBlockCount());
 }
 
 TEST(CatenaBlocks, BlocksGenesisMock){
@@ -22,7 +22,7 @@ TEST(CatenaBlocks, BlocksGenesisMock){
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCKTEST_EXTERNAL, tstore));
-	EXPECT_EQ(1, cbs.getBlockCount());
+	EXPECT_EQ(1, cbs.GetBlockCount());
 }
 
 TEST(CatenaBlocks, BlocksInvalidFile){
@@ -125,5 +125,5 @@ TEST(CatenaBlocks, ChainGenerated){
 	memcpy(block + s1, b2.get(), s2);
 	Catena::Blocks cbs;
 	EXPECT_FALSE(cbs.LoadData(block, s1 + s2, tstore));
-	EXPECT_EQ(2, cbs.getBlockCount());
+	EXPECT_EQ(2, cbs.GetBlockCount());
 }
