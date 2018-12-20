@@ -26,7 +26,8 @@ CATENAOBJ:=$(addprefix $(OUT)/,$(CATENASRC:%.cpp=%.o))
 CATENATESTSRC:=$(foreach dir, src/test src/libcatena, $(filter $(dir)/%, $(CPPSRC)))
 CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
 
-TESTDATA:=test/genesisblock
+LEDGER:=genesisblock
+TESTDATA:=test/genesisblock-test $(LEDGER)
 
 WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2

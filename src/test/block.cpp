@@ -4,7 +4,8 @@
 #include "libcatena/builtin.h"
 #include "libcatena/block.h"
 
-#define GENESISBLOCK_EXTERNAL "test/genesisblock"
+#define GENESISBLOCKTEST_EXTERNAL "test/genesisblock-test"
+#define GENESISBLOCK_EXTERNAL "genesisblock"
 
 TEST(CatenaBlocks, BlocksGenesisBlock){
 	Catena::TrustStore tstore;
@@ -12,6 +13,15 @@ TEST(CatenaBlocks, BlocksGenesisBlock){
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCK_EXTERNAL, tstore));
+	EXPECT_EQ(1, cbs.getBlockCount());
+}
+
+TEST(CatenaBlocks, BlocksGenesisMock){
+	Catena::TrustStore tstore;
+	Catena::BuiltinKeys bkeys;
+        bkeys.AddToTrustStore(tstore);
+	Catena::Blocks cbs;
+	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCKTEST_EXTERNAL, tstore));
 	EXPECT_EQ(1, cbs.getBlockCount());
 }
 
