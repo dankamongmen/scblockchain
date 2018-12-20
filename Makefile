@@ -3,6 +3,7 @@
 .DEFAULT_GOAL:=all
 
 SRC:=src
+EXTSRC:=ext
 OUT:=.out
 TAGS:=.tags
 BINOUT:=$(OUT)
@@ -12,13 +13,11 @@ VALGRIND:=valgrind --tool=memcheck --leak-check=full
 
 HTTPDLIBS:=$(shell pkg-config --libs libmicrohttpd)
 HTTPDCFLAGS:=$(shell pkg-config --cflags libmicrohttpd)
-# msgpack-c for C++ is a header-only implementation
-MPACKCFLAGS:=$(shell pkg-config --cflags msgpack)
 SSLLIBS:=$(shell pkg-config --libs openssl)
 SSLCFLAGS:=$(shell pkg-config --cflags openssl)
 READLINELIBS:=-lreadline
 
-CPPSRCDIRS:=$(wildcard $(SRC)/*)
+CPPSRCDIRS:=$(wildcard $(SRC)/* $(EXTSRC))
 CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
 CPPINC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.h -print)
 
@@ -33,7 +32,7 @@ WFLAGS:=-Wall -W -Werror -Wl,-z,defs
 OFLAGS:=-O2
 CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
-EXTCPPFLAGS:=$(SSLCFLAGS) $(MPACKCFLAGS) $(HTTPDCFLAGS)
+EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) -I$(EXTSRC)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
 LIBS:=$(SSLLIBS) $(HTTPDLIBS) $(READLINELIBS)
 
@@ -60,7 +59,7 @@ $(TAGS): $(CPPSRC) $(CPPINC)
 
 bin: $(BIN)
 
-check: test
+check: $(TAGS) test
 
 test: $(TESTBIN) $(TESTDATA)
 	$(BINOUT)/catenatest

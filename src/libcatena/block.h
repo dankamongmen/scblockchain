@@ -28,15 +28,17 @@ Blocks() = default;
 virtual ~Blocks() = default;
 
 // Load blocks from the specified chunk of memory. Returns true on parsing
-// error, or if there were no blocks. Any present blocks are discarded.
-bool loadData(const void* data, unsigned len, TrustStore& tstore);
+// error. Any present blocks are discarded.
+bool LoadData(const void* data, unsigned len, TrustStore& tstore);
 // Load blocks from the specified file. Propagates I/O exceptions. Any present
 // blocks are discarded. Return value is the same as loadData.
-bool loadFile(const std::string& s, TrustStore& tstore);
+bool LoadFile(const std::string& s, TrustStore& tstore);
 
-unsigned getBlockCount(){
+unsigned getBlockCount() const {
 	return offsets.size();
 }
+
+void GetLastHash(unsigned char* hash) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 
@@ -56,7 +58,7 @@ static const int BLOCKVERSION = 0;
 
 // Returns allocated block with serialized data, and size of serialized data.
 // Updates prevhash with hash of serialized block.
-static std::pair<std::unique_ptr<const char[]>, unsigned>
+std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 	serializeBlock(unsigned char* prevhash);
 
 static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
@@ -64,6 +66,14 @@ static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
 
 bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
 			TrustStore& tstore);
+
+int TransactionCount() const {
+	return transactions.size();
+}
+
+void AddTransaction(std::unique_ptr<Transaction> tx);
+
+friend std::ostream& operator<<(std::ostream& stream, const Block& b);
 
 private:
 std::vector<std::unique_ptr<Transaction>> transactions;

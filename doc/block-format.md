@@ -114,13 +114,13 @@ table (transactions ought not have trailing padding).
 
 #### NoOp
 
-Transaction type 0x0000, having arbitrary additional trailing data.
+Transaction type 0x0000.
 
 ```
  0                   1
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         type (0x0000)         | ...arbitrary data...
+|         type (0x0000)         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 

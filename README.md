@@ -11,8 +11,11 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * Google Test (libgtest-dev)
 * OpenSSL 1.1+ (libopenssl-dev)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
-* msgpack-c 3.0.1+ (libmsgpack-dev)
 * GNU Readline 6.3+ (libreadline-dev)
+
+External projects included in this project include:
+
+* nlohmann\_json (https://github.com/nlohmann/json) version 3.4.0 (released 2018-10-30, MIT)
 
 ## Running the catena daemon
 
@@ -29,6 +32,26 @@ match either a built-in or an on-ledger key.
 When started without the `-d` option, the catena agent will remain in the
 foreground, providing a readline-driven text UI. This can be used to examine
 the loaded ledger and issue API requests directly.
+
+### Interactive use of catena
+
+The following commands are available when catena is invoked interactively (this
+list can be accessed by running the `help` command):
+
+* `help`: summary of available commands
+* `quit`: exit catena
+* `show`: print the chain in a human-readable format
+* `tstore`: print the trust store (known keys) in a human-readable format
+* `outstanding`: print outstanding transactions in a human-readable format
+* `flush`: flush outstanding transactions, as a block
+* `noop`: generate a NoOp transaction
+* `member`: generate a ConsortiumMember transaction. takes as its argument a
+filename containing the new member's public key, and an arbitrary JSON-encoded
+payload. Use single quotes to enclose the payload, escaping any single quotes
+within the payload.
+
+Use of the `member` command requires a private key having been loaded with the
+`-u` option.
 
 ## Key operations
 

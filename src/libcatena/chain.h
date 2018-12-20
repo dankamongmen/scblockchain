@@ -1,6 +1,7 @@
 #ifndef CATENA_LIBCATENA_CHAIN
 #define CATENA_LIBCATENA_CHAIN
 
+#include <json.hpp>
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
@@ -23,7 +24,7 @@ virtual ~Chain() = default;
 
 // Constructing a Chain requires lexing and validating blocks. On a logic error
 // within the chain, a BlockValidationException exception is thrown. Exceptions
-// can also be thrown for file I/O error.
+// can also be thrown for file I/O error. An empty file is acceptable.
 Chain(const std::string& fname);
 
 // A Chain instantiated from memory will not write out new blocks.
@@ -34,15 +35,30 @@ Chain(const void* data, unsigned len);
 unsigned loadFile(const std::string& fname);
 unsigned loadData(const void* data, unsigned len);
 
-std::ostream& DumpTrustStore(std::ostream& s);
+// Dump the trust store contents in a human-readable format
+std::ostream& DumpTrustStore(std::ostream& s) const {
+	return s << tstore;
+}
+
+// Dump outstanding transactions in a human-readable format
+std::ostream& DumpOutstanding(std::ostream& s) const;
+
+// serialize and flush outstanding transactions
+std::pair<std::unique_ptr<const unsigned char[]>, size_t> SerializeOutstanding();
 
 void AddSigningKey(const Keypair& kp);
+
+// Generate and sign new transactions, to be added to the ledger.
+void AddNoOp();
+void AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload);
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
 TrustStore tstore;
 Blocks blocks;
+Block outstanding;
+
 void LoadBuiltinKeys();
 };
 

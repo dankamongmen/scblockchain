@@ -62,8 +62,8 @@ int main(int argc, char **argv){
 	if(daemonize){
 		// FIXME daemonize out
 	}else{
-		Catena::ReadlineUI rline;
-		rline.InputLoop(chain);
+		Catena::ReadlineUI rline(chain);
+		rline.InputLoop();
 	}
 	return EXIT_SUCCESS;
 }

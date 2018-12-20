@@ -1,8 +1,5 @@
 #include <memory>
 #include <cstring>
-#include <iomanip>
-#include <fstream>
-#include <iostream>
 #include "libcatena/utility.h"
 #include "libcatena/block.h"
 #include "libcatena/hash.h"
@@ -141,28 +138,31 @@ int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	return blocknum;
 }
 
-bool Blocks::loadData(const void* data, unsigned len, TrustStore& tstore){
+bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	auto blocknum = verifyData(static_cast<const unsigned char*>(data),
 					len, tstore);
-	if(blocknum <= 0){
+	if(blocknum < 0){
 		return true;
 	}
 	return false;
 }
 
-bool Blocks::loadFile(const std::string& fname, TrustStore& tstore){
+bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
-	std::ifstream f;
-	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
-	auto size = f.tellg();
-	std::unique_ptr<char[]> memblock(new char[size]);
-	f.seekg(0, std::ios::beg);
-	f.read(memblock.get(), size);
-	return loadData(memblock.get(), size, tstore);
+	size_t size;
+	auto memblock = ReadBinaryFile(fname, &size);
+	return LoadData(memblock.get(), size, tstore);
+}
+
+void Blocks::GetLastHash(unsigned char* hash) const {
+	if(headers.empty()){ // will be genesis block
+		memset(hash, 0xff, HASHLEN);
+	}else{
+		memcpy(hash, headers.back().hash, HASHLEN);
+	}
 }
 
 std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
@@ -177,29 +177,56 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 	return stream;
 }
 
-std::pair<std::unique_ptr<const char[]>, unsigned>
+std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 Block::serializeBlock(unsigned char* prevhash){
-	auto block = new char[BLOCKHEADERLEN]();
-	unsigned len = BLOCKHEADERLEN;
-	char *targ = block + HASHLEN;
-	memcpy(targ, prevhash, HASHLEN);
+	std::vector<std::pair<std::unique_ptr<unsigned char[]>, size_t>> txserials;
+	std::vector<size_t> offsets;
+	size_t txoffset = 0;
+	size_t len = 0;
+	for(const auto& txp : transactions){
+		const auto& tx = txp.get();
+		txserials.push_back(tx->Serialize());
+		offsets.push_back(txoffset);
+		txoffset += txserials.back().second;
+		len += txserials.back().second + 4; // 4 for offset table entry
+	}
+	len += BLOCKHEADERLEN;
+	auto block = new unsigned char[len]();
+	std::unique_ptr<const unsigned char[]> ret(block);
+	unsigned char *targ = block + HASHLEN; // leave hash aside for now
+	memcpy(targ, prevhash, HASHLEN); // copy in previous hash
 	targ += HASHLEN;
-	*targ++ = BLOCKVERSION / 0x100;
-	*targ++ = BLOCKVERSION % 0x100;
-	*targ++ = BLOCKHEADERLEN / 0x10000;
-	*targ++ = BLOCKHEADERLEN / 0x100;
-	*targ++ = BLOCKHEADERLEN % 0x100;
-	targ += 3; // txcount
-	time_t now = time(NULL);
-	++targ; // first byte of utc
-	*targ++ = (now & 0xff000000) >> 24u;
-	*targ++ = (now & 0x00ff0000) >> 16u;
-	*targ++ = (now & 0x0000ff00) >> 8u;
-	*targ++ = (now & 0x000000ff);
-	catenaHash(block + HASHLEN, BLOCKHEADERLEN - HASHLEN, block);
+	targ = ulong_to_nbo(BLOCKVERSION, targ, 2);
+	targ = ulong_to_nbo(len, targ, 3);
+	targ = ulong_to_nbo(transactions.size(), targ, 3);
+	time_t now = time(NULL); // FIXME throw exception on result < 0?
+	targ = ulong_to_nbo(now, targ, 5); // 40 bits for UTC
+	memset(targ, 0x00, 19); // reserved bytes
+	targ += 19;
+	auto offtable = targ;
+	auto txtable = offtable + 4 * txserials.size();
+	for(auto i = 0u ; i < txserials.size() ; ++i){
+		const auto& txp = txserials[i];
+		offtable = ulong_to_nbo(offsets[i], offtable, 4);
+		memcpy(txtable, txp.first.get(), txp.second);
+		txtable += txp.second;
+	}
+	catenaHash(block + HASHLEN, len - HASHLEN, block);
 	memcpy(prevhash, block, HASHLEN);
-	std::unique_ptr<const char[]> ret(block);
 	return std::make_pair(std::move(ret), len);
+}
+
+void Block::AddTransaction(std::unique_ptr<Transaction> tx){
+	transactions.push_back(std::move(tx));
+}
+
+std::ostream& operator<<(std::ostream& stream, const Block& b){
+	// FIXME reset stream after using setfill/setw
+	for(size_t i = 0 ; i < b.transactions.size() ; ++i){
+		stream << std::setfill('0') << std::setw(5) << i <<
+			" " << b.transactions[i].get() << "\n";
+	}
+	return stream;
 }
 
 }
