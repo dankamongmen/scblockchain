@@ -73,10 +73,12 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	if(sig.second == 0){
 		return; // FIXME throw exception? make Sign throw exception?
 	}
-	size_t totlen = len + sig.second + 2;
+	// FIXME need to get signer hash and signer idx
+	size_t totlen = len + sig.second + 4 + HASHLEN + 2;
 	unsigned char txbuf[totlen];
-	targ = txbuf;
-	targ = ulong_to_nbo(sig.second, targ, 2);
+	targ = ulong_to_nbo(sig.second, txbuf, 2);
+memset(targ, 0, HASHLEN + 4);
+targ += HASHLEN + 4; // FIXME need signer hash/idx!
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
 	memcpy(targ, buf, len);
