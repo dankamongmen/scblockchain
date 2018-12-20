@@ -58,10 +58,33 @@ void Chain::AddNoOp(){
 }
 
 void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload){
+	// FIXME verify that pkey is a valid public key
 	std::cout << "payload: " << payload << "\n";
-	(void)pkey;
-	(void)plen;
-	// FIXME
+	std::cout << "payloaddump: " << payload.dump() << "\n";
+	auto serialjson = payload.dump();
+	size_t len = plen + 2 + serialjson.length();
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	targ = ulong_to_nbo(plen, targ, 2);
+	memcpy(targ, pkey, plen);
+	targ += plen;
+	memcpy(targ, serialjson.c_str(), serialjson.length());
+	auto sig = tstore.Sign(buf, len);
+	if(sig.second == 0){
+		return; // FIXME throw exception? make Sign throw exception?
+	}
+	size_t totlen = len + sig.second + 2;
+	unsigned char txbuf[totlen];
+	targ = txbuf;
+	targ = ulong_to_nbo(sig.second, targ, 2);
+	memcpy(targ, sig.first.get(), sig.second);
+	targ += sig.second;
+	memcpy(targ, buf, len);
+	auto tx = std::unique_ptr<ConsortiumMemberTX>(new ConsortiumMemberTX());
+	if(tx.get()->extract(txbuf, totlen)){
+		return; // FIXME throw exception?
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
 }
