@@ -6,7 +6,8 @@
 
 namespace Catena {
 
-std::unique_ptr<char[]> ReadBinaryFile(const std::string& fname, size_t *len){
+std::unique_ptr<unsigned char[]>
+ReadBinaryFile(const std::string& fname, size_t *len){
 	// FIXME this should be wrapped in an RAII class
 	int fd = open(fname.c_str(), O_RDONLY | O_CLOEXEC);
 	if(fd < 0){
@@ -27,7 +28,7 @@ std::unique_ptr<char[]> ReadBinaryFile(const std::string& fname, size_t *len){
 		return nullptr;
 	}
 	// FIXME could throw, leaking file descriptor!
-	std::unique_ptr<char[]> memblock(new char[*len]);
+	std::unique_ptr<unsigned char[]> memblock(new unsigned char[*len]);
 	auto r = read(fd, memblock.get(), *len);
 	close(fd);
 	if(r < 0 || r != flen){

@@ -60,7 +60,8 @@ std::ostream& HexOutput(std::ostream& s, const std::array<unsigned char, SIZE>& 
 // inability to open file or read error. We use POSIX C I/O here because it's
 // difficult to e.g. verify that a file is not a directory using C++ ifstream.
 // Poor performance and memory characteristics for large files.
-std::unique_ptr<char[]> ReadBinaryFile(const std::string& fname, size_t *len);
+std::unique_ptr<unsigned char[]>
+ReadBinaryFile(const std::string& fname, size_t *len);
 
 }
 
