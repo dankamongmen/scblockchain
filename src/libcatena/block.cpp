@@ -105,12 +105,13 @@ bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
 }
 
 int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
-	unsigned char prevhash[HASHLEN] = {0};
+	unsigned char prevhash[HASHLEN];
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
+	memset(prevhash, 0xff, sizeof(prevhash));
 	while(len){
 		Block block;
 		BlockHeader chdr;

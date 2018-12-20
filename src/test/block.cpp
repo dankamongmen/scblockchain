@@ -49,7 +49,8 @@ TEST(CatenaBlocks, BlocksInvalidZeroes){
 // Generate a simple block, and read it back
 TEST(CatenaBlocks, BlockGenerated){
 	Catena::TrustStore tstore;
-	unsigned char prevhash[HASHLEN] = {0};
+	unsigned char prevhash[HASHLEN];
+	memset(prevhash, 0xff, sizeof(prevhash));
 	std::unique_ptr<const unsigned char[]> block;
 	size_t size;
 	Catena::Block b;
@@ -64,7 +65,8 @@ TEST(CatenaBlocks, BlockGenerated){
 TEST(CatenaBlocks, BlockGeneratedNoOps){
 	Catena::TrustStore tstore;
 	for(auto i = 0 ; i < 4096 ; i += 16){
-		unsigned char prevhash[HASHLEN] = {0};
+		unsigned char prevhash[HASHLEN];
+		memset(prevhash, 0xff, sizeof(prevhash));
 		Catena::Block b;
 		for(auto j = 0 ; j < i + 1 ; ++j){
 			b.AddTransaction(std::make_unique<Catena::NoOpTX>());
@@ -97,7 +99,8 @@ TEST(CatenaBlocks, BlockGeneratedBadprev){
 // Generate two blocks, and read them back
 TEST(CatenaBlocks, ChainGenerated){
 	Catena::TrustStore tstore;
-	unsigned char prevhash[HASHLEN] = {0};
+	unsigned char prevhash[HASHLEN];
+	memset(prevhash, 0xff, sizeof(prevhash));
 	std::unique_ptr<const unsigned char[]> b1, b2;
 	size_t s1, s2;
 	Catena::Block blk1, blk2;
