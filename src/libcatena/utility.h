@@ -56,16 +56,11 @@ std::ostream& HexOutput(std::ostream& s, const std::array<unsigned char, SIZE>& 
 	return s;
 }
 
-inline std::unique_ptr<char[]> ReadBinaryFile(const std::string& fname, size_t *len){
-	std::ifstream f;
-	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	f.open(fname, std::ios::in | std::ios::binary | std::ios::ate);
-	*len = f.tellg();
-	std::unique_ptr<char[]> memblock(new char[*len]);
-	f.seekg(0, std::ios::beg);
-	f.read(memblock.get(), *len);
-	return memblock;
-}
+// Returns nullptr for a 0-byte file (setting *len to 0). Throws exceptions on
+// inability to open file or read error. We use POSIX C I/O here because it's
+// difficult to e.g. verify that a file is not a directory using C++ ifstream.
+// Poor performance and memory characteristics for large files.
+std::unique_ptr<char[]> ReadBinaryFile(const std::string& fname, size_t *len);
 
 }
 
