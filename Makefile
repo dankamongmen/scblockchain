@@ -34,7 +34,6 @@ CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
 EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) -I$(EXTSRC)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
-LIBS:=$(SSLLIBS) $(HTTPDLIBS) $(READLINELIBS)
 
 # FIXME detect this, or let it be specified
 LDLIBSGTEST:=/usr/lib/x86_64-linux-gnu/libgtest.a
@@ -43,11 +42,11 @@ all: $(TAGS) $(BIN) $(TESTBIN)
 
 $(BINOUT)/catena: $(CATENAOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SSLLIBS) $(HTTPDLIBS) $(READLINELIBS)
 
 $(BINOUT)/catenatest: $(CATENATESTOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS)
 
 $(OUT)/%.o: %.cpp $(CPPINC)
 	@mkdir -p $(@D)
@@ -68,5 +67,4 @@ valgrind: $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
 
 clean:
-	rm -rf $(OUT)
-	rm -rf $(TAGS)
+	rm -rf $(OUT) $(TAGS)
