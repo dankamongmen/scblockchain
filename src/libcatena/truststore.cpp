@@ -7,11 +7,12 @@ namespace Catena {
 std::ostream& operator<<(std::ostream& s, const TrustStore& ts){
 	for(const auto& k : ts.keys){
 		const KeyLookup& kl = k.first;
-		if(k.second.HasPrivateKey()){
+		const Keypair& kp = k.second;
+		if(kp.HasPrivateKey()){
 			s << "(*) ";
 		}
-		s << "hash: ";
 		HexOutput(s, kl.first) << ":" << kl.second << "\n";
+		s << kp;
 	}
 	return s;
 }
