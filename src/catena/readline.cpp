@@ -50,6 +50,16 @@ int ReadlineUI::Outstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::CommitOutstanding(Iterator start, Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+	chain.CommitOutstanding();
+	return 0;
+}
+
+template <typename Iterator>
 int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
@@ -135,6 +145,7 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
+		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
 		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },

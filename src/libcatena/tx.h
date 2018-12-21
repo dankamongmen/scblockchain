@@ -47,7 +47,7 @@ public:
 NoOpTX() = default;
 NoOpTX(const unsigned char* hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore __attribute__ ((unused))){
+bool Validate(TrustStore& tstore __attribute__ ((unused))) override {
 	return false;
 }
 std::ostream& TXOStream(std::ostream& s) const override;

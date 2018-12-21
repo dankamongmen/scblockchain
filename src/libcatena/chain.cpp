@@ -48,6 +48,10 @@ Chain::SerializeOutstanding(){
 	// FIXME need kill off outstanding
 }
 
+void Chain::CommitOutstanding(){
+	// FIXME
+}
+
 void Chain::AddSigningKey(const Keypair& kp){
 	const KeyLookup& kl = tstore.GetLookup(kp);
 	tstore.addKey(&kp, kl);

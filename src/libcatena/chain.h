@@ -46,6 +46,9 @@ std::ostream& DumpOutstanding(std::ostream& s) const;
 // serialize and flush outstanding transactions
 std::pair<std::unique_ptr<const unsigned char[]>, size_t> SerializeOutstanding();
 
+// Serialize outstanding transactions into a block, and add it to the ledger
+void CommitOutstanding();
+
 void AddSigningKey(const Keypair& kp);
 
 // Generate and sign new transactions, to be added to the ledger.
