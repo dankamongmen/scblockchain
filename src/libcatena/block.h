@@ -34,6 +34,9 @@ bool LoadData(const void* data, unsigned len, TrustStore& tstore);
 // blocks are discarded. Return value is the same as loadData.
 bool LoadFile(const std::string& s, TrustStore& tstore);
 
+// Parse, validate, and finally add the block to the ledger.
+bool AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore);
+
 unsigned GetBlockCount() const {
 	return offsets.size();
 }
@@ -59,7 +62,7 @@ static const int BLOCKVERSION = 0;
 // Returns allocated block with serialized data, and size of serialized data.
 // Updates prevhash with hash of serialized block.
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-	SerializeBlock(unsigned char* prevhash);
+	SerializeBlock(unsigned char* prevhash) const;
 
 static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	unsigned len, const unsigned char* prevhash, uint64_t prevutc);

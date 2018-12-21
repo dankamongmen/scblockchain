@@ -159,6 +159,14 @@ bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	return LoadData(memblock.get(), size, tstore);
 }
 
+bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore){
+	std::cout << "Appending " << blen << " byte block\n";
+	(void)block;
+	(void)tstore;
+	// FIXME
+	return false;
+}
+
 void Blocks::GetLastHash(unsigned char* hash) const {
 	if(headers.empty()){ // will be genesis block
 		memset(hash, 0xff, HASHLEN);
@@ -180,7 +188,7 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-Block::SerializeBlock(unsigned char* prevhash){
+Block::SerializeBlock(unsigned char* prevhash) const {
 	std::vector<std::pair<std::unique_ptr<unsigned char[]>, size_t>> txserials;
 	std::vector<size_t> offsets;
 	size_t txoffset = 0;
