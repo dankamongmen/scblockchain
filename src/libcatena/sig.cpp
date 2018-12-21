@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <iostream>
+#include <iterator>
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include "libcatena/sig.h"
@@ -165,14 +166,16 @@ std::ostream& Keypair::PrintPublicKey(std::ostream& s, const EVP_PKEY* evp){
 	BIO* bio = BIO_new(BIO_s_mem());
 	auto r = EVP_PKEY_print_public(bio, evp, 1, NULL);
 	if(r <= 0){
-		return s;
-	}
-	char* buf;
-	if(BIO_get_mem_data(bio, &buf) <= 0){
 		BIO_free(bio);
 		return s;
 	}
-	s << buf;
+	char* buf;
+	long len;
+	if((len = BIO_get_mem_data(bio, &buf)) <= 0){
+		BIO_free(bio);
+		return s;
+	}
+	std::copy(buf, buf + len, std::ostream_iterator<char>(s, ""));
 	BIO_free(bio);
 	return s;
 }
