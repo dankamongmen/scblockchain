@@ -48,9 +48,18 @@ Chain::SerializeOutstanding() const {
 	// FIXME need kill off outstanding
 }
 
+// This needs to operator atomically -- either while trying to commit the
+// transactions, we can't modify the outstanding table (including accepting
+// new transactions), or we need hide the outstanding transactions and then
+// merge them back on failure.
 void Chain::CommitOutstanding(){
 	auto p = SerializeOutstanding();
 	// FIXME
+	FlushOutstanding();
+}
+
+void Chain::FlushOutstanding(){
+	outstanding.Flush();
 }
 
 void Chain::AddSigningKey(const Keypair& kp){
