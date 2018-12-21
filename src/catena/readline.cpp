@@ -65,7 +65,7 @@ int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
-	chain.SerializeOutstanding();
+	chain.FlushOutstanding();
 	return 0;
 }
 
