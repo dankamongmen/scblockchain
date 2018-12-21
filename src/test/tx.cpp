@@ -6,8 +6,9 @@
 TEST(CatenaTransactions, EmptyTX){
 	unsigned char hash[HASHLEN];
 	memset(hash, 0, sizeof(hash));
-	EXPECT_EQ(Catena::Transaction::lexTX({}, 0, hash, 0), nullptr);
-	EXPECT_EQ(Catena::Transaction::lexTX({0}, 1, hash, 0), nullptr);
+	unsigned char buf[1] = {0};
+	EXPECT_EQ(Catena::Transaction::lexTX(buf, 0, hash, 0), nullptr);
+	EXPECT_EQ(Catena::Transaction::lexTX(buf, 1, hash, 0), nullptr);
 }
 
 static inline const unsigned char *uccast(const char* s){
