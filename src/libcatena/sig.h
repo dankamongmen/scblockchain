@@ -56,6 +56,12 @@ bool HasPrivateKey() const {
 	return privkey != nullptr;
 }
 
+static std::ostream& PrintPublicKey(std::ostream& s, const EVP_PKEY* evp);
+
+friend std::ostream& operator<<(std::ostream& s, const Keypair& kp){
+	return Keypair::PrintPublicKey(s, kp.pubkey);
+}
+
 private:
 EVP_PKEY* pubkey;
 EVP_PKEY* privkey;
