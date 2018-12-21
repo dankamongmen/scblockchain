@@ -34,6 +34,9 @@ When started without the `-d` option, the catena agent will remain in the
 foreground, providing a readline-driven text UI. This can be used to examine
 the loaded ledger and issue API requests directly.
 
+The ledger must never be modified externally while `catena` is running. Doing
+so will result in undefined behavior, possibly corrupting the ledger.
+
 ### Interactive use of catena
 
 The following commands are available when catena is invoked interactively (this
