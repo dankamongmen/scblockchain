@@ -27,6 +27,7 @@ public:
 Blocks() = default;
 virtual ~Blocks() = default;
 
+// FIXME why aren't these two just constructors? they should only be called once.
 // Load blocks from the specified chunk of memory. Returns true on parsing
 // error. Any present blocks are discarded.
 bool LoadData(const void* data, unsigned len, TrustStore& tstore);
@@ -49,6 +50,7 @@ private:
 std::vector<unsigned> offsets;
 std::vector<BlockHeader> headers;
 int VerifyData(const unsigned char* data, unsigned len, TrustStore& tstore);
+std::string filename; // for in-memory chains, "", otherwise name from LoadFile
 };
 
 // A descriptor of a single block, and logic to serialize blocks

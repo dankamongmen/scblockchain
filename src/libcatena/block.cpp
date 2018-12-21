@@ -153,10 +153,15 @@ bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
+	filename = "";
 	size_t size;
 	// Returns nullptr on zero-byte file, but LoadData handles that fine
 	const auto& memblock = ReadBinaryFile(fname, &size);
-	return LoadData(memblock.get(), size, tstore);
+	bool ret;
+	if(!(ret = LoadData(memblock.get(), size, tstore))){
+		filename = fname;
+	}
+	return ret;
 }
 
 bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore){
