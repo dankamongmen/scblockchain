@@ -29,7 +29,9 @@ CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
 LEDGER:=genesisblock
 TESTDATA:=test/genesisblock-test $(LEDGER)
 
-WFLAGS:=-Wall -W -Werror -Wl,-z,defs
+WFLAGS:=-Wall -W -Werror
+# clang doesn't like this
+# WFLAGS+=-Wl,-z,defs
 OFLAGS:=-O2
 CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
