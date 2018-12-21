@@ -182,7 +182,14 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 		stream << "\nprev: ";
 		hashOStream(stream, h.prev);
 		stream << "\ntransactions: " << h.txcount <<
-			" " << "bytes: " << h.totlen << "\n";
+			" " << "bytes: " << h.totlen << " ";
+		char buf[80];
+		time_t btime = h.utc;
+		if(ctime_r(&btime, buf)){
+			stream << buf; // has its own newline
+		}else{
+			stream << "\n";
+		}
 	}
 	return stream;
 }
