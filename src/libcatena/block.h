@@ -76,6 +76,8 @@ int TransactionCount() const {
 
 void AddTransaction(std::unique_ptr<Transaction> tx);
 
+void Flush();
+
 friend std::ostream& operator<<(std::ostream& stream, const Block& b);
 
 private:

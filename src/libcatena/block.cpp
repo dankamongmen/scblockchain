@@ -238,6 +238,11 @@ void Block::AddTransaction(std::unique_ptr<Transaction> tx){
 	transactions.push_back(std::move(tx));
 }
 
+// Toss any transactions, resetting the block
+void Block::Flush(){
+	transactions.clear();
+}
+
 std::ostream& operator<<(std::ostream& stream, const Block& b){
 	// FIXME reset stream after using setfill/setw
 	for(size_t i = 0 ; i < b.transactions.size() ; ++i){
