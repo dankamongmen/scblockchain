@@ -181,7 +181,8 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 		hashOStream(stream, h.hash);
 		stream << "\nprev: ";
 		hashOStream(stream, h.prev);
-		stream << "\ntransactions: " << h.txcount <<
+		stream << "\nver " << h.version <<
+			" transactions: " << h.txcount <<
 			" " << "bytes: " << h.totlen << " ";
 		char buf[80];
 		time_t btime = h.utc;

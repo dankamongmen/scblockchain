@@ -146,7 +146,7 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
-		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush outstanding transactions", },
+		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
