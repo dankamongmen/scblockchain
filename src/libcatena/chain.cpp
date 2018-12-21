@@ -54,7 +54,9 @@ Chain::SerializeOutstanding() const {
 // merge them back on failure.
 void Chain::CommitOutstanding(){
 	auto p = SerializeOutstanding();
-	// FIXME
+	if(blocks.AppendBlock(p.first.get(), p.second, tstore)){
+		throw BlockValidationException();
+	}
 	FlushOutstanding();
 }
 
