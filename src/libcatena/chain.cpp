@@ -35,20 +35,21 @@ std::ostream& operator<<(std::ostream& stream, const Chain& chain){
 
 std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
 	s << outstanding;
-	return s;
+	auto p = SerializeOutstanding();
+	return HexOutput(s, p.first.get(), p.second) << std::endl;
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-Chain::SerializeOutstanding(){
+Chain::SerializeOutstanding() const {
 	unsigned char lasthash[HASHLEN];
 	blocks.GetLastHash(lasthash);
 	auto p = outstanding.SerializeBlock(lasthash);
-	HexOutput(std::cout, p.first.get(), p.second) << std::endl;
 	return p;
 	// FIXME need kill off outstanding
 }
 
 void Chain::CommitOutstanding(){
+	auto p = SerializeOutstanding();
 	// FIXME
 }
 

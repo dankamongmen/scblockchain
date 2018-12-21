@@ -44,7 +44,8 @@ std::ostream& DumpTrustStore(std::ostream& s) const {
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
 // serialize and flush outstanding transactions
-std::pair<std::unique_ptr<const unsigned char[]>, size_t> SerializeOutstanding();
+std::pair<std::unique_ptr<const unsigned char[]>, size_t>
+  SerializeOutstanding() const;
 
 // Serialize outstanding transactions into a block, and add it to the ledger
 void CommitOutstanding();
