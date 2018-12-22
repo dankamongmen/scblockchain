@@ -175,8 +175,20 @@ bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& ts
 	if(VerifyData(block, blen, tstore) <= 0){
 		return true;
 	}
-	if(filename == ""){
-		// FIXME append data to file
+	if(filename != ""){
+		// FIXME if we have an error writing out, do we need to remove
+		// the new data from internal data structures from VerifyData?
+		std::cout << "writing to " << filename << "\n";
+		std::ofstream ofs;
+		ofs.open(filename, std::ios::out | std::ios::binary | std::ios_base::app);
+		ofs.write(reinterpret_cast<const char*>(block), blen);
+		if(ofs.rdstate()){
+			std::cerr << "error updating file " << filename << std::endl;
+			return true;
+		}
+		std::cout << "Wrote " << blen << " bytes to " << filename << std::endl;
+	}else{
+		std::cout << "Ledger is not file-backed, not writing data\n";
 	}
 	return false;
 }
