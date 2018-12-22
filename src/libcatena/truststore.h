@@ -26,6 +26,8 @@ class TrustStore {
 public:
 TrustStore() : signingkey(nullptr) {}
 virtual ~TrustStore() = default;
+TrustStore(const TrustStore& ts);
+TrustStore& operator=(const TrustStore& ts);
 
 // Add the keypair (usually just public key), using the specified hash and
 // index as its source (this is how it will be referenced in the ledger).
