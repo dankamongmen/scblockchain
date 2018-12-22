@@ -179,6 +179,8 @@ bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& ts
 	if(filename != ""){
 		// FIXME if we have an error writing out, do we need to remove
 		// the new data from internal data structures from VerifyData?
+		// Safest thing might be to copy+append first, then verify, then
+		// atomically move appended file over old...
 		std::ofstream ofs;
 		ofs.open(filename, std::ios::out | std::ios::binary | std::ios_base::app);
 		ofs.write(reinterpret_cast<const char*>(block), blen);
