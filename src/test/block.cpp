@@ -106,7 +106,7 @@ TEST(CatenaBlocks, BlockGeneratedBadprev){
 	EXPECT_TRUE(cbs.LoadData(block.get(), size, tstore));
 }
 
-// Generate two blocks, and read them back
+// Generate two simple blocks, concatenate them, and read them back
 TEST(CatenaBlocks, ChainGenerated){
 	Catena::TrustStore tstore;
 	unsigned char prevhash[HASHLEN];
@@ -125,5 +125,26 @@ TEST(CatenaBlocks, ChainGenerated){
 	memcpy(block + s1, b2.get(), s2);
 	Catena::Blocks cbs;
 	EXPECT_FALSE(cbs.LoadData(block, s1 + s2, tstore));
+	EXPECT_EQ(2, cbs.GetBlockCount());
+}
+
+// Generate two simple blocks, and append the second using AppendData
+TEST(CatenaBlocks, BlockAppendBlock){
+	Catena::TrustStore tstore;
+	unsigned char prevhash[HASHLEN];
+	memset(prevhash, 0xff, sizeof(prevhash));
+	std::unique_ptr<const unsigned char[]> b1, b2;
+	size_t s1, s2;
+	Catena::Block blk1, blk2;
+	std::tie(b1, s1) = blk1.SerializeBlock(prevhash);
+	ASSERT_NE(nullptr, b1);
+	Catena::Blocks cbs;
+	EXPECT_FALSE(cbs.LoadData(b1.get(), s1, tstore));
+	EXPECT_EQ(1, cbs.GetBlockCount());
+	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s1);
+	std::tie(b2, s2) = blk2.SerializeBlock(prevhash);
+	ASSERT_NE(nullptr, b2);
+	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s2);
+	EXPECT_FALSE(cbs.AppendBlock(b2.get(), s2, tstore));
 	EXPECT_EQ(2, cbs.GetBlockCount());
 }

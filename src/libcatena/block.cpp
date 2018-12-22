@@ -133,6 +133,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 			offsets.clear();
 			return -1;
 		}
+		data += chdr.totlen - Block::BLOCKHEADERLEN;
 		len -= chdr.totlen;
 		new_offsets.push_back(totlen);
 		new_headers.push_back(chdr);
@@ -175,8 +176,21 @@ bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& ts
 	if(VerifyData(block, blen, tstore) <= 0){
 		return true;
 	}
-	if(filename == ""){
-		// FIXME append data to file
+	if(filename != ""){
+		// FIXME if we have an error writing out, do we need to remove
+		// the new data from internal data structures from VerifyData?
+		// Safest thing might be to copy+append first, then verify, then
+		// atomically move appended file over old...
+		std::ofstream ofs;
+		ofs.open(filename, std::ios::out | std::ios::binary | std::ios_base::app);
+		ofs.write(reinterpret_cast<const char*>(block), blen);
+		if(ofs.rdstate()){
+			std::cerr << "error updating file " << filename << std::endl;
+			return true;
+		}
+		std::cout << "Wrote " << blen << " bytes to " << filename << std::endl;
+	}else{
+		std::cout << "Ledger is not file-backed, not writing data\n";
 	}
 	return false;
 }
