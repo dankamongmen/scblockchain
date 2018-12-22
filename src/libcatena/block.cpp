@@ -50,7 +50,8 @@ bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
 }
 
 bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
-		unsigned len, const unsigned char* prevhash, uint64_t prevutc){
+		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
+		uint64_t prevutc){
 	if(len < Block::BLOCKHEADERLEN){
 		std::cerr << "needed " << Block::BLOCKHEADERLEN <<
 			" bytes, had only " << len << std::endl;
@@ -60,9 +61,9 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	data += sizeof(chdr->hash);
 	unsigned const char* hashstart = data;
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
-	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
+	if(memcmp(chdr->prev, prevhash.data(), prevhash.size())){
 		std::cerr << "invalid prev hash (wanted ";
-		hashOStream(std::cerr, prevhash) << ")" << std::endl;
+		hashOStream(std::cerr, prevhash.data()) << ")" << std::endl;
 		return true;
 	}
 	data += sizeof(chdr->prev);
@@ -104,14 +105,18 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
+// Verify new blocks relative to the loaded blocks (i.e., do not replay already-
+// verified blocks). If any block fails verification, the Blocks structure is
+// unchanged, and -1 is returned.
 int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
-	unsigned char prevhash[HASHLEN];
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
-	memset(prevhash, 0xff, sizeof(prevhash));
+	std::array<unsigned char, HASHLEN> prevhash;
+	GetLastHash(prevhash);
+	TrustStore new_tstore = tstore; // FIXME expensive copy here :(
 	while(len){
 		Block block;
 		BlockHeader chdr;
@@ -121,9 +126,9 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 			return -1;
 		}
 		data += Block::BLOCKHEADERLEN;
-		memcpy(prevhash, chdr.hash, sizeof(prevhash));
+		memcpy(prevhash.data(), chdr.hash, prevhash.size());
 		prevutc = chdr.utc;
-		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, tstore)){
+		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, new_tstore)){
 			headers.clear();
 			offsets.clear();
 			return -1;
@@ -134,8 +139,9 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		totlen += chdr.totlen;
 		++blocknum;
 	}
-	headers.swap(new_headers);
-	offsets.swap(new_offsets);
+	headers.insert(headers.end(), new_headers.begin(), new_headers.end());
+	offsets.insert(offsets.end(), new_offsets.begin(), new_offsets.end());
+	tstore = new_tstore; // FIXME another expensive copy
 	return blocknum;
 }
 
@@ -166,17 +172,20 @@ bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 
 bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore){
 	std::cout << "Appending " << blen << " byte block\n";
-	(void)block;
-	(void)tstore;
-	// FIXME
+	if(VerifyData(block, blen, tstore) <= 0){
+		return true;
+	}
+	if(filename == ""){
+		// FIXME append data to file
+	}
 	return false;
 }
 
-void Blocks::GetLastHash(unsigned char* hash) const {
+void Blocks::GetLastHash(std::array<unsigned char, HASHLEN>& hash) const {
 	if(headers.empty()){ // will be genesis block
-		memset(hash, 0xff, HASHLEN);
+		memset(hash.data(), 0xff, HASHLEN);
 	}else{
-		memcpy(hash, headers.back().hash, HASHLEN);
+		memcpy(hash.data(), headers.back().hash, HASHLEN);
 	}
 }
 

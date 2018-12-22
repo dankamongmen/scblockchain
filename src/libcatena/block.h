@@ -42,7 +42,7 @@ unsigned GetBlockCount() const {
 	return offsets.size();
 }
 
-void GetLastHash(unsigned char* hash) const;
+void GetLastHash(std::array<unsigned char, HASHLEN>& hash) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 
@@ -67,7 +67,8 @@ std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 	SerializeBlock(unsigned char* prevhash) const;
 
 static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
-	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
+		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
+		uint64_t prevutc);
 
 bool ExtractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
 			TrustStore& tstore);
