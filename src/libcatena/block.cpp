@@ -133,6 +133,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 			offsets.clear();
 			return -1;
 		}
+		data += chdr.totlen - Block::BLOCKHEADERLEN;
 		len -= chdr.totlen;
 		new_offsets.push_back(totlen);
 		new_headers.push_back(chdr);
@@ -178,7 +179,6 @@ bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& ts
 	if(filename != ""){
 		// FIXME if we have an error writing out, do we need to remove
 		// the new data from internal data structures from VerifyData?
-		std::cout << "writing to " << filename << "\n";
 		std::ofstream ofs;
 		ofs.open(filename, std::ios::out | std::ios::binary | std::ios_base::app);
 		ofs.write(reinterpret_cast<const char*>(block), blen);
