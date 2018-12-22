@@ -10,7 +10,7 @@ namespace Catena {
 const int Block::BLOCKVERSION;
 const int Block::BLOCKHEADERLEN;
 
-bool Block::extractBody(BlockHeader* chdr, const unsigned char* data,
+bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
 			unsigned len, TrustStore& tstore){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
@@ -39,7 +39,7 @@ bool Block::extractBody(BlockHeader* chdr, const unsigned char* data,
 		if(tx == nullptr){
 			return true;
 		}
-		if(tx->validate(tstore)){
+		if(tx->Validate(tstore)){
 			return true;
 		}
 		transactions.push_back(std::move(tx));
@@ -49,8 +49,9 @@ bool Block::extractBody(BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
-bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
-		unsigned len, const unsigned char* prevhash, uint64_t prevutc){
+bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
+		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
+		uint64_t prevutc){
 	if(len < Block::BLOCKHEADERLEN){
 		std::cerr << "needed " << Block::BLOCKHEADERLEN <<
 			" bytes, had only " << len << std::endl;
@@ -60,9 +61,9 @@ bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
 	data += sizeof(chdr->hash);
 	unsigned const char* hashstart = data;
 	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
-	if(memcmp(chdr->prev, prevhash, sizeof(chdr->prev))){
+	if(memcmp(chdr->prev, prevhash.data(), prevhash.size())){
 		std::cerr << "invalid prev hash (wanted ";
-		hashOStream(std::cerr, prevhash) << ")" << std::endl;
+		hashOStream(std::cerr, prevhash.data()) << ")" << std::endl;
 		return true;
 	}
 	data += sizeof(chdr->prev);
@@ -104,45 +105,51 @@ bool Block::extractHeader(BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
-int Blocks::verifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
-	unsigned char prevhash[HASHLEN];
+// Verify new blocks relative to the loaded blocks (i.e., do not replay already-
+// verified blocks). If any block fails verification, the Blocks structure is
+// unchanged, and -1 is returned.
+int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
 	uint64_t prevutc = 0;
 	unsigned totlen = 0;
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
-	memset(prevhash, 0xff, sizeof(prevhash));
+	std::array<unsigned char, HASHLEN> prevhash;
+	GetLastHash(prevhash);
+	TrustStore new_tstore = tstore; // FIXME expensive copy here :(
 	while(len){
 		Block block;
 		BlockHeader chdr;
-		if(Block::extractHeader(&chdr, data, len, prevhash, prevutc)){
+		if(Block::ExtractHeader(&chdr, data, len, prevhash, prevutc)){
 			headers.clear();
 			offsets.clear();
 			return -1;
 		}
 		data += Block::BLOCKHEADERLEN;
-		memcpy(prevhash, chdr.hash, sizeof(prevhash));
+		memcpy(prevhash.data(), chdr.hash, prevhash.size());
 		prevutc = chdr.utc;
-		if(block.extractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, tstore)){
+		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, new_tstore)){
 			headers.clear();
 			offsets.clear();
 			return -1;
 		}
+		data += chdr.totlen - Block::BLOCKHEADERLEN;
 		len -= chdr.totlen;
 		new_offsets.push_back(totlen);
 		new_headers.push_back(chdr);
 		totlen += chdr.totlen;
 		++blocknum;
 	}
-	headers.swap(new_headers);
-	offsets.swap(new_offsets);
+	headers.insert(headers.end(), new_headers.begin(), new_headers.end());
+	offsets.insert(offsets.end(), new_offsets.begin(), new_offsets.end());
+	tstore = new_tstore; // FIXME another expensive copy
 	return blocknum;
 }
 
 bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
-	auto blocknum = verifyData(static_cast<const unsigned char*>(data),
+	auto blocknum = VerifyData(static_cast<const unsigned char*>(data),
 					len, tstore);
 	if(blocknum < 0){
 		return true;
@@ -153,17 +160,44 @@ bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
 bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
+	filename = "";
 	size_t size;
 	// Returns nullptr on zero-byte file, but LoadData handles that fine
 	const auto& memblock = ReadBinaryFile(fname, &size);
-	return LoadData(memblock.get(), size, tstore);
+	bool ret;
+	if(!(ret = LoadData(memblock.get(), size, tstore))){
+		filename = fname;
+	}
+	return ret;
 }
 
-void Blocks::GetLastHash(unsigned char* hash) const {
-	if(headers.empty()){ // will be genesis block
-		memset(hash, 0xff, HASHLEN);
+bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore){
+	std::cout << "Appending " << blen << " byte block\n";
+	if(VerifyData(block, blen, tstore) <= 0){
+		return true;
+	}
+	if(filename != ""){
+		// FIXME if we have an error writing out, do we need to remove
+		// the new data from internal data structures from VerifyData?
+		std::ofstream ofs;
+		ofs.open(filename, std::ios::out | std::ios::binary | std::ios_base::app);
+		ofs.write(reinterpret_cast<const char*>(block), blen);
+		if(ofs.rdstate()){
+			std::cerr << "error updating file " << filename << std::endl;
+			return true;
+		}
+		std::cout << "Wrote " << blen << " bytes to " << filename << std::endl;
 	}else{
-		memcpy(hash, headers.back().hash, HASHLEN);
+		std::cout << "Ledger is not file-backed, not writing data\n";
+	}
+	return false;
+}
+
+void Blocks::GetLastHash(std::array<unsigned char, HASHLEN>& hash) const {
+	if(headers.empty()){ // will be genesis block
+		memset(hash.data(), 0xff, HASHLEN);
+	}else{
+		memcpy(hash.data(), headers.back().hash, HASHLEN);
 	}
 }
 
@@ -173,14 +207,22 @@ std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 		hashOStream(stream, h.hash);
 		stream << "\nprev: ";
 		hashOStream(stream, h.prev);
-		stream << "\ntransactions: " << h.txcount <<
-			" " << "bytes: " << h.totlen << "\n";
+		stream << "\nver " << h.version <<
+			" transactions: " << h.txcount <<
+			" " << "bytes: " << h.totlen << " ";
+		char buf[80];
+		time_t btime = h.utc;
+		if(ctime_r(&btime, buf)){
+			stream << buf; // has its own newline
+		}else{
+			stream << "\n";
+		}
 	}
 	return stream;
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-Block::serializeBlock(unsigned char* prevhash){
+Block::SerializeBlock(unsigned char* prevhash) const {
 	std::vector<std::pair<std::unique_ptr<unsigned char[]>, size_t>> txserials;
 	std::vector<size_t> offsets;
 	size_t txoffset = 0;
@@ -220,6 +262,11 @@ Block::serializeBlock(unsigned char* prevhash){
 
 void Block::AddTransaction(std::unique_ptr<Transaction> tx){
 	transactions.push_back(std::move(tx));
+}
+
+// Toss any transactions, resetting the block
+void Block::Flush(){
+	transactions.clear();
 }
 
 std::ostream& operator<<(std::ostream& stream, const Block& b){

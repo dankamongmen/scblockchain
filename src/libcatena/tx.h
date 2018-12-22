@@ -18,8 +18,8 @@ Transaction(const unsigned char* hash, unsigned idx){
 }
 
 virtual ~Transaction() = default;
-virtual bool extract(const unsigned char* data, unsigned len) = 0;
-virtual bool validate(TrustStore& tstore) = 0;
+virtual bool Extract(const unsigned char* data, unsigned len) = 0;
+virtual bool Validate(TrustStore& tstore) = 0;
 
 // Send oneself to an ostream
 virtual std::ostream& TXOStream(std::ostream& s) const = 0;
@@ -35,9 +35,6 @@ static std::unique_ptr<Transaction>
 lexTX(const unsigned char* data, unsigned len,
 	const unsigned char* hash, unsigned idx);
 
-private:
-bool extractConsortiumMember(const unsigned char* data, unsigned len);
-
 protected:
 // FIXME shouldn't need to keep these, but don't want to explicitly pass them
 // into validate(). wrap them up in a lambda?
@@ -49,8 +46,8 @@ class NoOpTX : public Transaction {
 public:
 NoOpTX() = default;
 NoOpTX(const unsigned char* hash, unsigned idx) : Transaction(hash, idx) {}
-bool extract(const unsigned char* data, unsigned len) override;
-bool validate(TrustStore& tstore __attribute__ ((unused))){
+bool Extract(const unsigned char* data, unsigned len) override;
+bool Validate(TrustStore& tstore __attribute__ ((unused))) override {
 	return false;
 }
 std::ostream& TXOStream(std::ostream& s) const override;
@@ -61,8 +58,8 @@ class ConsortiumMemberTX : public Transaction {
 public:
 ConsortiumMemberTX() = default;
 ConsortiumMemberTX(const unsigned char* hash, unsigned idx) : Transaction(hash, idx) {}
-bool extract(const unsigned char* data, unsigned len) override;
-bool validate(TrustStore& tstore) override;
+bool Extract(const unsigned char* data, unsigned len) override;
+bool Validate(TrustStore& tstore) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 

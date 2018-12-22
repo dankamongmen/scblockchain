@@ -50,12 +50,27 @@ int ReadlineUI::Outstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::CommitOutstanding(Iterator start, Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+	try{
+		chain.CommitOutstanding();
+	}catch(std::exception& e){
+		std::cerr << "Error committing: " << e.what();
+		return -1;
+	}
+	return 0;
+}
+
+template <typename Iterator>
 int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
-	chain.SerializeOutstanding();
+	chain.FlushOutstanding();
 	return 0;
 }
 
@@ -91,14 +106,14 @@ int ReadlineUI::NewMember(Iterator start, Iterator end){
 		try{
 			auto pkey = Catena::ReadBinaryFile(start[0], &plen);
 			chain.AddConsortiumMember(pkey.get(), plen, payload);
+			return 0;
 		}catch(std::ifstream::failure& e){
 			std::cerr << "couldn't read a public key from " << start[0] << std::endl;
-			return -1;
 		}
 	}catch(nlohmann::detail::parse_error &e){
 		std::cerr << "couldn't parse JSON from '" << start[1] << "'" << std::endl;
 	}
-	return 0;
+	return -1;
 }
 
 std::vector<std::string> ReadlineUI::SplitInput(const char* line) const {
@@ -135,7 +150,8 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
-		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush outstanding transactions", },
+		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
+		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },

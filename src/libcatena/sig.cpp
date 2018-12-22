@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <iostream>
+#include <iterator>
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include "libcatena/sig.h"
@@ -150,6 +151,33 @@ bool Keypair::Verify(const unsigned char* in, size_t inlen, const unsigned char*
 	};
 	EVP_PKEY_CTX_free(ctx);
 	return ret;
+}
+
+std::ostream& Keypair::PrintPublicKey(std::ostream& s, const EVP_PKEY* evp){
+	s << ' ';
+	switch(EVP_PKEY_base_id(evp)){
+		case EVP_PKEY_DSA: s << "DSA"; break;
+		case EVP_PKEY_DH: s << "DH"; break;
+		case EVP_PKEY_EC: s << "ECDSA"; break;
+		case EVP_PKEY_RSA: s << "RSA"; break;
+		default: s << "Unknown type"; break;
+	}
+	// FIXME RAII-wrap this so it's not lost during exceptions
+	BIO* bio = BIO_new(BIO_s_mem());
+	auto r = EVP_PKEY_print_public(bio, evp, 1, NULL);
+	if(r <= 0){
+		BIO_free(bio);
+		return s;
+	}
+	char* buf;
+	long len;
+	if((len = BIO_get_mem_data(bio, &buf)) <= 0){
+		BIO_free(bio);
+		return s;
+	}
+	std::copy(buf, buf + len, std::ostream_iterator<char>(s, ""));
+	BIO_free(bio);
+	return s;
 }
 
 }

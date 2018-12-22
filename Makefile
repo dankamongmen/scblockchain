@@ -29,8 +29,10 @@ CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
 LEDGER:=genesisblock
 TESTDATA:=test/genesisblock-test $(LEDGER)
 
-WFLAGS:=-Wall -W -Werror -Wl,-z,defs
-OFLAGS:=-O2
+WFLAGS:=-Wall -W -Werror
+# clang doesn't like this
+# WFLAGS+=-Wl,-z,defs
+OFLAGS:=-g -O2
 CPPFLAGS:=-I$(SRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
 EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) -I$(EXTSRC)
@@ -59,12 +61,12 @@ $(TAGS): $(CPPSRC) $(CPPINC)
 
 bin: $(BIN)
 
-check: $(TAGS) test
+check: test
 
-test: $(TESTBIN) $(TESTDATA)
+test: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(BINOUT)/catenatest
 
-valgrind: $(TESTBIN) $(TESTDATA)
+valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
 
 clean:

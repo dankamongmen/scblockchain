@@ -7,7 +7,8 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 
 ### Build requirements
 
-* C++ compiler and GNU Make
+* C++ compiler and GNU Make 4.2.1+
+** Tested with clang++ 7.0.1 and g++ 8.2.0
 * Google Test (libgtest-dev)
 * OpenSSL 1.1+ (libopenssl-dev)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
@@ -33,6 +34,9 @@ When started without the `-d` option, the catena agent will remain in the
 foreground, providing a readline-driven text UI. This can be used to examine
 the loaded ledger and issue API requests directly.
 
+The ledger must never be modified externally while `catena` is running. Doing
+so will result in undefined behavior, possibly corrupting the ledger.
+
 ### Interactive use of catena
 
 The following commands are available when catena is invoked interactively (this
@@ -43,7 +47,8 @@ list can be accessed by running the `help` command):
 * `show`: print the chain in a human-readable format
 * `tstore`: print the trust store (known keys) in a human-readable format
 * `outstanding`: print outstanding transactions in a human-readable format
-* `flush`: flush outstanding transactions, as a block
+* `commit`: coalesce outstanding transactions into a block and add it to ledger
+* `flush`: flush outstanding transactions
 * `noop`: generate a NoOp transaction
 * `member`: generate a ConsortiumMember transaction. takes as its argument a
 filename containing the new member's public key, and an arbitrary JSON-encoded
@@ -93,3 +98,10 @@ Order:
 Cofactor:  1 (0x1)
 ```
 * Extract public ECDSA key from `outfile.pem` to `outfile.pub`: `openssl ec -in outfile.pem -pubout -out outfile.pub`
+
+## Runtime data
+
+Included are two files, `genesisblock` and `test/genesisblock-test`. The former
+is the first block of the official ledger as run in the Headway Catena Network.
+The latter contains a ConsortiumMemberTX record using the testing keys in
+`test/ecdsa.pem` and `test/ecdsa.pub`.

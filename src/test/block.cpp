@@ -13,7 +13,7 @@ TEST(CatenaBlocks, BlocksGenesisBlock){
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCK_EXTERNAL, tstore));
-	EXPECT_EQ(1, cbs.getBlockCount());
+	EXPECT_EQ(1, cbs.GetBlockCount());
 }
 
 TEST(CatenaBlocks, BlocksGenesisMock){
@@ -22,7 +22,7 @@ TEST(CatenaBlocks, BlocksGenesisMock){
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCKTEST_EXTERNAL, tstore));
-	EXPECT_EQ(1, cbs.getBlockCount());
+	EXPECT_EQ(1, cbs.GetBlockCount());
 }
 
 TEST(CatenaBlocks, BlocksInvalidFile){
@@ -64,7 +64,7 @@ TEST(CatenaBlocks, BlockGenerated){
 	std::unique_ptr<const unsigned char[]> block;
 	size_t size;
 	Catena::Block b;
-	std::tie(block, size) = b.serializeBlock(prevhash);
+	std::tie(block, size) = b.SerializeBlock(prevhash);
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
@@ -84,7 +84,7 @@ TEST(CatenaBlocks, BlockGeneratedNoOps){
 		EXPECT_EQ(i + 1, b.TransactionCount());
 		std::unique_ptr<const unsigned char[]> block;
 		size_t size;
-		std::tie(block, size) = b.serializeBlock(prevhash);
+		std::tie(block, size) = b.SerializeBlock(prevhash);
 		ASSERT_NE(nullptr, block);
 		ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 		Catena::Blocks cbs;
@@ -99,7 +99,7 @@ TEST(CatenaBlocks, BlockGeneratedBadprev){
 	std::unique_ptr<const unsigned char[]> block;
 	size_t size;
 	Catena::Block b;
-	std::tie(block, size) = b.serializeBlock(prevhash);
+	std::tie(block, size) = b.SerializeBlock(prevhash);
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
@@ -114,10 +114,10 @@ TEST(CatenaBlocks, ChainGenerated){
 	std::unique_ptr<const unsigned char[]> b1, b2;
 	size_t s1, s2;
 	Catena::Block blk1, blk2;
-	std::tie(b1, s1) = blk1.serializeBlock(prevhash);
+	std::tie(b1, s1) = blk1.SerializeBlock(prevhash);
 	ASSERT_NE(nullptr, b1);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s1);
-	std::tie(b2, s2) = blk2.serializeBlock(prevhash);
+	std::tie(b2, s2) = blk2.SerializeBlock(prevhash);
 	ASSERT_NE(nullptr, b2);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s2);
 	char block[s1 + s2];
@@ -125,5 +125,5 @@ TEST(CatenaBlocks, ChainGenerated){
 	memcpy(block + s1, b2.get(), s2);
 	Catena::Blocks cbs;
 	EXPECT_FALSE(cbs.LoadData(block, s1 + s2, tstore));
-	EXPECT_EQ(2, cbs.getBlockCount());
+	EXPECT_EQ(2, cbs.GetBlockCount());
 }

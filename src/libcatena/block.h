@@ -27,6 +27,7 @@ public:
 Blocks() = default;
 virtual ~Blocks() = default;
 
+// FIXME why aren't these two just constructors? they should only be called once.
 // Load blocks from the specified chunk of memory. Returns true on parsing
 // error. Any present blocks are discarded.
 bool LoadData(const void* data, unsigned len, TrustStore& tstore);
@@ -34,18 +35,22 @@ bool LoadData(const void* data, unsigned len, TrustStore& tstore);
 // blocks are discarded. Return value is the same as loadData.
 bool LoadFile(const std::string& s, TrustStore& tstore);
 
-unsigned getBlockCount() const {
+// Parse, validate, and finally add the block to the ledger.
+bool AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore);
+
+unsigned GetBlockCount() const {
 	return offsets.size();
 }
 
-void GetLastHash(unsigned char* hash) const;
+void GetLastHash(std::array<unsigned char, HASHLEN>& hash) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 
 private:
 std::vector<unsigned> offsets;
 std::vector<BlockHeader> headers;
-int verifyData(const unsigned char* data, unsigned len, TrustStore& tstore);
+int VerifyData(const unsigned char* data, unsigned len, TrustStore& tstore);
+std::string filename; // for in-memory chains, "", otherwise name from LoadFile
 };
 
 // A descriptor of a single block, and logic to serialize blocks
@@ -59,12 +64,13 @@ static const int BLOCKVERSION = 0;
 // Returns allocated block with serialized data, and size of serialized data.
 // Updates prevhash with hash of serialized block.
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-	serializeBlock(unsigned char* prevhash);
+	SerializeBlock(unsigned char* prevhash) const;
 
-static bool extractHeader(BlockHeader* chdr, const unsigned char* data,
-	unsigned len, const unsigned char* prevhash, uint64_t prevutc);
+static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
+		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
+		uint64_t prevutc);
 
-bool extractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
+bool ExtractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
 			TrustStore& tstore);
 
 int TransactionCount() const {
@@ -72,6 +78,8 @@ int TransactionCount() const {
 }
 
 void AddTransaction(std::unique_ptr<Transaction> tx);
+
+void Flush();
 
 friend std::ostream& operator<<(std::ostream& stream, const Block& b);
 

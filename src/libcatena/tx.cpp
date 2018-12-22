@@ -13,7 +13,7 @@ enum TXTypes {
 	ConsortiumMember = 0x0001,
 };
 
-bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
+bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	if(len < 2){ // 16-bit signature length
 		std::cerr << "no room for siglen in " << len << std::endl;
 		return true;
@@ -46,7 +46,7 @@ bool ConsortiumMemberTX::extract(const unsigned char* data, unsigned len){
 	return false;
 }
 
-bool ConsortiumMemberTX::validate(TrustStore& tstore){
+bool ConsortiumMemberTX::Validate(TrustStore& tstore){
 	if(tstore.Verify({signerhash, signidx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
@@ -67,7 +67,7 @@ bool ConsortiumMemberTX::validate(TrustStore& tstore){
 	return false;
 }
 
-bool NoOpTX::extract(const unsigned char* data __attribute__ ((unused)),
+bool NoOpTX::Extract(const unsigned char* data __attribute__ ((unused)),
 			unsigned len __attribute__ ((unused))){
 	return false;
 }
@@ -127,7 +127,7 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 		std::cerr << "unknown transaction type " << txtype << std::endl;
 		return nullptr;
 	}
-	if(tx->extract(data, len)){
+	if(tx->Extract(data, len)){
 		delete tx;
 		return nullptr;
 	}

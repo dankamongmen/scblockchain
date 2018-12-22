@@ -35,17 +35,33 @@ std::ostream& operator<<(std::ostream& stream, const Chain& chain){
 
 std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
 	s << outstanding;
-	return s;
+	auto p = SerializeOutstanding();
+	return HexOutput(s, p.first.get(), p.second) << std::endl;
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-Chain::SerializeOutstanding(){
-	unsigned char lasthash[HASHLEN];
+Chain::SerializeOutstanding() const {
+	std::array<unsigned char, HASHLEN> lasthash;
 	blocks.GetLastHash(lasthash);
-	auto p = outstanding.serializeBlock(lasthash);
-	HexOutput(std::cout, p.first.get(), p.second) << std::endl;
+	auto p = outstanding.SerializeBlock(lasthash.data());
 	return p;
 	// FIXME need kill off outstanding
+}
+
+// This needs to operator atomically -- either while trying to commit the
+// transactions, we can't modify the outstanding table (including accepting
+// new transactions), or we need hide the outstanding transactions and then
+// merge them back on failure.
+void Chain::CommitOutstanding(){
+	auto p = SerializeOutstanding();
+	if(blocks.AppendBlock(p.first.get(), p.second, tstore)){
+		throw BlockValidationException();
+	}
+	FlushOutstanding();
+}
+
+void Chain::FlushOutstanding(){
+	outstanding.Flush();
 }
 
 void Chain::AddSigningKey(const Keypair& kp){
@@ -84,7 +100,7 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	targ += sig.second;
 	memcpy(targ, buf, len);
 	auto tx = std::unique_ptr<ConsortiumMemberTX>(new ConsortiumMemberTX());
-	if(tx.get()->extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf, totlen)){
 		return; // FIXME throw exception?
 	}
 	outstanding.AddTransaction(std::move(tx));

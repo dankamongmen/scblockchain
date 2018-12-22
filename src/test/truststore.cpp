@@ -47,4 +47,12 @@ TEST(CatenaTrustStore, BuiltinKeys){
 	}
 }
 
+TEST(CatenaTrustStore, CopyConstructorEmpty){
+	Catena::TrustStore tstore, tstore1;
+	tstore1 = tstore;
+	Catena::TrustStore tstore2 = tstore;
+}
+
+// FIXME add copy constructor test using builtin keys
+
 // FIXME add test using test keys + addKey() for full sign + verify loop

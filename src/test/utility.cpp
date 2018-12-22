@@ -37,3 +37,10 @@ TEST(CatenaUtility, nbo_to_ulong){
 		EXPECT_EQ(t->hbo, Catena::nbo_to_ulong(t->conv, t->bytes));
 	}
 }
+
+// Try to read a directory and device as a binary file (expect an exception)
+TEST(CatenaUtility, ReadBinaryFileIrregulars){
+	size_t len;
+	EXPECT_THROW(Catena::ReadBinaryFile("/", &len), std::ifstream::failure);
+	EXPECT_THROW(Catena::ReadBinaryFile("/dev/null", &len), std::ifstream::failure);
+}

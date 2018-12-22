@@ -4,14 +4,33 @@
 
 namespace Catena {
 
+TrustStore::TrustStore(const TrustStore& ts) :
+  keys(ts.keys),
+  signingkey(nullptr) {
+	  if(ts.signingkey.get() != nullptr){
+		  signingkey = std::make_unique<KeyLookup>(*ts.signingkey);
+	  }
+}
+
+TrustStore& TrustStore::operator=(const TrustStore& ts){
+	if(ts.signingkey.get() != nullptr){
+		signingkey.reset(new KeyLookup(*ts.signingkey));
+	}else{
+		signingkey = nullptr;
+	}
+	keys = ts.keys;
+	return *this;
+}
+
 std::ostream& operator<<(std::ostream& s, const TrustStore& ts){
 	for(const auto& k : ts.keys){
 		const KeyLookup& kl = k.first;
-		if(k.second.HasPrivateKey()){
+		const Keypair& kp = k.second;
+		if(kp.HasPrivateKey()){
 			s << "(*) ";
 		}
-		s << "hash: ";
 		HexOutput(s, kl.first) << ":" << kl.second << "\n";
+		s << kp;
 	}
 	return s;
 }
