@@ -30,6 +30,7 @@ BlockDetail(const BlockHeader& bhdr, unsigned offset, std::vector<std::unique_pt
 BlockHeader bhdr;
 unsigned offset;
 std::vector<std::unique_ptr<Transaction>> transactions;
+friend std::ostream& operator<<(std::ostream& stream, const BlockDetail& b);
 };
 
 // A contiguous chain of zero or more BlockHeaders

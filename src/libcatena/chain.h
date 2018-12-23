@@ -40,6 +40,10 @@ std::ostream& DumpTrustStore(std::ostream& s) const {
 	return s << tstore;
 }
 
+unsigned GetBlockCount() const {
+	return blocks.GetBlockCount();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 

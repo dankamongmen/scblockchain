@@ -47,15 +47,15 @@ int ReadlineUI::Inspect(Iterator start, Iterator end){
 		return -1;
 	}else if(start + 1 == end){
 		// FIXME parse up argument
+		b1 = 0;
+		b2 = chain.GetBlockCount();
 	}else{
 		b1 = 0;
-		b2 = 0;
+		b2 = chain.GetBlockCount();
 	}
 	auto det = chain.Inspect(b1, b2);
 	for(const auto& d : det){
-		std::cout << "hash: ";
-		Catena::hashOStream(std::cout, d.bhdr.hash) << "\n";
-		// FIXME display details of block
+		std::cout << d;
 	}
 	return 0;
 }

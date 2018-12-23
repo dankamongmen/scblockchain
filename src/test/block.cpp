@@ -156,7 +156,7 @@ TEST(CatenaBlocks, BlockInspectGenesis){
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCKTEST_EXTERNAL, tstore));
 	EXPECT_EQ(1, cbs.GetBlockCount());
-	auto i = cbs.Inspect(0, 0);
-	ASSERT_EQ(1, i.size());
+	auto i = cbs.Inspect(0, cbs.GetBlockCount());
+	ASSERT_EQ(cbs.GetBlockCount(), i.size());
 	EXPECT_EQ(1, i[0].transactions.size());
 }

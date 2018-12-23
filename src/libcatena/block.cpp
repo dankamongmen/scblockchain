@@ -208,13 +208,16 @@ std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 	if(start < 0 || end < 0){
 		return ret;
 	}
-	if(end == 0 || (size_t)end > headers.size()){
+	if((size_t)end > headers.size()){
 		end = headers.size();
 	}
 	int idx = start;
 	while(idx < end){
 		std::vector<std::unique_ptr<Transaction>> trans;
 		// FIXME build up transaction list
+		// FIXME this means read the block from disk, check that it
+		//  still matches its hash, extract details, but don't
+		//  run validate() on the transactions
 		ret.emplace_back(headers[idx], offsets[idx], std::move(trans));
 		++idx;
 	}
@@ -295,6 +298,14 @@ std::ostream& operator<<(std::ostream& stream, const Block& b){
 		stream << std::setfill('0') << std::setw(5) << i <<
 			" " << b.transactions[i].get() << "\n";
 	}
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const BlockDetail& b){
+	stream << "hash: ";
+	hashOStream(stream, b.bhdr.hash) << "\nprev: ";
+	hashOStream(stream, b.bhdr.prev) << "\n";
+	// FIXME display details of transactions
 	return stream;
 }
 
