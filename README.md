@@ -37,6 +37,9 @@ the loaded ledger and issue API requests directly.
 The ledger must never be modified externally while `catena` is running. Doing
 so will result in undefined behavior, possibly corrupting the ledger.
 
+HTTP service will be provided on port 80 by default; this can be changed with
+the `-p` parameter. Specifying a port of 0 will disable HTTP service.
+
 ### Interactive use of catena
 
 The following commands are available when catena is invoked interactively (this

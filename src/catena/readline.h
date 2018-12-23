@@ -3,7 +3,7 @@
 
 #include <libcatena/chain.h>
 
-namespace Catena {
+namespace CatenaAgent {
 
 class ReadlineUI {
 public:

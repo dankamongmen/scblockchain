@@ -13,7 +13,7 @@
 #include <libcatena/utility.h>
 #include <catena/readline.h>
 
-namespace Catena {
+namespace CatenaAgent {
 
 ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	cancelled(false),
@@ -143,7 +143,7 @@ std::vector<std::string> ReadlineUI::SplitInput(const char* line) const {
 void ReadlineUI::InputLoop(){
 	const struct {
 		const std::string cmd;
-		int (Catena::ReadlineUI::* fxn)(std::vector<std::string>::iterator,
+		int (ReadlineUI::* fxn)(std::vector<std::string>::iterator,
 						std::vector<std::string>::iterator);
 		const char* help;
 	} cmdtable[] = {
