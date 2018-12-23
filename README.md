@@ -61,6 +61,13 @@ within the payload.
 Use of the `member` command requires a private key having been loaded with the
 `-u` option.
 
+### HTTP services of cantena
+
+The following endpoints are provided:
+
+* `/show`: HTML equivalent of the `show` command
+* `/tstore`: HTML equivalent of the `tstore` command
+
 ## Key operations
 
 ### Generating ECDSA material
