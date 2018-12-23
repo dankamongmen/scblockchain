@@ -148,3 +148,15 @@ TEST(CatenaBlocks, BlockAppendBlock){
 	EXPECT_FALSE(cbs.AppendBlock(b2.get(), s2, tstore));
 	EXPECT_EQ(2, cbs.GetBlockCount());
 }
+
+TEST(CatenaBlocks, BlockInspectGenesis){
+	Catena::TrustStore tstore;
+	Catena::BuiltinKeys bkeys;
+        bkeys.AddToTrustStore(tstore);
+	Catena::Blocks cbs;
+	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCKTEST_EXTERNAL, tstore));
+	EXPECT_EQ(1, cbs.GetBlockCount());
+	auto i = cbs.Inspect(0, 0);
+	ASSERT_EQ(1, i.size());
+	EXPECT_EQ(1, i[0].transactions.size());
+}
