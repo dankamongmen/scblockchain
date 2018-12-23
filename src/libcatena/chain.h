@@ -60,6 +60,12 @@ void AddSigningKey(const Keypair& kp);
 void AddNoOp();
 void AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload);
 
+// Return a JSON object containing details regarding the specified block range.
+nlohmann::json InspectJSON(int start, int end) const;
+
+// Return a copy of the blockchain details for the specified block range.
+std::vector<BlockDetail> Inspect(int start, int end) const;
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:

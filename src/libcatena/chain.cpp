@@ -106,4 +106,20 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	outstanding.AddTransaction(std::move(tx));
 }
 
+// Get full block information about the specified range
+std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
+	return blocks.Inspect(start, end);
+}
+
+nlohmann::json Chain::InspectJSON(int start, int end) const {
+	auto blks = Inspect(start, end);
+	std::vector<nlohmann::json> jblks;
+	for(const auto& b : blks){
+		jblks.emplace_back(nlohmann::json(b.bhdr.totlen));
+	}
+	nlohmann::json ret(jblks);
+	// FIXME JSONify it. later, inline the JSONification maybe, in Blocks
+	return ret;
+}
+
 }
