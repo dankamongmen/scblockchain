@@ -23,8 +23,17 @@ void catenaHash(const void* in, unsigned len, void* hash){
 	EVP_MD_CTX_destroy(mdctx);
 }
 
+void catenaHash(const void* in, unsigned len, std::array<unsigned char, HASHLEN>& hash){
+	catenaHash(in, len, hash.data());
+}
+
 std::ostream& hashOStream(std::ostream& s, const void* hash){
 	HexOutput(s, reinterpret_cast<const unsigned char*>(hash), HASHLEN);
+	return s;
+}
+
+std::ostream& hashOStream(std::ostream& s, const std::array<unsigned char, HASHLEN>& hash){
+	HexOutput(s, hash.data(), hash.size());
 	return s;
 }
 
