@@ -5,18 +5,22 @@
 
 namespace CatenaAgent {
 
+// FIXME all the places where we just plainly return MHD_NO, we ought try
+//  queueing an actual MHD_HTTP_INTERNAL_SERVER_ERROR.
 int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url,
 				const char* method, const char* version,
 				const char* upload_data, size_t* upload_len,
 				void** conn_cls){
 	(void)cls;
 	(void)url;
-	(void)method;
 	(void)version;
 	(void)upload_data;
 	(void)upload_len;
 	(void)conn_cls;
-	char buf[] = "<!DOCTYPE html><html lang=\"en\"><head><title>catena</title></head><body>heya</body></html>";
+	if(strcmp(method, MHD_HTTP_METHOD_GET)){
+		return MHD_NO;
+	}
+	char buf[] = "<!DOCTYPE html><html lang=\"en\"><head><title>catena</title></head><body></body></html>";
 	auto resp = MHD_create_response_from_buffer(strlen(buf), buf, MHD_RESPMEM_MUST_COPY);
 	if(resp == nullptr){
 		std::cerr << "couldn't create HTTP response" << std::endl;
