@@ -49,6 +49,7 @@ list can be accessed by running the `help` command):
 * `quit`: exit catena
 * `show`: print the chain in a human-readable format
 * `tstore`: print the trust store (known keys) in a human-readable format
+* `inspect`: print detailed information about a range of the chain
 * `outstanding`: print outstanding transactions in a human-readable format
 * `commit`: coalesce outstanding transactions into a block and add it to ledger
 * `flush`: flush outstanding transactions
@@ -67,6 +68,7 @@ The following endpoints are provided:
 
 * `/show`: HTML equivalent of the `show` command
 * `/tstore`: HTML equivalent of the `tstore` command
+* `/inspect`: JSON equivalent of the `inspect` command
 
 ## Key operations
 

@@ -40,6 +40,16 @@ int ReadlineUI::Show(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::Inspect(Iterator start, Iterator end){
+	if(start + 1 < end){
+		std::cerr << "command requires at most one argument" << std::endl;
+		return -1;
+	}
+	// FIXME inspect range, display result
+	return 0;
+}
+
+template <typename Iterator>
 int ReadlineUI::Outstanding(Iterator start, Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
@@ -149,6 +159,7 @@ void ReadlineUI::InputLoop(){
 	} cmdtable[] = {
 		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
+		{ .cmd = "inspect", .fxn = &ReadlineUI::Inspect, .help = "detailed view of a range of blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
 		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },
