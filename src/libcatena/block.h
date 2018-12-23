@@ -21,6 +21,17 @@ struct BlockHeader {
 	uint64_t utc;
 };
 
+struct BlockDetail {
+public:
+BlockDetail(const BlockHeader& bhdr, unsigned offset, std::vector<std::unique_ptr<Transaction>> trans) :
+  bhdr(bhdr),
+  offset(offset),
+  transactions(std::move(trans)) {}
+BlockHeader bhdr;
+unsigned offset;
+std::vector<std::unique_ptr<Transaction>> transactions;
+};
+
 // A contiguous chain of zero or more BlockHeaders
 class Blocks {
 public:
@@ -43,6 +54,8 @@ unsigned GetBlockCount() const {
 }
 
 void GetLastHash(std::array<unsigned char, HASHLEN>& hash) const;
+
+std::vector<BlockDetail> Inspect(int start, int end) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 

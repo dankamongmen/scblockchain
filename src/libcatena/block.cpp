@@ -203,6 +203,24 @@ void Blocks::GetLastHash(std::array<unsigned char, HASHLEN>& hash) const {
 	}
 }
 
+std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
+	std::vector<BlockDetail> ret;
+	if(start < 0 || end < 0){
+		return ret;
+	}
+	if(end == 0 || (size_t)end > headers.size()){
+		end = headers.size();
+	}
+	int idx = start;
+	while(idx < end){
+		std::vector<std::unique_ptr<Transaction>> trans;
+		// FIXME build up transaction list
+		ret.emplace_back(headers[idx], offsets[idx], std::move(trans));
+		++idx;
+	}
+	return ret;
+}
+
 std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
 	for(auto& h : blocks.headers){
 		stream << "hash: ";
