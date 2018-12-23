@@ -41,11 +41,22 @@ int ReadlineUI::Show(Iterator start, Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::Inspect(Iterator start, Iterator end){
+	int b1, b2;
 	if(start + 1 < end){
 		std::cerr << "command requires at most one argument" << std::endl;
 		return -1;
+	}else if(start + 1 == end){
+		// FIXME parse up argument
+	}else{
+		b1 = 0;
+		b2 = 0;
 	}
-	// FIXME inspect range, display result
+	auto det = chain.Inspect(b1, b2);
+	for(const auto& d : det){
+		std::cout << "hash: ";
+		Catena::hashOStream(std::cout, d.bhdr.hash) << "\n";
+		// FIXME display details of block
+	}
 	return 0;
 }
 
