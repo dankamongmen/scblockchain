@@ -11,6 +11,7 @@ namespace Catena {
 class BlockValidationException : public std::runtime_error {
 public:
 BlockValidationException() : std::runtime_error("error validating block"){}
+BlockValidationException(const std::string& s) : std::runtime_error(s){}
 };
 
 // The ledger (one or more CatenaBlocks on disk) as indexed in memory. The
