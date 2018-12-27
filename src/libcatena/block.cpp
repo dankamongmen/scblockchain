@@ -244,26 +244,6 @@ std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 	return ret;
 }
 
-std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
-	for(auto& h : blocks.headers){
-		stream << "hash: ";
-		hashOStream(stream, h.hash);
-		stream << "\nprev: ";
-		hashOStream(stream, h.prev);
-		stream << "\nver " << h.version <<
-			" transactions: " << h.txcount <<
-			" " << "bytes: " << h.totlen << " ";
-		char buf[80];
-		time_t btime = h.utc;
-		if(ctime_r(&btime, buf)){
-			stream << buf; // has its own newline
-		}else{
-			stream << "\n";
-		}
-	}
-	return stream;
-}
-
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 Block::SerializeBlock(unsigned char* prevhash) const {
 	std::vector<std::pair<std::unique_ptr<unsigned char[]>, size_t>> txserials;
@@ -312,20 +292,50 @@ void Block::Flush(){
 	transactions.clear();
 }
 
-std::ostream& operator<<(std::ostream& stream, const Block& b){
+template <typename Iterator> std::ostream&
+DumpTransactions(std::ostream& s, const Iterator begin, const Iterator end){
 	// FIXME reset stream after using setfill/setw
-	for(size_t i = 0 ; i < b.transactions.size() ; ++i){
-		stream << std::setfill('0') << std::setw(5) << i <<
-			" " << b.transactions[i].get() << "\n";
+	int i = 0;
+	while(begin + i != end){
+		s << std::setfill('0') << std::setw(5) << i <<
+			" " << begin[i].get() << "\n";
+		++i;
+	}
+	return s;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Block& b){
+	return DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
+}
+
+std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
+	stream << "hash: ";
+	hashOStream(stream, bh.hash);
+	stream << "\nprev: ";
+	hashOStream(stream, bh.prev);
+	stream << "\nver " << bh.version <<
+		" transactions: " << bh.txcount <<
+		" " << "bytes: " << bh.totlen << " ";
+	char buf[80];
+	time_t btime = bh.utc;
+	if(ctime_r(&btime, buf)){
+		stream << buf; // has its own newline
+	}else{
+		stream << "\n";
 	}
 	return stream;
 }
 
 std::ostream& operator<<(std::ostream& stream, const BlockDetail& b){
-	stream << "hash: ";
-	hashOStream(stream, b.bhdr.hash) << "\nprev: ";
-	hashOStream(stream, b.bhdr.prev) << "\n";
-	// FIXME display details of transactions
+	stream << b.bhdr;
+	DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
+	for(auto& h : blocks.headers){
+		stream << h;
+	}
 	return stream;
 }
 
