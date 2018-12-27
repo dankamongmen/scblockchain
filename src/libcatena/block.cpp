@@ -40,11 +40,11 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 		if(tx == nullptr){
 			return true;
 		}
-    if(tstore){
-      if(tx->Validate(*tstore)){
-        return true;
-      }
-    }
+		if(tstore){
+			if(tx->Validate(*tstore)){
+				return true;
+			}
+		}
 		transactions.push_back(std::move(tx));
 		data += txlen;
 		len -= txlen;
@@ -113,7 +113,10 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 // unchanged, and -1 is returned.
 int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
 	uint64_t prevutc = 0;
-	unsigned totlen = 0;
+	unsigned offset = 0;
+	if(offsets.size()){
+		offset = offsets.back() + headers.back().totlen;
+	}
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
@@ -138,9 +141,9 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		}
 		data += chdr.totlen - Block::BLOCKHEADERLEN;
 		len -= chdr.totlen;
-		new_offsets.push_back(totlen);
+		new_offsets.push_back(offset);
 		new_headers.push_back(chdr);
-		totlen += chdr.totlen;
+		offset += chdr.totlen;
 		++blocknum;
 	}
 	headers.insert(headers.end(), new_headers.begin(), new_headers.end());
@@ -212,10 +215,12 @@ Block::Inspect(const unsigned char* b, const BlockHeader* chdr){
 	unsigned char hash[HASHLEN];
 	catenaHash(b + HASHLEN, chdr->totlen - HASHLEN, hash);
 	if(memcmp(hash, chdr->hash, HASHLEN)){
-    throw BlockValidationException();
+		throw BlockValidationException("bad hash on inspection");
 	}
-  ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr);
-  return std::move(transactions);
+	if(ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr)){
+		throw BlockValidationException();
+	}
+	return std::move(transactions);
 }
 
 std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
@@ -227,17 +232,17 @@ std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 		end = headers.size();
 	}
 	if(filename == ""){ // FIXME need keep copy of internal buffer
-	  throw BlockValidationException();
+		throw BlockValidationException();
 	}
 	int idx = start;
 	while(idx < end){
-	  size_t blen = headers[idx].totlen;
-	  auto mblock = ReadBinaryBlob(filename, offsets[idx], blen);
-	  if(mblock == nullptr){
-	    throw BlockValidationException();
-	  }
-    Block b; // FIXME embed these into Blocks
-    auto trans = b.Inspect(mblock.get(), &headers[idx]);
+		size_t blen = headers[idx].totlen;
+		auto mblock = ReadBinaryBlob(filename, offsets[idx], blen);
+		if(mblock == nullptr){
+			throw BlockValidationException();
+		}
+		Block b; // FIXME embed these into Blocks
+		auto trans = b.Inspect(mblock.get(), &headers[idx]);
 		ret.emplace_back(headers[idx], offsets[idx], std::move(trans));
 		++idx;
 	}
