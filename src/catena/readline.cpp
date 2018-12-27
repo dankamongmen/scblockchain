@@ -13,14 +13,14 @@
 #include <libcatena/utility.h>
 #include <catena/readline.h>
 
-namespace Catena {
+namespace CatenaAgent {
 
 ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	cancelled(false),
 	chain(chain) { }
 
 template <typename Iterator>
-int ReadlineUI::Quit(Iterator start, Iterator end){
+int ReadlineUI::Quit(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -30,7 +30,7 @@ int ReadlineUI::Quit(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::Show(Iterator start, Iterator end){
+int ReadlineUI::Show(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -40,7 +40,28 @@ int ReadlineUI::Show(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::Outstanding(Iterator start, Iterator end){
+int ReadlineUI::Inspect(const Iterator start, const Iterator end){
+	int b1, b2;
+	if(start + 1 < end){
+		std::cerr << "command requires at most one argument" << std::endl;
+		return -1;
+	}else if(start + 1 == end){
+		// FIXME parse up argument
+		b1 = 0;
+		b2 = chain.GetBlockCount();
+	}else{
+		b1 = 0;
+		b2 = chain.GetBlockCount();
+	}
+	auto det = chain.Inspect(b1, b2);
+	for(const auto& d : det){
+		std::cout << d;
+	}
+	return 0;
+}
+
+template <typename Iterator>
+int ReadlineUI::Outstanding(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -50,7 +71,7 @@ int ReadlineUI::Outstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::CommitOutstanding(Iterator start, Iterator end){
+int ReadlineUI::CommitOutstanding(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -65,7 +86,7 @@ int ReadlineUI::CommitOutstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
+int ReadlineUI::FlushOutstanding(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -75,7 +96,7 @@ int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::TStore(Iterator start, Iterator end){
+int ReadlineUI::TStore(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -85,7 +106,7 @@ int ReadlineUI::TStore(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NoOp(Iterator start, Iterator end){
+int ReadlineUI::NoOp(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -95,7 +116,7 @@ int ReadlineUI::NoOp(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NewMember(Iterator start, Iterator end){
+int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	if(end - start != 2){
 		std::cerr << "command requires two arguments, a public key file and a JSON payload" << std::endl;
 		return -1;
@@ -109,6 +130,8 @@ int ReadlineUI::NewMember(Iterator start, Iterator end){
 			return 0;
 		}catch(std::ifstream::failure& e){
 			std::cerr << "couldn't read a public key from " << start[0] << std::endl;
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 		}
 	}catch(nlohmann::detail::parse_error &e){
 		std::cerr << "couldn't parse JSON from '" << start[1] << "'" << std::endl;
@@ -143,12 +166,13 @@ std::vector<std::string> ReadlineUI::SplitInput(const char* line) const {
 void ReadlineUI::InputLoop(){
 	const struct {
 		const std::string cmd;
-		int (Catena::ReadlineUI::* fxn)(std::vector<std::string>::iterator,
+		int (ReadlineUI::* fxn)(std::vector<std::string>::iterator,
 						std::vector<std::string>::iterator);
 		const char* help;
 	} cmdtable[] = {
 		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
+		{ .cmd = "inspect", .fxn = &ReadlineUI::Inspect, .help = "detailed view of a range of blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
 		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },

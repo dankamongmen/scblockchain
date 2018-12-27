@@ -37,6 +37,9 @@ the loaded ledger and issue API requests directly.
 The ledger must never be modified externally while `catena` is running. Doing
 so will result in undefined behavior, possibly corrupting the ledger.
 
+HTTP service will be provided on port 80 by default; this can be changed with
+the `-p` parameter. Specifying a port of 0 will disable HTTP service.
+
 ### Interactive use of catena
 
 The following commands are available when catena is invoked interactively (this
@@ -46,6 +49,7 @@ list can be accessed by running the `help` command):
 * `quit`: exit catena
 * `show`: print the chain in a human-readable format
 * `tstore`: print the trust store (known keys) in a human-readable format
+* `inspect`: print detailed information about a range of the chain
 * `outstanding`: print outstanding transactions in a human-readable format
 * `commit`: coalesce outstanding transactions into a block and add it to ledger
 * `flush`: flush outstanding transactions
@@ -57,6 +61,14 @@ within the payload.
 
 Use of the `member` command requires a private key having been loaded with the
 `-u` option.
+
+### HTTP services of cantena
+
+The following endpoints are provided:
+
+* `/show`: HTML equivalent of the `show` command
+* `/tstore`: HTML equivalent of the `tstore` command
+* `/inspect`: JSON equivalent of the `inspect` command
 
 ## Key operations
 

@@ -21,6 +21,18 @@ struct BlockHeader {
 	uint64_t utc;
 };
 
+struct BlockDetail {
+public:
+BlockDetail(const BlockHeader& bhdr, unsigned offset, std::vector<std::unique_ptr<Transaction>> trans) :
+  bhdr(bhdr),
+  offset(offset),
+  transactions(std::move(trans)) {}
+BlockHeader bhdr;
+unsigned offset;
+std::vector<std::unique_ptr<Transaction>> transactions;
+friend std::ostream& operator<<(std::ostream& stream, const BlockDetail& b);
+};
+
 // A contiguous chain of zero or more BlockHeaders
 class Blocks {
 public:
@@ -43,6 +55,8 @@ unsigned GetBlockCount() const {
 }
 
 void GetLastHash(std::array<unsigned char, HASHLEN>& hash) const;
+
+std::vector<BlockDetail> Inspect(int start, int end) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);
 
@@ -70,8 +84,12 @@ static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
 		uint64_t prevutc);
 
-bool ExtractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
-			TrustStore& tstore);
+std::vector<std::unique_ptr<Transaction>>
+  Inspect(const unsigned char* b, const BlockHeader* bhdr);
+
+// Pass nullptr as tstore to not validate transactions / update metadata
+bool ExtractBody(const BlockHeader* chdr, const unsigned char* data,
+    unsigned len, TrustStore* tstore);
 
 int TransactionCount() const {
 	return transactions.size();
@@ -86,6 +104,8 @@ friend std::ostream& operator<<(std::ostream& stream, const Block& b);
 private:
 std::vector<std::unique_ptr<Transaction>> transactions;
 };
+
+std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh);
 
 }
 

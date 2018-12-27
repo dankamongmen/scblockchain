@@ -1,6 +1,7 @@
 #include <memory>
 #include <cstring>
 #include "libcatena/utility.h"
+#include "libcatena/chain.h"
 #include "libcatena/block.h"
 #include "libcatena/hash.h"
 #include "libcatena/tx.h"
@@ -10,8 +11,8 @@ namespace Catena {
 const int Block::BLOCKVERSION;
 const int Block::BLOCKHEADERLEN;
 
-bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
-			unsigned len, TrustStore& tstore){
+bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
+			unsigned len, TrustStore* tstore){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
@@ -39,8 +40,10 @@ bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
 		if(tx == nullptr){
 			return true;
 		}
-		if(tx->Validate(tstore)){
-			return true;
+		if(tstore){
+			if(tx->Validate(*tstore)){
+				return true;
+			}
 		}
 		transactions.push_back(std::move(tx));
 		data += txlen;
@@ -95,11 +98,10 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		}
 		++data;
 	}
-	unsigned char hash[HASHLEN];
+	CatenaHash hash;
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
-	if(memcmp(hash, chdr->hash, HASHLEN)){
-		std::cerr << "invalid block hash (wanted ";
-		hashOStream(std::cerr, hash) << ")" << std::endl;
+	if(memcmp(hash.data(), chdr->hash, HASHLEN)){
+		std::cerr << "invalid block hash (wanted " << hash << ")" << std::endl;
 		return true;
 	}
 	return false;
@@ -110,7 +112,10 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 // unchanged, and -1 is returned.
 int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
 	uint64_t prevutc = 0;
-	unsigned totlen = 0;
+	unsigned offset = 0;
+	if(offsets.size()){
+		offset = offsets.back() + headers.back().totlen;
+	}
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
@@ -128,16 +133,16 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		data += Block::BLOCKHEADERLEN;
 		memcpy(prevhash.data(), chdr.hash, prevhash.size());
 		prevutc = chdr.utc;
-		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, new_tstore)){
+		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, &new_tstore)){
 			headers.clear();
 			offsets.clear();
 			return -1;
 		}
 		data += chdr.totlen - Block::BLOCKHEADERLEN;
 		len -= chdr.totlen;
-		new_offsets.push_back(totlen);
+		new_offsets.push_back(offset);
 		new_headers.push_back(chdr);
-		totlen += chdr.totlen;
+		offset += chdr.totlen;
 		++blocknum;
 	}
 	headers.insert(headers.end(), new_headers.begin(), new_headers.end());
@@ -203,24 +208,44 @@ void Blocks::GetLastHash(std::array<unsigned char, HASHLEN>& hash) const {
 	}
 }
 
-std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
-	for(auto& h : blocks.headers){
-		stream << "hash: ";
-		hashOStream(stream, h.hash);
-		stream << "\nprev: ";
-		hashOStream(stream, h.prev);
-		stream << "\nver " << h.version <<
-			" transactions: " << h.txcount <<
-			" " << "bytes: " << h.totlen << " ";
-		char buf[80];
-		time_t btime = h.utc;
-		if(ctime_r(&btime, buf)){
-			stream << buf; // has its own newline
-		}else{
-			stream << "\n";
-		}
+// Returns nullptr on a failure to lex the block or verify its hash
+std::vector<std::unique_ptr<Transaction>>
+Block::Inspect(const unsigned char* b, const BlockHeader* chdr){
+	CatenaHash hash;
+	catenaHash(b + HASHLEN, chdr->totlen - HASHLEN, hash);
+	if(memcmp(hash.data(), chdr->hash, HASHLEN)){
+		throw BlockValidationException("bad hash on inspection");
 	}
-	return stream;
+	if(ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr)){
+		throw BlockValidationException();
+	}
+	return std::move(transactions);
+}
+
+std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
+	std::vector<BlockDetail> ret;
+	if(start < 0 || end < 0){
+		return ret;
+	}
+	if((size_t)end > headers.size()){
+		end = headers.size();
+	}
+	if(filename == ""){ // FIXME need keep copy of internal buffer
+		throw BlockValidationException();
+	}
+	int idx = start;
+	while(idx < end){
+		size_t blen = headers[idx].totlen;
+		auto mblock = ReadBinaryBlob(filename, offsets[idx], blen);
+		if(mblock == nullptr){
+			throw BlockValidationException();
+		}
+		Block b; // FIXME embed these into Blocks
+		auto trans = b.Inspect(mblock.get(), &headers[idx]);
+		ret.emplace_back(headers[idx], offsets[idx], std::move(trans));
+		++idx;
+	}
+	return ret;
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
@@ -271,11 +296,48 @@ void Block::Flush(){
 	transactions.clear();
 }
 
-std::ostream& operator<<(std::ostream& stream, const Block& b){
+template <typename Iterator> std::ostream&
+DumpTransactions(std::ostream& s, const Iterator begin, const Iterator end){
 	// FIXME reset stream after using setfill/setw
-	for(size_t i = 0 ; i < b.transactions.size() ; ++i){
-		stream << std::setfill('0') << std::setw(5) << i <<
-			" " << b.transactions[i].get() << "\n";
+	int i = 0;
+	while(begin + i != end){
+		s << std::setfill('0') << std::setw(5) << i <<
+			" " << begin[i].get() << "\n";
+		++i;
+	}
+	return s;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Block& b){
+	return DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
+}
+
+std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
+	stream << "hash: ";
+	hashOStream(stream, bh.hash);
+	stream << "\nprev: ";
+	hashOStream(stream, bh.prev);
+	stream << "\nv" << bh.version << " transactions: " << bh.txcount <<
+		" bytes: " << bh.totlen << " ";
+	char buf[80];
+	time_t btime = bh.utc;
+	if(ctime_r(&btime, buf)){
+		stream << buf; // has its own newline
+	}else{
+		stream << "\n";
+	}
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const BlockDetail& b){
+	stream << b.bhdr;
+	DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
+	for(auto& h : blocks.headers){
+		stream << h;
 	}
 	return stream;
 }

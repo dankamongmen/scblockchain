@@ -9,6 +9,12 @@
 
 namespace Catena {
 
+class SigningException : public std::runtime_error {
+public:
+SigningException() : std::runtime_error("error signing"){}
+SigningException(const std::string& s) : std::runtime_error(s){}
+};
+
 using KeyLookup = std::pair<std::array<unsigned char, HASHLEN>, unsigned>;
 
 struct keylookup_hash {

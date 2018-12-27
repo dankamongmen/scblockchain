@@ -21,10 +21,14 @@ CPPSRCDIRS:=$(wildcard $(SRC)/* $(EXTSRC))
 CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
 CPPINC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.h -print)
 
-CATENASRC:=$(foreach dir, src/catena src/libcatena, $(filter $(dir)/%, $(CPPSRC)))
+CATENASRC:=$(foreach dir, $(SRC)/catena $(SRC)/libcatena, $(filter $(dir)/%, $(CPPSRC)))
 CATENAOBJ:=$(addprefix $(OUT)/,$(CATENASRC:%.cpp=%.o))
-CATENATESTSRC:=$(foreach dir, src/test src/libcatena, $(filter $(dir)/%, $(CPPSRC)))
+CATENAINC:=$(foreach dir, $(SRC)/catena $(SRC)/libcatena $(EXTSRC), $(filter $(dir)/%, $(CPPINC)))
+CATENATESTSRC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena, $(filter $(dir)/%, $(CPPSRC)))
 CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
+CATENATESTINC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena $(EXTSRC), $(filter $(dir)/%, $(CPPINC)))
+# libcatena is not its own binary, just a namespace; no src/obj rules necessary
+LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena $(EXTSRC), $(filter $(dir)/%, $(CPPINC)))
 
 LEDGER:=genesisblock
 TESTDATA:=test/genesisblock-test $(LEDGER)
@@ -51,7 +55,15 @@ $(BINOUT)/catenatest: $(CATENATESTOBJ)
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS)
 
-$(OUT)/%.o: %.cpp $(CPPINC)
+$(OUT)/$(SRC)/catena/%.o: $(SRC)/catena/%.cpp $(CATENAINC)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OUT)/$(SRC)/test/%.o: $(SRC)/test/%.cpp $(CATENATESTINC)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OUT)/$(SRC)/libcatena/%.o: $(SRC)/libcatena/%.cpp $(LIBCATENAINC)
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 

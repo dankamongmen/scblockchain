@@ -60,11 +60,11 @@ void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 TrustStore::Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const {
 	if(signingkey == nullptr){
-		return std::make_pair(nullptr, 0);
+		throw SigningException("no signing key");
 	}
 	const auto& it = keys.find(*signingkey.get());
 	if(it == keys.end()){
-		return std::make_pair(nullptr, 0);
+		throw SigningException("couldn't find signing key");
 	}
 	*signer = it->first;
 	return it->second.Sign(in, inlen);

@@ -11,6 +11,7 @@ namespace Catena {
 class BlockValidationException : public std::runtime_error {
 public:
 BlockValidationException() : std::runtime_error("error validating block"){}
+BlockValidationException(const std::string& s) : std::runtime_error(s){}
 };
 
 // The ledger (one or more CatenaBlocks on disk) as indexed in memory. The
@@ -40,6 +41,10 @@ std::ostream& DumpTrustStore(std::ostream& s) const {
 	return s << tstore;
 }
 
+unsigned GetBlockCount() const {
+	return blocks.GetBlockCount();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
@@ -59,6 +64,12 @@ void AddSigningKey(const Keypair& kp);
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
 void AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload);
+
+// Return a JSON object containing details regarding the specified block range.
+nlohmann::json InspectJSON(int start, int end) const;
+
+// Return a copy of the blockchain details for the specified block range.
+std::vector<BlockDetail> Inspect(int start, int end) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
