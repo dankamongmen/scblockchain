@@ -8,7 +8,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 ### Build requirements
 
 * C++ compiler and GNU Make 4.2.1+
-** Tested with clang++ 7.0.1 and g++ 8.2.0
+    * Tested with clang++ 7.0.1 and g++ 8.2.0
 * Google Test (libgtest-dev)
 * OpenSSL 1.1+ (libopenssl-dev)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
