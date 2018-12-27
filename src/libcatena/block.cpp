@@ -98,11 +98,10 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		}
 		++data;
 	}
-	unsigned char hash[HASHLEN];
+	CatenaHash hash;
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
-	if(memcmp(hash, chdr->hash, HASHLEN)){
-		std::cerr << "invalid block hash (wanted ";
-		hashOStream(std::cerr, hash) << ")" << std::endl;
+	if(memcmp(hash.data(), chdr->hash, HASHLEN)){
+		std::cerr << "invalid block hash (wanted " << hash << ")" << std::endl;
 		return true;
 	}
 	return false;
@@ -212,9 +211,9 @@ void Blocks::GetLastHash(std::array<unsigned char, HASHLEN>& hash) const {
 // Returns nullptr on a failure to lex the block or verify its hash
 std::vector<std::unique_ptr<Transaction>>
 Block::Inspect(const unsigned char* b, const BlockHeader* chdr){
-	unsigned char hash[HASHLEN];
+	CatenaHash hash;
 	catenaHash(b + HASHLEN, chdr->totlen - HASHLEN, hash);
-	if(memcmp(hash, chdr->hash, HASHLEN)){
+	if(memcmp(hash.data(), chdr->hash, HASHLEN)){
 		throw BlockValidationException("bad hash on inspection");
 	}
 	if(ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr)){
