@@ -15,7 +15,6 @@ static void usage(std::ostream& os, const char* name){
 	os << "\t-u pubkey -v privkey: provide authentication material\n";
 	os << "\t-p port: provide HTTP service on port, 0 to disable\n";
 	os << "\t-d: daemonize\n";
-	os << std::endl;
 }
 
 static const auto DEFAULT_HTTP_PORT = 8080;
