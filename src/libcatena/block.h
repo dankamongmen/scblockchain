@@ -84,8 +84,12 @@ static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
 		uint64_t prevutc);
 
-bool ExtractBody(BlockHeader* chdr, const unsigned char* data, unsigned len,
-			TrustStore& tstore);
+std::vector<std::unique_ptr<Transaction>>
+  Inspect(const unsigned char* b, const BlockHeader* bhdr);
+
+// Pass nullptr as tstore to not validate transactions / update metadata
+bool ExtractBody(const BlockHeader* chdr, const unsigned char* data,
+    unsigned len, TrustStore* tstore);
 
 int TransactionCount() const {
 	return transactions.size();

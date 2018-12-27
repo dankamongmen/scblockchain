@@ -1,6 +1,7 @@
 #include <memory>
 #include <cstring>
 #include "libcatena/utility.h"
+#include "libcatena/chain.h"
 #include "libcatena/block.h"
 #include "libcatena/hash.h"
 #include "libcatena/tx.h"
@@ -10,8 +11,8 @@ namespace Catena {
 const int Block::BLOCKVERSION;
 const int Block::BLOCKHEADERLEN;
 
-bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
-			unsigned len, TrustStore& tstore){
+bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
+			unsigned len, TrustStore* tstore){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
@@ -39,9 +40,11 @@ bool Block::ExtractBody(BlockHeader* chdr, const unsigned char* data,
 		if(tx == nullptr){
 			return true;
 		}
-		if(tx->Validate(tstore)){
-			return true;
-		}
+    if(tstore){
+      if(tx->Validate(*tstore)){
+        return true;
+      }
+    }
 		transactions.push_back(std::move(tx));
 		data += txlen;
 		len -= txlen;
@@ -128,7 +131,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		data += Block::BLOCKHEADERLEN;
 		memcpy(prevhash.data(), chdr.hash, prevhash.size());
 		prevutc = chdr.utc;
-		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, new_tstore)){
+		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, &new_tstore)){
 			headers.clear();
 			offsets.clear();
 			return -1;
@@ -203,6 +206,18 @@ void Blocks::GetLastHash(std::array<unsigned char, HASHLEN>& hash) const {
 	}
 }
 
+// Returns nullptr on a failure to lex the block or verify its hash
+std::vector<std::unique_ptr<Transaction>>
+Block::Inspect(const unsigned char* b, const BlockHeader* chdr){
+	unsigned char hash[HASHLEN];
+	catenaHash(b + HASHLEN, chdr->totlen - HASHLEN, hash);
+	if(memcmp(hash, chdr->hash, HASHLEN)){
+    throw BlockValidationException();
+	}
+  ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr);
+  return std::move(transactions);
+}
+
 std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 	std::vector<BlockDetail> ret;
 	if(start < 0 || end < 0){
@@ -211,13 +226,18 @@ std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 	if((size_t)end > headers.size()){
 		end = headers.size();
 	}
+	if(filename == ""){ // FIXME need keep copy of internal buffer
+	  throw BlockValidationException();
+	}
 	int idx = start;
 	while(idx < end){
-		std::vector<std::unique_ptr<Transaction>> trans;
-		// FIXME build up transaction list
-		// FIXME this means read the block from disk, check that it
-		//  still matches its hash, extract details, but don't
-		//  run validate() on the transactions
+	  size_t blen = headers[idx].totlen;
+	  auto mblock = ReadBinaryBlob(filename, offsets[idx], blen);
+	  if(mblock == nullptr){
+	    throw BlockValidationException();
+	  }
+    Block b; // FIXME embed these into Blocks
+    auto trans = b.Inspect(mblock.get(), &headers[idx]);
 		ret.emplace_back(headers[idx], offsets[idx], std::move(trans));
 		++idx;
 	}
