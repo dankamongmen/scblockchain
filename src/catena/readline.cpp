@@ -20,7 +20,7 @@ ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	chain(chain) { }
 
 template <typename Iterator>
-int ReadlineUI::Quit(Iterator start, Iterator end){
+int ReadlineUI::Quit(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -30,7 +30,7 @@ int ReadlineUI::Quit(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::Show(Iterator start, Iterator end){
+int ReadlineUI::Show(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -40,7 +40,7 @@ int ReadlineUI::Show(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::Inspect(Iterator start, Iterator end){
+int ReadlineUI::Inspect(const Iterator start, const Iterator end){
 	int b1, b2;
 	if(start + 1 < end){
 		std::cerr << "command requires at most one argument" << std::endl;
@@ -61,7 +61,7 @@ int ReadlineUI::Inspect(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::Outstanding(Iterator start, Iterator end){
+int ReadlineUI::Outstanding(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -71,7 +71,7 @@ int ReadlineUI::Outstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::CommitOutstanding(Iterator start, Iterator end){
+int ReadlineUI::CommitOutstanding(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -86,7 +86,7 @@ int ReadlineUI::CommitOutstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
+int ReadlineUI::FlushOutstanding(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -96,7 +96,7 @@ int ReadlineUI::FlushOutstanding(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::TStore(Iterator start, Iterator end){
+int ReadlineUI::TStore(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -106,7 +106,7 @@ int ReadlineUI::TStore(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NoOp(Iterator start, Iterator end){
+int ReadlineUI::NoOp(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -116,7 +116,7 @@ int ReadlineUI::NoOp(Iterator start, Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NewMember(Iterator start, Iterator end){
+int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	if(end - start != 2){
 		std::cerr << "command requires two arguments, a public key file and a JSON payload" << std::endl;
 		return -1;
