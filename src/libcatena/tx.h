@@ -67,7 +67,7 @@ private:
 unsigned char signature[SIGLEN];
 
 // specifier of who signed this tx
-std::array<unsigned char, HASHLEN> signerhash;
+CatenaHash signerhash;
 uint32_t signeridx; // must be exactly 32 bits for serialization
 size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;

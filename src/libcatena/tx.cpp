@@ -84,9 +84,7 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 
 std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
 	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload)\n";
-	s << " signer: ";
-	hashOStream(s, signerhash);
-	s << "[" << signeridx << "]";
+	s << " signer: " << signerhash << "[" << signeridx << "]";
 	return s;
 }
 
