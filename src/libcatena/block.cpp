@@ -317,9 +317,8 @@ std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
 	hashOStream(stream, bh.hash);
 	stream << "\nprev: ";
 	hashOStream(stream, bh.prev);
-	stream << "\nver " << bh.version <<
-		" transactions: " << bh.txcount <<
-		" " << "bytes: " << bh.totlen << " ";
+	stream << "\nv" << bh.version << " transactions: " << bh.txcount <<
+		" bytes: " << bh.totlen << " ";
 	char buf[80];
 	time_t btime = bh.utc;
 	if(ctime_r(&btime, buf)){
