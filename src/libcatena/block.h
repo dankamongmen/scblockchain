@@ -105,6 +105,8 @@ private:
 std::vector<std::unique_ptr<Transaction>> transactions;
 };
 
+std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh);
+
 }
 
 #endif
