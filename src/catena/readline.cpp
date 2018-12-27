@@ -48,10 +48,10 @@ int ReadlineUI::Inspect(const Iterator start, const Iterator end){
 	}else if(start + 1 == end){
 		// FIXME parse up argument
 		b1 = 0;
-		b2 = chain.GetBlockCount();
+		b2 = -1;
 	}else{
 		b1 = 0;
-		b2 = chain.GetBlockCount();
+		b2 = -1;
 	}
 	auto det = chain.Inspect(b1, b2);
 	for(const auto& d : det){

@@ -224,10 +224,10 @@ Block::Inspect(const unsigned char* b, const BlockHeader* chdr){
 
 std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 	std::vector<BlockDetail> ret;
-	if(start < 0 || end < 0){
+	if(start < 0){
 		return ret;
 	}
-	if((size_t)end > headers.size()){
+	if(end < 0 || (size_t)end > headers.size()){
 		end = headers.size();
 	}
 	if(filename == ""){ // FIXME need keep copy of internal buffer

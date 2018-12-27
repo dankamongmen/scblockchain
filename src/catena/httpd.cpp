@@ -40,11 +40,11 @@ struct MHD_Response* HTTPDServer::Inspect(struct MHD_Connection* conn){
 	auto sstart = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "begin");
 	auto sstop = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "end");
 	char* e;
-	auto start = strtol(sstart, &e, 10);
+	auto start = sstart ? strtol(sstart, &e, 10) : 0;
 	if(start < 0 || start == LONG_MAX || *e){
 		return nullptr;
 	}
-	auto end = strtol(sstop, &e, 10);
+	auto end = sstop ? strtol(sstop, &e, 10) : -1;
 	if(end < 0 || end == LONG_MAX || *e){
 		return nullptr;
 	}
