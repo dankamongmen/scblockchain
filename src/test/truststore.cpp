@@ -53,6 +53,22 @@ TEST(CatenaTrustStore, CopyConstructorEmpty){
 	Catena::TrustStore tstore2 = tstore;
 }
 
+TEST(CatenaTrustStore, SignNoKeys){
+	Catena::TrustStore tstore;
+	unsigned char buf[] = {0};
+	Catena::KeyLookup kl;
+	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), &kl), Catena::SigningException);
+}
+
+TEST(CatenaTrustStore, SignOnlyBuiltinKeys){
+	Catena::TrustStore tstore;
+	Catena::BuiltinKeys bkeys;
+	bkeys.AddToTrustStore(tstore);
+	unsigned char buf[] = {0};
+	Catena::KeyLookup kl;
+	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), &kl), Catena::SigningException);
+}
+
 // FIXME add copy constructor test using builtin keys
 
 // FIXME add test using test keys + addKey() for full sign + verify loop
