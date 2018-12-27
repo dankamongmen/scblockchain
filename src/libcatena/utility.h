@@ -63,6 +63,12 @@ std::ostream& HexOutput(std::ostream& s, const std::array<unsigned char, SIZE>& 
 std::unique_ptr<unsigned char[]>
 ReadBinaryFile(const std::string& fname, size_t *len);
 
+// Returns nullptr if the specified region was not available in the file. Throws
+// exceptions on inability to open file or read error. Copies the data; we might
+// want to rewrite this in a zero-copy fashion.
+std::unique_ptr<unsigned char[]>
+ReadBinaryBlob(const std::string& fname, off_t offset, size_t len);
+
 }
 
 #endif
