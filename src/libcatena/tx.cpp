@@ -21,7 +21,7 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	siglen = nbo_to_ulong(data, 2);
 	data += 2;
 	len -= 2;
-	if(len < HASHLEN + sizeof(signidx)){
+	if(len < HASHLEN + sizeof(signeridx)){
 		std::cerr << "no room for sigspec in " << len << std::endl;
 		return true;
 	}
@@ -30,9 +30,9 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	}
 	data += HASHLEN;
 	len -= HASHLEN;
-	signidx = nbo_to_ulong(data, sizeof(signidx));
-	data += sizeof(signidx);
-	len -= sizeof(signidx);
+	signeridx = nbo_to_ulong(data, sizeof(signeridx));
+	data += sizeof(signeridx);
+	len -= sizeof(signeridx);
 	if(len < siglen){
 		std::cerr << "no room for signature in " << len << std::endl;
 		return true;
@@ -47,7 +47,7 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 }
 
 bool ConsortiumMemberTX::Validate(TrustStore& tstore){
-	if(tstore.Verify({signerhash, signidx}, payload.get(),
+	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
@@ -83,19 +83,23 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 }
 
 std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
-	return s << "ConsortiumMember"; // FIXME
+	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload)\n";
+	s << " signer: ";
+	hashOStream(s, signerhash);
+	s << "[" << signeridx << "]";
+	return s;
 }
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 ConsortiumMemberTX::Serialize() const {
-	size_t len = 4 + siglen + signerhash.size() + sizeof(signidx) +
+	size_t len = 4 + siglen + signerhash.size() + sizeof(signeridx) +
 		payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
 	auto data = ulong_to_nbo(ConsortiumMember, ret.get(), 2);
 	data = ulong_to_nbo(siglen, data, 2);
 	memcpy(data, signerhash.data(), signerhash.size());
 	data += signerhash.size();
-	data = ulong_to_nbo(signidx, data, 4);
+	data = ulong_to_nbo(signeridx, data, 4);
 	memcpy(data, signature, siglen);
 	data += siglen;
 	memcpy(data, payload.get(), payloadlen);
