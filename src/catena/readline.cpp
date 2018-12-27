@@ -130,6 +130,8 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 			return 0;
 		}catch(std::ifstream::failure& e){
 			std::cerr << "couldn't read a public key from " << start[0] << std::endl;
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 		}
 	}catch(nlohmann::detail::parse_error &e){
 		std::cerr << "couldn't parse JSON from '" << start[1] << "'" << std::endl;
