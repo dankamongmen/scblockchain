@@ -24,7 +24,6 @@ template <typename Iterator> int CommitOutstanding(const Iterator start, const I
 template <typename Iterator> int TStore(const Iterator start, const Iterator end);
 template <typename Iterator> int NewMember(const Iterator start, const Iterator end);
 template <typename Iterator> int NoOp(const Iterator start, const Iterator end);
-std::vector<std::string> SplitInput(const char* line) const;
 };
 
 }

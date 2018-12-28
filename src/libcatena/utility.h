@@ -1,6 +1,7 @@
 #ifndef CATENA_LIBCATENA_UTILITY
 #define CATENA_LIBCATENA_UTILITY
 
+#include <vector>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -68,6 +69,10 @@ ReadBinaryFile(const std::string& fname, size_t *len);
 // want to rewrite this in a zero-copy fashion.
 std::unique_ptr<unsigned char[]>
 ReadBinaryBlob(const std::string& fname, off_t offset, size_t len);
+
+// Split a line into whitespace-delimited tokens, supporting simple quoting
+// using single quotes, plus escaping using backslash.
+std::vector<std::string> SplitInput(const char* line);
 
 }
 

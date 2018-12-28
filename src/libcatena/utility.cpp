@@ -68,4 +68,45 @@ ReadBinaryBlob(const std::string& fname, off_t offset, size_t len){
 	return memblock;
 }
 
+std::vector<std::string> SplitInput(const char* line) {
+	std::vector<std::string> tokens;
+	std::vector<char> token;
+	bool quoted = false;
+	bool escaped = false;
+	int offset = 0;
+	char c;
+	while( (c = line[offset]) ){
+		if(c == '\\' && !escaped){
+			escaped = true;
+		}else if(escaped){
+			token.push_back(c);
+			escaped = false;
+		}else if(quoted){
+			if(c == '\''){
+				quoted = false;
+			}else{
+				token.push_back(c);
+			}
+		}else if(isspace(c)){
+			if(token.size()){
+				tokens.emplace_back(std::string(token.begin(), token.end()));
+				token.clear();
+			}
+		}else if(c == '\''){
+			quoted = true;
+		}else{
+			token.push_back(c);
+		}
+		++offset;
+	}
+	if(token.size()){
+		tokens.emplace_back(std::string(token.begin(), token.end()));
+	}
+	if(quoted){
+		std::cerr << "unterminated quote" << std::endl;
+		tokens.clear();
+	}
+	return tokens;
+}
+
 }

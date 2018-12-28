@@ -139,41 +139,6 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	return -1;
 }
 
-std::vector<std::string> ReadlineUI::SplitInput(const char* line) const {
-	std::vector<std::string> tokens;
-	std::vector<char> token;
-	bool quoted = false;
-	int offset = 0;
-	char c;
-	while( (c = line[offset]) ){
-		if(quoted){
-			if(c == '\''){
-				quoted = false;
-			}else{
-				token.push_back(c);
-			}
-		}else if(isspace(c)){
-			if(token.size()){
-				tokens.emplace_back(std::string(token.begin(), token.end()));
-				token.clear();
-			}
-		}else if(c == '\''){
-			quoted = true;
-		}else{
-			token.push_back(c);
-		}
-		++offset;
-	}
-	if(token.size()){
-		tokens.emplace_back(std::string(token.begin(), token.end()));
-	}
-	if(quoted){
-		std::cerr << "unterminated quote" << std::endl;
-		tokens.clear();
-	}
-	return tokens;
-}
-
 #define RL_START "\x01" // RL_PROMPT_START_IGNORE
 #define RL_END "\x02"   // RL_PROMPT_END_IGNORE
 
@@ -204,7 +169,7 @@ void ReadlineUI::InputLoop(){
 		if(line == nullptr){
 			break;
 		}
-		auto tokens = SplitInput(line);
+		auto tokens = Catena::SplitInput(line);
 		if(tokens.size() == 0){
 			continue;
 		}
