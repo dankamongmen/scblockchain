@@ -42,16 +42,24 @@ int ReadlineUI::Show(const Iterator start, const Iterator end){
 template <typename Iterator>
 int ReadlineUI::Inspect(const Iterator start, const Iterator end){
 	int b1, b2;
-	if(start + 1 < end){
+	if(start + 2 < end){
 		std::cerr << "command requires at most one argument" << std::endl;
 		return -1;
-	}else if(start + 1 == end){
-		// FIXME parse up argument
+	}else if(start == end){
 		b1 = 0;
 		b2 = -1;
 	}else{
-		b1 = 0;
-		b2 = -1;
+		try{
+			b1 = Catena::StrToLong(start[0], 0, LONG_MAX);
+			if(start + 1 < end){
+				b2 = Catena::StrToLong(start[1], -1, LONG_MAX);
+			}else{
+				b2 = -1;
+			}
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "couldn't parse argument (" << e.what() << ")" << std::endl;
+			return -1;
+		}
 	}
 	auto det = chain.Inspect(b1, b2);
 	for(const auto& d : det){
@@ -118,23 +126,53 @@ int ReadlineUI::NoOp(const Iterator start, const Iterator end){
 template <typename Iterator>
 int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	if(end - start != 2){
-		std::cerr << "command requires two arguments, a public key file and a JSON payload" << std::endl;
+		std::cerr << "command requires two arguments: public key file, JSON payload" << std::endl;
 		return -1;
 	}
-	size_t plen;
+	const auto& keyfile = start[0];
+	const auto& json = start[1];
 	try{
-		auto payload = nlohmann::json::parse(start[1]);
+		auto payload = nlohmann::json::parse(json);
 		try{
-			auto pkey = Catena::ReadBinaryFile(start[0], &plen);
+			size_t plen;
+			auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
 			chain.AddConsortiumMember(pkey.get(), plen, payload);
 			return 0;
 		}catch(std::ifstream::failure& e){
-			std::cerr << "couldn't read a public key from " << start[0] << std::endl;
+			std::cerr << "couldn't read a public key from " << keyfile << std::endl;
 		}catch(Catena::SigningException& e){
 			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 		}
 	}catch(nlohmann::detail::parse_error &e){
-		std::cerr << "couldn't parse JSON from '" << start[1] << "'" << std::endl;
+		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
+	if(end - start != 3){
+		std::cerr << "command requires three arguments: lookup type, public key file, external ID" << std::endl;
+		return -1;
+	}
+	long ltype;
+	try{
+		ltype = Catena::StrToLong(start[0], 0, 65535);
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't parse lookup type from " << start[0] << " (" << e.what() << ")" << std::endl;
+		return -1;
+	}
+	const auto& keyfile = start[1];
+	const auto& extid = start[2];
+	try{
+		size_t plen;
+		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
+		chain.AddExternalLookup(pkey.get(), plen, extid, ltype);
+		return 0;
+	}catch(std::ifstream::failure& e){
+		std::cerr << "couldn't read a public key from " << keyfile << std::endl;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 	}
 	return -1;
 }
@@ -158,6 +196,7 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
+		{ .cmd = "exlookup", .fxn = &ReadlineUI::NewExternalLookup, .help = "create new ExternalLookup transaction", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;
@@ -169,7 +208,14 @@ void ReadlineUI::InputLoop(){
 		if(line == nullptr){
 			break;
 		}
-		auto tokens = Catena::SplitInput(line);
+		std::vector<std::string> tokens;
+		try{
+			tokens = Catena::SplitInput(line);
+		}catch(Catena::SplitInputException& e){
+			std::cerr << "error tokenizing inputs: " << e.what() << std::endl;
+			add_history(line);
+			continue;
+		}
 		if(tokens.size() == 0){
 			continue;
 		}
