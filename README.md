@@ -54,21 +54,36 @@ list can be accessed by running the `help` command):
 * `commit`: coalesce outstanding transactions into a block and add it to ledger
 * `flush`: flush outstanding transactions
 * `noop`: generate a NoOp transaction
-* `member`: generate a ConsortiumMember transaction. takes as its argument a
+* `member`: generate a ConsortiumMember transaction. takes as its arguments a
 filename containing the new member's public key, and an arbitrary JSON-encoded
 payload. Use single quotes to enclose the payload, escaping any single quotes
 within the payload.
+* `exlookup`: generate an ExternalLookup transaction. takes as its arguments
+an integer specifying the lookup type, a filename containing the new
+association's public key, and an external identifier valid for the specified
+lookup type.
 
 Use of the `member` command requires a private key having been loaded with the
-`-u` option.
+`-u` option, along with a public key .
 
 ### HTTP services of cantena
 
-The following endpoints are provided:
+The following endpoints are provided. JSON schema are available in
+doc/json-schema.md.
 
-* `/show`: HTML equivalent of the `show` command
-* `/tstore`: HTML equivalent of the `tstore` command
-* `/inspect`: JSON equivalent of the `inspect` command
+* GET `/`: HTML status page for human consumption (do not scrape/parse)
+* GET `/show`: HTML equivalent of the `show` command
+* GET `/tstore`: HTML equivalent of the `tstore` command
+* GET `/inspect`: JSON equivalent of the `inspect` command
+    * Optional query argument: `begin`, integer specifying first block
+    * Optional query argument: `end`, integer specifying last block
+    * Replies with application/json body of type InspectResult
+* POST `/member`: JSON equivalent of the `member` command
+    * Requires an application/json body of type ConsortiumMemberTXRequest
+    * Replies with application/json body of type TXRequestResult
+* POST `/exlookup`: JSON equivalent of the `exlookup` command
+    * Requires an application/json body of type ExternalLookupTXRequest
+    * Replies with application/json body of type TXRequestResult
 
 ## Key operations
 
