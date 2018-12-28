@@ -6,6 +6,9 @@
 #include <iomanip>
 #include <ostream>
 #include <iostream>
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
+#include <gnu/libc-version.h>
+#endif
 
 namespace Catena {
 
@@ -89,6 +92,21 @@ ConvertInputException(const std::string& s) : std::runtime_error(s){}
 // equal to min, and that it is less than or equal to max. Throws
 // ConvertInputException on any error.
 long StrToLong(const std::string& s, long min, long max);
+
+inline std::string GetLibcID(){
+	std::stringstream ss;
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
+	ss << "glibc " << gnu_get_libc_version();
+#elif defined(__UCLIBC__)
+	ss << "µClibc " << __UCLIBC_MAJOR__ << "." << __UCLIBC_MINOR__ << "."
+		<< __UCLIBC_SUBLEVEL__;
+#elif defined(__BIONIC__)
+	ss << "Google Bionic";
+#else
+#error "couldn't determine libc versioning"
+#endif
+	return ss.str();
+}
 
 }
 

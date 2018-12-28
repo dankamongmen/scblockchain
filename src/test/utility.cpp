@@ -142,3 +142,7 @@ TEST(CatenaUtility, StrToLongOutOfRange){
 	EXPECT_THROW(Catena::StrToLong("3", 4, LONG_MAX), Catena::ConvertInputException);
 	EXPECT_THROW(Catena::StrToLong("-3", LONG_MIN, -4), Catena::ConvertInputException);
 }
+
+TEST(CatenaUtility, GetLibcID){
+	EXPECT_NE("", Catena::GetLibcID());
+}
