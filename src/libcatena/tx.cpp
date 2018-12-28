@@ -97,7 +97,7 @@ std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
 	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload, "
 		<< keylen << "b key)\n";
 	s << " signer: " << signerhash << "[" << signeridx << "]\n";
-	s << " json: ";
+	s << " payload: ";
 	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;
 }
@@ -126,6 +126,8 @@ nlohmann::json ConsortiumMemberTX::JSONify() const {
 	ret["signeridx"] = signeridx;
 	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
 	ret["payload"] = nlohmann::json::parse(pload);
+	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
+	ret["pubkey"] = pubkey;
 	return ret;
 }
 
