@@ -183,7 +183,7 @@ followed by the public key, followed by the external identifier, of form
 determined by the lookup type (the external identifier should only contain
 printable characters). Lookup types include:
 
-* 0x0001 Sharecare ID
+* 0x0000 Sharecare ID (RFC 4122 UUID)
 
 ```
  0                   1                   2                   3
