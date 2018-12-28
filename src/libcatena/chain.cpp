@@ -88,11 +88,11 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	if(sig.second == 0){
 		throw SigningException("couldn't sign payload");
 	}
-	size_t totlen = len + sig.second + 4 + HASHLEN + 2;
+	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2);
-	memcpy(targ, signer.first.data(), HASHLEN);
-	targ += HASHLEN;
+	memcpy(targ, signer.first.data(), signer.first.size());
+	targ += signer.first.size();
 	targ = ulong_to_nbo(signer.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
@@ -111,11 +111,34 @@ std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 
 void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype){
-	(void)pkey;
-	(void)plen;
-	(void)extid;
-	(void)lookuptype;
-	// FIXME
+	// FIXME verify that pkey is a valid public key
+	size_t len = plen + 2 + extid.size();
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	targ = ulong_to_nbo(plen, targ, 2);
+	memcpy(targ, pkey, plen);
+	targ += plen;
+	memcpy(targ, extid.c_str(), extid.size());
+	KeyLookup signer;
+	auto sig = tstore.Sign(buf, len, &signer);
+	if(sig.second == 0){
+		throw SigningException("couldn't sign payload");
+	}
+	size_t totlen = len + sig.second + 4 + signer.first.size() + 4;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(lookuptype, txbuf, 2);
+	memcpy(targ, signer.first.data(), signer.first.size());
+	targ += signer.first.size();
+	targ = ulong_to_nbo(signer.second, targ, 4);
+	targ = ulong_to_nbo(sig.second, targ, 2);
+	memcpy(targ, sig.first.get(), sig.second);
+	targ += sig.second;
+	memcpy(targ, buf, len);
+	auto tx = std::unique_ptr<ExternalLookupTX>(new ExternalLookupTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
 }
