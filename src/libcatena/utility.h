@@ -70,9 +70,25 @@ ReadBinaryFile(const std::string& fname, size_t *len);
 std::unique_ptr<unsigned char[]>
 ReadBinaryBlob(const std::string& fname, off_t offset, size_t len);
 
+class SplitInputException : public std::runtime_error {
+public:
+SplitInputException(const std::string& s) : std::runtime_error(s){}
+};
+
 // Split a line into whitespace-delimited tokens, supporting simple quoting
 // using single quotes, plus escaping using backslash.
 std::vector<std::string> SplitInput(const char* line);
+
+class ConvertInputException : public std::runtime_error {
+public:
+ConvertInputException(const std::string& s) : std::runtime_error(s){}
+};
+
+// Extract a long int from s, ensuring that it is the entirety of s (save any
+// leading whitespace and sign; see strtol(3)), that it is greater than or
+// equal to min, and that it is less than or equal to max. Throws
+// ConvertInputException on any error.
+long StrToLong(const std::string& s, long min, long max);
 
 }
 

@@ -1,3 +1,4 @@
+#include <climits>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -103,10 +104,32 @@ std::vector<std::string> SplitInput(const char* line) {
 		tokens.emplace_back(std::string(token.begin(), token.end()));
 	}
 	if(quoted){
-		std::cerr << "unterminated quote" << std::endl;
-		tokens.clear();
+		throw SplitInputException("unterminated single quote");
 	}
 	return tokens;
+}
+
+long StrToLong(const std::string& str, long min, long max){
+	const char* s = str.c_str();
+	char* e;
+	errno = 0;
+	auto ret = strtol(s, &e, 10);
+	if((ret == LONG_MIN || ret == LONG_MAX) && errno == ERANGE){
+		throw ConvertInputException("overflowed parsing number " + str);
+	}
+	if(ret < min){
+		throw ConvertInputException("extracted value was too low " + str);
+	}
+	if(ret > max){
+		throw ConvertInputException("extracted value was too high " + str);
+	}
+	if(e == s){
+		throw ConvertInputException("value was empty");
+	}
+	if(*e){
+		throw ConvertInputException("garbage in numeric value " + str);
+	}
+	return ret;
 }
 
 }

@@ -1,4 +1,5 @@
 #include <cstring>
+#include <climits>
 #include <gtest/gtest.h>
 #include <libcatena/utility.h>
 
@@ -94,7 +95,38 @@ TEST(CatenaUtility, SplitUnterminatedQuote){
 		"'", "'akjajhla", "'\\'", "\\''", "'a", "'' '"
 	};
 	for(const auto& t : tests){
-		const auto tokes = Catena::SplitInput(t);
-		EXPECT_EQ(0, tokes.size());
+		EXPECT_THROW(Catena::SplitInput(t), Catena::SplitInputException);
 	}
+}
+
+TEST(CatenaUtility, StrToLong){
+	const struct {
+		const char* str;
+		long val;
+	} tests[] = {
+		{ .str = "0", .val = 0, },
+		{ .str = nullptr, .val = 0, },
+	};
+	for(auto t = tests ; t->str ; ++t){
+		auto ret = Catena::StrToLong(t->str, LONG_MIN, LONG_MAX);
+		EXPECT_EQ(ret, t->val);
+	}
+}
+
+TEST(CatenaUtility, StrToLongMalformed){
+	const char* tests[] = { // all ought fail
+		"", "m0", "0m", " 0 ", "0 ",
+	};
+	for(const auto& t : tests){
+		EXPECT_THROW(Catena::StrToLong(t, LONG_MIN, LONG_MAX), Catena::ConvertInputException);
+	}
+}
+
+TEST(CatenaUtility, StrToLongOutOfRange){
+	EXPECT_THROW(Catena::StrToLong("1", 0, 0), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToLong("-1", 0, 0), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToLong("0", 1, 1), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToLong("-2", -1, 1), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToLong("3", 4, LONG_MAX), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToLong("-3", LONG_MIN, -4), Catena::ConvertInputException);
 }
