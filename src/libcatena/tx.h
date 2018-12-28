@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <cstring>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <libcatena/truststore.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>

@@ -96,7 +96,7 @@ long StrToLong(const std::string& s, long min, long max);
 inline std::string GetLibcID(){
 	std::stringstream ss;
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
-	ss << "glibc " << gnu_get_libc_version();
+	ss << "GNU glibc " << gnu_get_libc_version();
 #elif defined(__UCLIBC__)
 	ss << "µClibc " << __UCLIBC_MAJOR__ << "." << __UCLIBC_MINOR__ << "."
 		<< __UCLIBC_SUBLEVEL__;
