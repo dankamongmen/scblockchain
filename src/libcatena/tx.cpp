@@ -233,8 +233,14 @@ ExternalLookupTX::Serialize() const {
 }
 
 nlohmann::json ExternalLookupTX::JSONify() const {
-	// FIXME
-	return nlohmann::json({{"type", "ExternalLookup"}});
+	nlohmann::json ret({{"type", "ExternalLookup"}});
+	ret["sigbytes"] = siglen;
+	ret["signerhash"] = hashOString(signerhash);
+	ret["signeridx"] = signeridx;
+	ret["payload"] = std::string(reinterpret_cast<const char*>(GetPayload()), GetPayloadLength());
+	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
+	ret["pubkey"] = pubkey;
+	return ret;
 }
 
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
