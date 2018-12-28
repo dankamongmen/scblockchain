@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <cstring>
+#include <json.hpp>
 #include <libcatena/truststore.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
@@ -20,6 +21,7 @@ Transaction(const unsigned char* hash, unsigned idx){
 virtual ~Transaction() = default;
 virtual bool Extract(const unsigned char* data, unsigned len) = 0;
 virtual bool Validate(TrustStore& tstore) = 0;
+virtual nlohmann::json JSONify() const = 0;
 
 // Send oneself to an ostream
 virtual std::ostream& TXOStream(std::ostream& s) const = 0;
@@ -50,6 +52,7 @@ bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore __attribute__ ((unused))) override {
 	return false;
 }
+nlohmann::json JSONify() const override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 };
@@ -62,6 +65,7 @@ bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
+nlohmann::json JSONify() const override;
 
 private:
 unsigned char signature[SIGLEN];

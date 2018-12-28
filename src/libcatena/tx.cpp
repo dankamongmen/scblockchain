@@ -76,6 +76,10 @@ std::ostream& NoOpTX::TXOStream(std::ostream& s) const {
 	return s << "NoOp";
 }
 
+nlohmann::json NoOpTX::JSONify() const {
+	return nlohmann::json({"type", "NoOp"});
+}
+
 std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[2]);
 	ulong_to_nbo(NoOp, ret.get(), 2);
@@ -103,6 +107,10 @@ ConsortiumMemberTX::Serialize() const {
 	memcpy(data, payload.get(), payloadlen);
 	data += payloadlen;
 	return std::make_pair(std::move(ret), len);
+}
+
+nlohmann::json ConsortiumMemberTX::JSONify() const {
+	return nlohmann::json({{"type", "ConsortiumMember"}});
 }
 
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
