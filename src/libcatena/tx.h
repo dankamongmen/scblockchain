@@ -74,7 +74,23 @@ CatenaHash signerhash;
 uint32_t signeridx; // must be exactly 32 bits for serialization
 size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;
-size_t payloadlen;
+size_t keylen; // length of public key
+size_t payloadlen; // total length of signed payload
+
+const unsigned char*
+GetPubKey() const {
+	return payload.get() + 2;
+}
+
+const unsigned char*
+GetJSONPayload() const {
+	return payload.get() + 2 + keylen;
+}
+
+size_t GetJSONPayloadLength() const {
+	return payloadlen - keylen - 2;
+}
+
 };
 
 }

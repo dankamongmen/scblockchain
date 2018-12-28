@@ -40,6 +40,13 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
+	if(len < 2){
+		std::cerr << "no room for keylen in " << len << std::endl;
+		return true;
+	}
+	keylen = nbo_to_ulong(data, 2);
+	// FIXME verify that key is valid? verify payload is valid JSON?
+	// Key length is part of the signed payload, so don't advance data
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
 	payloadlen = len;
@@ -87,8 +94,11 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 }
 
 std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
-	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload)\n";
-	s << " signer: " << signerhash << "[" << signeridx << "]";
+	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload, "
+		<< keylen << "b key)\n";
+	s << " signer: " << signerhash << "[" << signeridx << "]\n";
+	s << " json: ";
+	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;
 }
 
@@ -114,6 +124,8 @@ nlohmann::json ConsortiumMemberTX::JSONify() const {
 	ret["sigbytes"] = siglen;
 	ret["signerhash"] = hashOString(signerhash);
 	ret["signeridx"] = signeridx;
+	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
+	ret["payload"] = nlohmann::json::parse(pload);
 	return ret;
 }
 
