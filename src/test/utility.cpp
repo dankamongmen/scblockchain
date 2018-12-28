@@ -79,6 +79,18 @@ TEST(CatenaUtility, SplitInputDyad){
 	}
 }
 
+TEST(CatenaUtility, SplitEscapedSpace){
+	const auto tokes = Catena::SplitInput("a\\ a");
+	EXPECT_EQ(1, tokes.size());
+	EXPECT_EQ("a a", tokes[0]);
+}
+
+TEST(CatenaUtility, SplitQuotedSpace){
+	const auto tokes = Catena::SplitInput("'a a'");
+	EXPECT_EQ(1, tokes.size());
+	EXPECT_EQ("a a", tokes[0]);
+}
+
 TEST(CatenaUtility, SplitEscapedQuote){
 	const char* tests[] = { // ought get "'a'a'"
 		"'\\'a\\'a\\''", "\\'a\\'a\\'"
