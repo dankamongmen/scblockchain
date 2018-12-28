@@ -7,6 +7,31 @@
 
 namespace CatenaAgent {
 
+constexpr char htmlhdr[] =
+ "<!DOCTYPE html>"
+ "<html><link rel=\"stylesheet\" type=\"text/css\" href=\"//fonts.googleapis.com/css?family=Open+Sans\" />"
+ "<head><title>catena node</title>"
+ "<style>body { font-family: \"Open Sans\"; margin: 5px ; padding: 5px; background: whitesmoke; }"
+ "</style></head>";
+
+struct MHD_Response*
+HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const {
+	std::stringstream ss;
+	ss << htmlhdr;
+	ss << "<body><h1>catena node</h1>";
+	ss << "</body>";
+	std::string s = ss.str();
+	auto resp = MHD_create_response_from_buffer(s.size(),
+			const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);
+	if(resp){
+		if(MHD_NO == MHD_add_response_header(resp, MHD_HTTP_HEADER_CONTENT_TYPE, "text/html; charset=UTF-8")){
+			MHD_destroy_response(resp);
+			return nullptr;
+		}
+	}
+	return resp;
+}
+
 struct MHD_Response*
 HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
@@ -111,6 +136,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		const char *uri;
 		struct MHD_Response* (HTTPDServer::*fxn)(struct MHD_Connection*) const;
 	} cmds[] = {
+		{ "/", &HTTPDServer::Summary, },
 		{ "/show", &HTTPDServer::Show, },
 		{ "/tstore", &HTTPDServer::TStore, },
 		{ "/inspect", &HTTPDServer::Inspect, },
