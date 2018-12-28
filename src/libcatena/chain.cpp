@@ -109,4 +109,13 @@ std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 	return blocks.Inspect(start, end);
 }
 
+void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
+			const std::string& extid, unsigned lookuptype){
+	(void)pkey;
+	(void)plen;
+	(void)extid;
+	(void)lookuptype;
+	// FIXME
+}
+
 }
