@@ -1,6 +1,7 @@
 #ifndef CATENA_LIBCATENA_UTILITY
 #define CATENA_LIBCATENA_UTILITY
 
+#include <string>
 #include <vector>
 #include <fstream>
 #include <iomanip>
@@ -92,6 +93,16 @@ ConvertInputException(const std::string& s) : std::runtime_error(s){}
 // equal to min, and that it is less than or equal to max. Throws
 // ConvertInputException on any error.
 long StrToLong(const std::string& s, long min, long max);
+
+inline std::string GetCompilerID(){
+#if defined(__GNUC__) && !defined(__clang__)
+	return std::string("GNU C++ ") + __VERSION__;
+#elif defined(__clang__)
+	return __VERSION__;
+#else
+#error "couldn't determine c++ compiler"
+#endif
+}
 
 inline std::string GetLibcID(){
 	std::stringstream ss;

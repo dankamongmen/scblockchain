@@ -24,14 +24,13 @@ constexpr char htmlhdr[] =
 
 std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 	ss << "<table>";
-	ss << "<tr><td>cc::version</td><td>" << __VERSION__ << "</td></tr>";
-	ss << "<tr><td>libc::version</td><td>" << Catena::GetLibcID()
-		<< "</td></tr>";
-	ss << "<tr><td>json::version</td><td>JSON for Modern C++ " <<
+	ss << "<tr><td>cxx</td><td>" << Catena::GetCompilerID() << "</td></tr>";
+	ss << "<tr><td>libc</td><td>" << Catena::GetLibcID() << "</td></tr>";
+	ss << "<tr><td>json</td><td>JSON for Modern C++ " <<
 		NLOHMANN_JSON_VERSION_MAJOR << "." <<
 		NLOHMANN_JSON_VERSION_MINOR << "." <<
 		NLOHMANN_JSON_VERSION_PATCH << "</td>";
-	ss << "<tr><td>openssl::version</td><td>" <<
+	ss << "<tr><td>crypto</td><td>" <<
 		SSLeay_version(SSLEAY_VERSION) << "</td></tr>";
 	ss << "</table>";
 	return ss;
