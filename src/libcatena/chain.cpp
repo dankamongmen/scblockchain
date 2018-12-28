@@ -41,9 +41,9 @@ std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 Chain::SerializeOutstanding() const {
-	std::array<unsigned char, HASHLEN> lasthash;
+	CatenaHash lasthash;
 	blocks.GetLastHash(lasthash);
-	auto p = outstanding.SerializeBlock(lasthash.data());
+	auto p = outstanding.SerializeBlock(lasthash);
 	return p;
 	// FIXME need kill off outstanding
 }

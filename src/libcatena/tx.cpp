@@ -61,7 +61,7 @@ bool ConsortiumMemberTX::Validate(TrustStore& tstore){
 	len -= sizeof(keylen);
 	data += sizeof(keylen);
 	std::array<unsigned char, sizeof(blockhash)> bhash;
-	memcpy(bhash.data(), blockhash, sizeof(blockhash));
+	bhash = blockhash;
 	Keypair kp(data, keylen);
 	tstore.addKey(&kp, {bhash, txidx});
 	return false;
@@ -110,13 +110,17 @@ ConsortiumMemberTX::Serialize() const {
 }
 
 nlohmann::json ConsortiumMemberTX::JSONify() const {
-	return nlohmann::json({{"type", "ConsortiumMember"}});
+	nlohmann::json ret({{"type", "ConsortiumMember"}});
+	ret["sigbytes"] = siglen;
+	ret["signerhash"] = hashOString(signerhash);
+	ret["signeridx"] = signeridx;
+	return ret;
 }
 
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
 std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len,
-					const unsigned char* hash, unsigned idx){
+					const CatenaHash& blkhash, unsigned txidx){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
 		std::cerr << "no room for transaction type in " << len << std::endl;
@@ -128,10 +132,10 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 	Transaction* tx;
 	switch(txtype){
 	case NoOp:
-		tx = new NoOpTX(hash, idx);
+		tx = new NoOpTX(blkhash, txidx);
 		break;
 	case ConsortiumMember:
-		tx = new ConsortiumMemberTX(hash, idx);
+		tx = new ConsortiumMemberTX(blkhash, txidx);
 		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;

@@ -13,10 +13,9 @@ namespace Catena {
 class Transaction {
 public:
 Transaction() = default;
-Transaction(const unsigned char* hash, unsigned idx){
-	txidx = idx;
-	memcpy(blockhash, hash, sizeof(blockhash));
-}
+Transaction(const CatenaHash& hash, unsigned idx) :
+	txidx(idx),
+	blockhash(hash) {}
 
 virtual ~Transaction() = default;
 virtual bool Extract(const unsigned char* data, unsigned len) = 0;
@@ -35,19 +34,19 @@ friend std::ostream& operator<<(std::ostream& s, Transaction* t){
 
 static std::unique_ptr<Transaction>
 lexTX(const unsigned char* data, unsigned len,
-	const unsigned char* hash, unsigned idx);
+	const CatenaHash& blkhash, unsigned txidx);
 
 protected:
 // FIXME shouldn't need to keep these, but don't want to explicitly pass them
 // into validate(). wrap them up in a lambda?
 unsigned txidx; // transaction index within block
-unsigned char blockhash[HASHLEN]; // containing block hash
+CatenaHash blockhash; // containing block hash
 };
 
 class NoOpTX : public Transaction {
 public:
 NoOpTX() = default;
-NoOpTX(const unsigned char* hash, unsigned idx) : Transaction(hash, idx) {}
+NoOpTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore __attribute__ ((unused))) override {
 	return false;
@@ -60,7 +59,7 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 class ConsortiumMemberTX : public Transaction {
 public:
 ConsortiumMemberTX() = default;
-ConsortiumMemberTX(const unsigned char* hash, unsigned idx) : Transaction(hash, idx) {}
+ConsortiumMemberTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore) override;
 std::ostream& TXOStream(std::ostream& s) const override;

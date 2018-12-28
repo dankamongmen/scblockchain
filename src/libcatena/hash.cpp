@@ -27,6 +27,12 @@ void catenaHash(const void* in, unsigned len, CatenaHash& hash){
 	catenaHash(in, len, hash.data());
 }
 
+std::string hashOString(const CatenaHash& hash){
+	std::stringstream ss;
+	ss << hash;
+	return ss.str();
+}
+
 std::ostream& hashOStream(std::ostream& s, const void* hash){
 	HexOutput(s, reinterpret_cast<const unsigned char*>(hash), HASHLEN);
 	return s;

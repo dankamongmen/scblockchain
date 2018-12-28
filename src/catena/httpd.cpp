@@ -52,9 +52,7 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 		jblk["version"] = b.bhdr.version;
 		jblk["utc"] = b.bhdr.utc;
 		jblk["bytes"] = b.bhdr.totlen;
-		std::stringstream hashbuf;
-		Catena::hashOStream(hashbuf, b.bhdr.hash);
-		jblk["hash"] = hashbuf.str();
+		jblk["hash"] = Catena::hashOString(b.bhdr.hash);
 		nlohmann::json(b.bhdr.totlen);
 		jblks.emplace_back(jblk);
 	}
