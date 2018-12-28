@@ -180,7 +180,8 @@ Transaction type 0x0002, followed by a 16 bit lookup type, followed by the
 256-bit hash and 32-bit index of the registering consortium, followed by the 16
 bit signature length, followed by the signature, 16 bit public key length,
 followed by the public key, followed by the external identifier, of form
-determined by the lookup type. Lookup types include:
+determined by the lookup type (the external identifier should only contain
+printable characters). Lookup types include:
 
 * 0x0001 Sharecare ID
 
