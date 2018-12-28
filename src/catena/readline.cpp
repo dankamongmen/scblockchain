@@ -5,8 +5,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
-#include <json.hpp>
 #include <libcatena/tx.h>
+#include <nlohmann/json.hpp>
 #include <libcatena/chain.h>
 #include <readline/history.h>
 #include <readline/readline.h>

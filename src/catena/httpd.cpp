@@ -1,6 +1,7 @@
 #include <sstream>
 #include <iostream>
 #include <microhttpd.h>
+#include <libcatena/utility.h>
 #include <libcatena/chain.h>
 #include <libcatena/hash.h>
 #include "catena/httpd.h"
@@ -12,13 +13,36 @@ constexpr char htmlhdr[] =
  "<html><link rel=\"stylesheet\" type=\"text/css\" href=\"//fonts.googleapis.com/css?family=Open+Sans\" />"
  "<head><title>catena node</title>"
  "<style>body { font-family: \"Open Sans\"; margin: 5px ; padding: 5px; background: whitesmoke; }"
+ "table { table-layout: fixed; border-collapse; collapse: border-spacing: 0; width: 90%; }"
+ "td { width: 10%; background: #dfdfdf; border: 1px solid transparent; transition: all 0.3s; }"
+ "td+td { width: auto; }"
+ "tr:nth-child(even) td { background: #f1f1f1; }"
+ "tr:nth-child(odd) td { background: #fefefe; }"
+ ".hrule { margin: 1em 0 1em 0; width: 50%; height: 1px; box-shadow: 0 0 5px 1px #ff8300; }"
+ "tr td:hover { background: #00dddd; }"
  "</style></head>";
+
+std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
+	ss << "<table>";
+	ss << "<tr><td>cc::version</td><td>" << __VERSION__ << "</td></tr>";
+	ss << "<tr><td>libc::version</td><td>" << Catena::GetLibcID()
+		<< "</td></tr>";
+	ss << "<tr><td>json::version</td><td>JSON for Modern C++ " <<
+		NLOHMANN_JSON_VERSION_MAJOR << "." <<
+		NLOHMANN_JSON_VERSION_MINOR << "." <<
+		NLOHMANN_JSON_VERSION_PATCH << "</td>";
+	ss << "<tr><td>openssl::version</td><td>" <<
+		SSLeay_version(SSLEAY_VERSION) << "</td></tr>";
+	ss << "</table>";
+	return ss;
+}
 
 struct MHD_Response*
 HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
 	ss << htmlhdr;
 	ss << "<body><h1>catena node</h1>";
+	HTMLSysinfo(ss);
 	ss << "</body>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),

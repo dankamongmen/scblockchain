@@ -1,8 +1,8 @@
 #ifndef CATENA_CATENA_HTTPD
 #define CATENA_CATENA_HTTPD
 
-#include <json.hpp>
 #include <microhttpd.h>
+#include <nlohmann/json.hpp>
 #include <libcatena/chain.h>
 
 namespace CatenaAgent {
@@ -28,6 +28,7 @@ struct MHD_Response* Show(struct MHD_Connection*) const;
 struct MHD_Response* TStore(struct MHD_Connection*) const;
 struct MHD_Response* Inspect(struct MHD_Connection*) const;
 nlohmann::json InspectJSON(int start, int end) const;
+std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
 
 static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	const char* method, const char* version, const char* upload_data,
