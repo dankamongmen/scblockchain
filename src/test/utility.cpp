@@ -44,3 +44,57 @@ TEST(CatenaUtility, ReadBinaryFileIrregulars){
 	EXPECT_THROW(Catena::ReadBinaryFile("/", &len), std::ifstream::failure);
 	EXPECT_THROW(Catena::ReadBinaryFile("/dev/null", &len), std::ifstream::failure);
 }
+
+TEST(CatenaUtility, SplitInputEmpty){
+	const char* tests[] = {
+		"", " ", "  ", "\t", " \t ", "\n\n\t  \v\f "
+	};
+	for(const auto& t : tests){
+		auto tokes = Catena::SplitInput(t);
+		EXPECT_EQ(0, tokes.size());
+	}
+}
+
+TEST(CatenaUtility, SplitInputMonad){
+	const char* tests[] = { // each ought just be 'a'
+		"a", " a ", " \\a ", "\ta ", "'a'", " 'a' ", "'a' ",
+	};
+	for(const auto& t : tests){
+		const auto tokes = Catena::SplitInput(t);
+		EXPECT_EQ(1, tokes.size());
+		EXPECT_EQ("a", tokes.back());
+	}
+}
+
+TEST(CatenaUtility, SplitInputDyad){
+	const char* tests[] = { // ought get {"aa", "bb"}
+		"aa bb", " aa\tbb ", " \\aa b\\b ", "'aa' 'bb'", " 'aa' 'b''b'"
+	};
+	for(const auto& t : tests){
+		const auto tokes = Catena::SplitInput(t);
+		EXPECT_EQ(2, tokes.size());
+		EXPECT_EQ("aa", tokes[0]);
+		EXPECT_EQ("bb", tokes[1]);
+	}
+}
+
+TEST(CatenaUtility, SplitEscapedQuote){
+	const char* tests[] = { // ought get "'a'a'"
+		"'\\'a\\'a\\''", "\\'a\\'a\\'"
+	};
+	for(const auto& t : tests){
+		const auto tokes = Catena::SplitInput(t);
+		EXPECT_EQ(1, tokes.size());
+		EXPECT_EQ("'a'a'", tokes[0]);
+	}
+}
+
+TEST(CatenaUtility, SplitUnterminatedQuote){
+	const char* tests[] = { // all ought fail
+		"'", "'akjajhla", "'\\'", "\\''", "'a", "'' '"
+	};
+	for(const auto& t : tests){
+		const auto tokes = Catena::SplitInput(t);
+		EXPECT_EQ(0, tokes.size());
+	}
+}
