@@ -13,8 +13,8 @@ namespace Catena {
 
 // NOT the on-disk packed format
 struct BlockHeader {
-	unsigned char hash[HASHLEN];
-	unsigned char prev[HASHLEN];
+	CatenaHash hash;
+	CatenaHash prev;
 	unsigned version;
 	unsigned totlen;
 	unsigned txcount;
@@ -54,7 +54,7 @@ unsigned GetBlockCount() const {
 	return offsets.size();
 }
 
-void GetLastHash(std::array<unsigned char, HASHLEN>& hash) const;
+void GetLastHash(CatenaHash& hash) const;
 
 // Pass -1 for end to leave the end unspecified.
 std::vector<BlockDetail> Inspect(int start, int end) const;
@@ -79,11 +79,10 @@ static const int BLOCKVERSION = 0;
 // Returns allocated block with serialized data, and size of serialized data.
 // Updates prevhash with hash of serialized block.
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-	SerializeBlock(unsigned char* prevhash) const;
+	SerializeBlock(CatenaHash& prevhash) const;
 
 static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
-		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
-		uint64_t prevutc);
+		unsigned len, const CatenaHash& prevhash, uint64_t prevutc);
 
 std::vector<std::unique_ptr<Transaction>>
   Inspect(const unsigned char* b, const BlockHeader* bhdr);

@@ -60,16 +60,15 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 			" bytes, had only " << len << std::endl;
 		return true;
 	}
-	std::memcpy(chdr->hash, data, sizeof(chdr->hash));
-	data += sizeof(chdr->hash);
+	memcpy(chdr->hash.data(), data, chdr->hash.size());
+	data += chdr->hash.size();
 	unsigned const char* hashstart = data;
-	std::memcpy(chdr->prev, data, sizeof(chdr->prev));
-	if(memcmp(chdr->prev, prevhash.data(), prevhash.size())){
-		std::cerr << "invalid prev hash (wanted ";
-		hashOStream(std::cerr, prevhash.data()) << ")" << std::endl;
+	memcpy(chdr->prev.data(), data, chdr->prev.size());
+	if(chdr->prev != prevhash){
+		std::cerr << "invalid prev hash (wanted " << prevhash << ")" << std::endl;
 		return true;
 	}
-	data += sizeof(chdr->prev);
+	data += chdr->prev.size();
 	chdr->version = nbo_to_ulong(data, 2);
 	data += 2; // 16-bit version field
 	if(chdr->version != Block::BLOCKVERSION){
@@ -100,7 +99,7 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	}
 	CatenaHash hash;
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
-	if(memcmp(hash.data(), chdr->hash, HASHLEN)){
+	if(hash != chdr->hash){
 		std::cerr << "invalid block hash (wanted " << hash << ")" << std::endl;
 		return true;
 	}
@@ -119,7 +118,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
-	std::array<unsigned char, HASHLEN> prevhash;
+	CatenaHash prevhash;
 	GetLastHash(prevhash);
 	TrustStore new_tstore = tstore; // FIXME expensive copy here :(
 	while(len){
@@ -131,7 +130,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 			return -1;
 		}
 		data += Block::BLOCKHEADERLEN;
-		memcpy(prevhash.data(), chdr.hash, prevhash.size());
+		prevhash = chdr.hash;
 		prevutc = chdr.utc;
 		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, &new_tstore)){
 			headers.clear();
@@ -200,11 +199,11 @@ bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& ts
 	return false;
 }
 
-void Blocks::GetLastHash(std::array<unsigned char, HASHLEN>& hash) const {
+void Blocks::GetLastHash(CatenaHash& hash) const {
 	if(headers.empty()){ // will be genesis block
 		memset(hash.data(), 0xff, HASHLEN);
 	}else{
-		memcpy(hash.data(), headers.back().hash, HASHLEN);
+		hash = headers.back().hash;
 	}
 }
 
@@ -213,7 +212,7 @@ std::vector<std::unique_ptr<Transaction>>
 Block::Inspect(const unsigned char* b, const BlockHeader* chdr){
 	CatenaHash hash;
 	catenaHash(b + HASHLEN, chdr->totlen - HASHLEN, hash);
-	if(memcmp(hash.data(), chdr->hash, HASHLEN)){
+	if(hash != chdr->hash){
 		throw BlockValidationException("bad hash on inspection");
 	}
 	if(ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr)){
@@ -249,7 +248,7 @@ std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
-Block::SerializeBlock(unsigned char* prevhash) const {
+Block::SerializeBlock(CatenaHash& prevhash) const {
 	std::vector<std::pair<std::unique_ptr<unsigned char[]>, size_t>> txserials;
 	std::vector<size_t> offsets;
 	size_t txoffset = 0;
@@ -265,7 +264,7 @@ Block::SerializeBlock(unsigned char* prevhash) const {
 	auto block = new unsigned char[len]();
 	std::unique_ptr<const unsigned char[]> ret(block);
 	unsigned char *targ = block + HASHLEN; // leave hash aside for now
-	memcpy(targ, prevhash, HASHLEN); // copy in previous hash
+	memcpy(targ, prevhash.data(), prevhash.size()); // copy in previous hash
 	targ += HASHLEN;
 	targ = ulong_to_nbo(BLOCKVERSION, targ, 2);
 	targ = ulong_to_nbo(len, targ, 3);
@@ -283,7 +282,7 @@ Block::SerializeBlock(unsigned char* prevhash) const {
 		txtable += txp.second;
 	}
 	catenaHash(block + HASHLEN, len - HASHLEN, block);
-	memcpy(prevhash, block, HASHLEN);
+	memcpy(prevhash.data(), block, HASHLEN);
 	return std::make_pair(std::move(ret), len);
 }
 
@@ -313,11 +312,8 @@ std::ostream& operator<<(std::ostream& stream, const Block& b){
 }
 
 std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
-	stream << "hash: ";
-	hashOStream(stream, bh.hash);
-	stream << "\nprev: ";
-	hashOStream(stream, bh.prev);
-	stream << "\nv" << bh.version << " transactions: " << bh.txcount <<
+	stream << "hash: " << bh.hash << "\nprev: " << bh.prev <<
+		"\nv" << bh.version << " transactions: " << bh.txcount <<
 		" bytes: " << bh.totlen << " ";
 	char buf[80];
 	time_t btime = bh.utc;
