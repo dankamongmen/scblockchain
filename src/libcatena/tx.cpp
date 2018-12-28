@@ -40,6 +40,13 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
+	if(len < 2){
+		std::cerr << "no room for keylen in " << len << std::endl;
+		return true;
+	}
+	keylen = nbo_to_ulong(data, 2);
+	// FIXME verify that key is valid? verify payload is valid JSON?
+	// Key length is part of the signed payload, so don't advance data
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
 	payloadlen = len;
@@ -61,7 +68,7 @@ bool ConsortiumMemberTX::Validate(TrustStore& tstore){
 	len -= sizeof(keylen);
 	data += sizeof(keylen);
 	std::array<unsigned char, sizeof(blockhash)> bhash;
-	memcpy(bhash.data(), blockhash, sizeof(blockhash));
+	bhash = blockhash;
 	Keypair kp(data, keylen);
 	tstore.addKey(&kp, {bhash, txidx});
 	return false;
@@ -76,6 +83,10 @@ std::ostream& NoOpTX::TXOStream(std::ostream& s) const {
 	return s << "NoOp";
 }
 
+nlohmann::json NoOpTX::JSONify() const {
+	return nlohmann::json({"type", "NoOp"});
+}
+
 std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[2]);
 	ulong_to_nbo(NoOp, ret.get(), 2);
@@ -83,8 +94,11 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 }
 
 std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
-	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload)\n";
-	s << " signer: " << signerhash << "[" << signeridx << "]";
+	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload, "
+		<< keylen << "b key)\n";
+	s << " signer: " << signerhash << "[" << signeridx << "]\n";
+	s << " payload: ";
+	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;
 }
 
@@ -105,10 +119,22 @@ ConsortiumMemberTX::Serialize() const {
 	return std::make_pair(std::move(ret), len);
 }
 
+nlohmann::json ConsortiumMemberTX::JSONify() const {
+	nlohmann::json ret({{"type", "ConsortiumMember"}});
+	ret["sigbytes"] = siglen;
+	ret["signerhash"] = hashOString(signerhash);
+	ret["signeridx"] = signeridx;
+	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
+	ret["payload"] = nlohmann::json::parse(pload);
+	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
+	ret["pubkey"] = pubkey;
+	return ret;
+}
+
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
 std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len,
-					const unsigned char* hash, unsigned idx){
+					const CatenaHash& blkhash, unsigned txidx){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
 		std::cerr << "no room for transaction type in " << len << std::endl;
@@ -120,10 +146,10 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 	Transaction* tx;
 	switch(txtype){
 	case NoOp:
-		tx = new NoOpTX(hash, idx);
+		tx = new NoOpTX(blkhash, txidx);
 		break;
 	case ConsortiumMember:
-		tx = new ConsortiumMemberTX(hash, idx);
+		tx = new ConsortiumMemberTX(blkhash, txidx);
 		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;

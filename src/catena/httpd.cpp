@@ -2,11 +2,13 @@
 #include <iostream>
 #include <microhttpd.h>
 #include <libcatena/chain.h>
+#include <libcatena/hash.h>
 #include "catena/httpd.h"
 
 namespace CatenaAgent {
 
-struct MHD_Response* HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))){
+struct MHD_Response*
+HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
 	ss << chain;
 	std::string s = ss.str();
@@ -21,7 +23,8 @@ struct MHD_Response* HTTPDServer::Show(struct MHD_Connection* conn __attribute__
 	return resp;
 }
 
-struct MHD_Response* HTTPDServer::TStore(struct MHD_Connection* conn __attribute__ ((unused))){
+struct MHD_Response*
+HTTPDServer::TStore(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
 	chain.DumpTrustStore(ss);
 	std::string s = ss.str();
@@ -36,19 +39,48 @@ struct MHD_Response* HTTPDServer::TStore(struct MHD_Connection* conn __attribute
 	return resp;
 }
 
-struct MHD_Response* HTTPDServer::Inspect(struct MHD_Connection* conn){
+nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
+	auto blks = chain.Inspect(start, end);
+	std::vector<nlohmann::json> jblks;
+	for(const auto& b : blks){
+		std::vector<nlohmann::json> jtxs;
+		for(const auto& tx : b.transactions){
+			jtxs.emplace_back(tx.get()->JSONify());
+		}
+		nlohmann::json jblk;
+		jblk["transactions"] = jtxs;
+		jblk["version"] = b.bhdr.version;
+		jblk["utc"] = b.bhdr.utc;
+		jblk["bytes"] = b.bhdr.totlen;
+		jblk["hash"] = Catena::hashOString(b.bhdr.hash);
+		nlohmann::json(b.bhdr.totlen);
+		jblks.emplace_back(jblk);
+	}
+	nlohmann::json ret(jblks);
+	return ret;
+}
+
+struct MHD_Response*
+HTTPDServer::Inspect(struct MHD_Connection* conn) const {
 	auto sstart = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "begin");
 	auto sstop = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "end");
-	char* e;
-	auto start = strtol(sstart, &e, 10);
-	if(start < 0 || start == LONG_MAX || *e){
-		return nullptr;
+	long start = 0;
+	if(sstart){
+		char* e = const_cast<char*>(sstart);
+		start = strtol(sstart, &e, 10);
+		if(start < 0 || start == LONG_MAX || *e){
+			return nullptr; // FIXME return 400 with explanation
+		}
 	}
-	auto end = strtol(sstop, &e, 10);
-	if(end < 0 || end == LONG_MAX || *e){
-		return nullptr;
+	long end = -1;
+	if(sstop){
+		char* e = const_cast<char*>(sstart);
+		end = strtol(sstop, &e, 10);
+		if(end < -1 || end == LONG_MAX || *e){ // allow explicit -1
+			return nullptr;
+		}
 	}
-	auto res = chain.InspectJSON(start, end).dump();
+	auto res = InspectJSON(start, end).dump();
 	auto resp = MHD_create_response_from_buffer(res.size(), const_cast<char*>(res.c_str()), MHD_RESPMEM_MUST_COPY);
 	if(resp){
 		if(MHD_NO == MHD_add_response_header(resp, MHD_HTTP_HEADER_CONTENT_TYPE, "application/json")){
@@ -77,7 +109,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 	int retcode = MHD_HTTP_OK; // FIXME callbacks need be able to set retcode
 	const struct {
 		const char *uri;
-		struct MHD_Response* (HTTPDServer::*fxn)(struct MHD_Connection*);
+		struct MHD_Response* (HTTPDServer::*fxn)(struct MHD_Connection*) const;
 	} cmds[] = {
 		{ "/show", &HTTPDServer::Show, },
 		{ "/tstore", &HTTPDServer::TStore, },

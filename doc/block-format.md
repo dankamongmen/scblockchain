@@ -160,6 +160,16 @@ a freeform msgpack-encoded payload.
 |              ...ECDSA signature (70--72 bytes)...             |
 |                ...2 bytes for DSA key length...               |
 |                      ...DSA public key...                     |
-|                ...msgpack consortium payload...               |
+|                  ...json consortium payload...                |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+The JSON payload is free-form. An example payload might be:
+```
+{
+	"Entity": "Headway",
+	"WWW": "https://headwayplatform.com/",
+	"Contact": "nick@headwayplatform.com",
+	"Location": "Atlanta, GA"
+}
 ```

@@ -48,10 +48,10 @@ int ReadlineUI::Inspect(const Iterator start, const Iterator end){
 	}else if(start + 1 == end){
 		// FIXME parse up argument
 		b1 = 0;
-		b2 = chain.GetBlockCount();
+		b2 = -1;
 	}else{
 		b1 = 0;
-		b2 = chain.GetBlockCount();
+		b2 = -1;
 	}
 	auto det = chain.Inspect(b1, b2);
 	for(const auto& d : det){
@@ -141,21 +141,35 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 
 std::vector<std::string> ReadlineUI::SplitInput(const char* line) const {
 	std::vector<std::string> tokens;
-	int soffset = -1, offset = 0;
+	std::vector<char> token;
+	bool quoted = false;
+	int offset = 0;
 	char c;
 	while( (c = line[offset]) ){
-		if(isspace(c)){
-			if(soffset != -1){
-				tokens.emplace_back(line + soffset, offset - soffset);
-				soffset = -1;
+		if(quoted){
+			if(c == '\''){
+				quoted = false;
+			}else{
+				token.push_back(c);
 			}
-		}else if(soffset == -1){
-			soffset = offset;
+		}else if(isspace(c)){
+			if(token.size()){
+				tokens.emplace_back(std::string(token.begin(), token.end()));
+				token.clear();
+			}
+		}else if(c == '\''){
+			quoted = true;
+		}else{
+			token.push_back(c);
 		}
 		++offset;
 	}
-	if(soffset != -1){
-		tokens.emplace_back(line + soffset, offset - soffset);
+	if(token.size()){
+		tokens.emplace_back(std::string(token.begin(), token.end()));
+	}
+	if(quoted){
+		std::cerr << "unterminated quote" << std::endl;
+		tokens.clear();
 	}
 	return tokens;
 }

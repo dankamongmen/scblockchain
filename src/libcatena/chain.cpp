@@ -41,9 +41,9 @@ std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 Chain::SerializeOutstanding() const {
-	std::array<unsigned char, HASHLEN> lasthash;
+	CatenaHash lasthash;
 	blocks.GetLastHash(lasthash);
-	auto p = outstanding.SerializeBlock(lasthash.data());
+	auto p = outstanding.SerializeBlock(lasthash);
 	return p;
 	// FIXME need kill off outstanding
 }
@@ -75,8 +75,6 @@ void Chain::AddNoOp(){
 
 void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload){
 	// FIXME verify that pkey is a valid public key
-	std::cout << "payload: " << payload << "\n";
-	std::cout << "payloaddump: " << payload.dump() << "\n";
 	auto serialjson = payload.dump();
 	size_t len = plen + 2 + serialjson.length();
 	unsigned char buf[len];
@@ -88,7 +86,7 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	KeyLookup signer;
 	auto sig = tstore.Sign(buf, len, &signer);
 	if(sig.second == 0){
-		return; // FIXME throw exception? make Sign throw exception?
+		throw SigningException("couldn't sign payload");
 	}
 	size_t totlen = len + sig.second + 4 + HASHLEN + 2;
 	unsigned char txbuf[totlen];
@@ -101,7 +99,7 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 	memcpy(targ, buf, len);
 	auto tx = std::unique_ptr<ConsortiumMemberTX>(new ConsortiumMemberTX());
 	if(tx.get()->Extract(txbuf, totlen)){
-		return; // FIXME throw exception?
+		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
 }
@@ -109,17 +107,6 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann
 // Get full block information about the specified range
 std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 	return blocks.Inspect(start, end);
-}
-
-nlohmann::json Chain::InspectJSON(int start, int end) const {
-	auto blks = Inspect(start, end);
-	std::vector<nlohmann::json> jblks;
-	for(const auto& b : blks){
-		jblks.emplace_back(nlohmann::json(b.bhdr.totlen));
-	}
-	nlohmann::json ret(jblks);
-	// FIXME JSONify it. later, inline the JSONification maybe, in Blocks
-	return ret;
 }
 
 }
