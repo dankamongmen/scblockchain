@@ -1,6 +1,7 @@
 #ifndef CATENA_CATENA_HTTPD
 #define CATENA_CATENA_HTTPD
 
+#include <json.hpp>
 #include <microhttpd.h>
 #include <libcatena/chain.h>
 
@@ -22,9 +23,10 @@ private:
 MHD_Daemon* mhd; // has no free function
 Catena::Chain& chain;
 
-struct MHD_Response* Show(struct MHD_Connection*);
-struct MHD_Response* TStore(struct MHD_Connection*);
-struct MHD_Response* Inspect(struct MHD_Connection*);
+struct MHD_Response* Show(struct MHD_Connection*) const;
+struct MHD_Response* TStore(struct MHD_Connection*) const;
+struct MHD_Response* Inspect(struct MHD_Connection*) const;
+nlohmann::json InspectJSON(int start, int end) const;
 
 static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	const char* method, const char* version, const char* upload_data,
