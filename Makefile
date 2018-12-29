@@ -31,7 +31,7 @@ CATENATESTINC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena $(EXTSRC), $(filter $
 LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena $(EXTSRC), $(filter $(dir)/%, $(CPPINC)))
 
 LEDGER:=genesisblock
-TESTDATA:=test/genesisblock-test $(LEDGER)
+TESTDATA:=$(wildcard test/*) $(LEDGER)
 
 WFLAGS:=-Wall -W -Werror
 # clang doesn't like this

@@ -1,7 +1,7 @@
 #ifndef CATENA_LIBCATENA_CHAIN
 #define CATENA_LIBCATENA_CHAIN
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
@@ -64,6 +64,8 @@ void AddSigningKey(const Keypair& kp);
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
 void AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload);
+void AddExternalLookup(const unsigned char* pkey, size_t plen,
+			const std::string& extid, unsigned lookuptype);
 
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.

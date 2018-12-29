@@ -1,10 +1,15 @@
 #ifndef CATENA_LIBCATENA_UTILITY
 #define CATENA_LIBCATENA_UTILITY
 
+#include <string>
+#include <vector>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
 #include <iostream>
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
+#include <gnu/libc-version.h>
+#endif
 
 namespace Catena {
 
@@ -68,6 +73,51 @@ ReadBinaryFile(const std::string& fname, size_t *len);
 // want to rewrite this in a zero-copy fashion.
 std::unique_ptr<unsigned char[]>
 ReadBinaryBlob(const std::string& fname, off_t offset, size_t len);
+
+class SplitInputException : public std::runtime_error {
+public:
+SplitInputException(const std::string& s) : std::runtime_error(s){}
+};
+
+// Split a line into whitespace-delimited tokens, supporting simple quoting
+// using single quotes, plus escaping using backslash.
+std::vector<std::string> SplitInput(const char* line);
+
+class ConvertInputException : public std::runtime_error {
+public:
+ConvertInputException(const std::string& s) : std::runtime_error(s){}
+};
+
+// Extract a long int from s, ensuring that it is the entirety of s (save any
+// leading whitespace and sign; see strtol(3)), that it is greater than or
+// equal to min, and that it is less than or equal to max. Throws
+// ConvertInputException on any error.
+long StrToLong(const std::string& s, long min, long max);
+
+inline std::string GetCompilerID(){
+#if defined(__GNUC__) && !defined(__clang__)
+	return std::string("GNU C++ ") + __VERSION__;
+#elif defined(__clang__)
+	return __VERSION__;
+#else
+#error "couldn't determine c++ compiler"
+#endif
+}
+
+inline std::string GetLibcID(){
+	std::stringstream ss;
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
+	ss << "GNU glibc " << gnu_get_libc_version();
+#elif defined(__UCLIBC__)
+	ss << "µClibc " << __UCLIBC_MAJOR__ << "." << __UCLIBC_MINOR__ << "."
+		<< __UCLIBC_SUBLEVEL__;
+#elif defined(__BIONIC__)
+	ss << "Google Bionic";
+#else
+#error "couldn't determine libc versioning"
+#endif
+	return ss.str();
+}
 
 }
 

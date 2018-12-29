@@ -31,8 +31,8 @@ TEST(CatenaBuiltin, ECSigVerify){
 		memcpy(sig, t->sig, sizeof(sig));
 		EXPECT_FALSE(bkeys.Verify(0, reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, sizeof(sig)));
-		EXPECT_TRUE(bkeys.Verify(1, reinterpret_cast<const unsigned char *>(t->data),
-				strlen(t->data), sig, sizeof(sig)));
+		EXPECT_THROW(bkeys.Verify(1, reinterpret_cast<const unsigned char *>(t->data),
+				strlen(t->data), sig, sizeof(sig)), Catena::SigningException);
 		++*sig;
 		EXPECT_TRUE(bkeys.Verify(0, reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, sizeof(sig)));

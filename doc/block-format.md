@@ -173,3 +173,46 @@ The JSON payload is free-form. An example payload might be:
 	"Location": "Atlanta, GA"
 }
 ```
+
+#### External Lookup
+
+Transaction type 0x0002, followed by a 16 bit lookup type, followed by the
+256-bit hash and 32-bit index of the registering consortium, followed by the 16
+bit signature length, followed by the signature, 16 bit public key length,
+followed by the public key, followed by the external identifier, of form
+determined by the lookup type (the external identifier should only contain
+printable characters). Lookup types include:
+
+* 0x0000 Sharecare ID (RFC 4122 UUID)
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         type (0x0002)         |           lookup type         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                         register hash                         +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        register index                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|               ...2 bytes for signature length...              |
+|              ...ECDSA signature (70--72 bytes)...             |
+|                ...2 bytes for DSA key length...               |
+|                      ...DSA public key...                     |
+|                   ...external identifier...                   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```

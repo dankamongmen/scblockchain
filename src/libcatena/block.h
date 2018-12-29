@@ -56,7 +56,7 @@ unsigned GetBlockCount() const {
 
 void GetLastHash(CatenaHash& hash) const;
 
-// Pass -1 for end to leave the end unspecified.
+// Pass -1 for end to leave the end unspecified. Start and end are inclusive.
 std::vector<BlockDetail> Inspect(int start, int end) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Blocks& b);

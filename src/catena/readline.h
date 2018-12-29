@@ -23,8 +23,8 @@ template <typename Iterator> int FlushOutstanding(const Iterator start, const It
 template <typename Iterator> int CommitOutstanding(const Iterator start, const Iterator end);
 template <typename Iterator> int TStore(const Iterator start, const Iterator end);
 template <typename Iterator> int NewMember(const Iterator start, const Iterator end);
+template <typename Iterator> int NewExternalLookup(const Iterator start, const Iterator end);
 template <typename Iterator> int NoOp(const Iterator start, const Iterator end);
-std::vector<std::string> SplitInput(const char* line) const;
 };
 
 }

@@ -1,8 +1,8 @@
 #ifndef CATENA_CATENA_HTTPD
 #define CATENA_CATENA_HTTPD
 
-#include <json.hpp>
 #include <microhttpd.h>
+#include <nlohmann/json.hpp>
 #include <libcatena/chain.h>
 
 namespace CatenaAgent {
@@ -17,20 +17,31 @@ public:
 HTTPDServer() = delete;
 HTTPDServer(Catena::Chain& chain, unsigned port);
 
-virtual ~HTTPDServer() = default;
+HTTPDServer(const HTTPDServer&) = delete;
+HTTPDServer& operator=(HTTPDServer const&) = delete;
+virtual ~HTTPDServer();
 
 private:
 MHD_Daemon* mhd; // has no free function
 Catena::Chain& chain;
 
+struct MHD_Response* Summary(struct MHD_Connection*) const;
 struct MHD_Response* Show(struct MHD_Connection*) const;
 struct MHD_Response* TStore(struct MHD_Connection*) const;
 struct MHD_Response* Inspect(struct MHD_Connection*) const;
 nlohmann::json InspectJSON(int start, int end) const;
+std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
 
 static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	const char* method, const char* version, const char* upload_data,
 	size_t* upload_len, void** conn_cls);
+
+// POST handlers
+int ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const;
+
+int HandlePost(struct MHD_Connection* conn, const char* url,
+		const char* upload_data, size_t* upload_len,
+		void** conn_cls);
 
 };
 

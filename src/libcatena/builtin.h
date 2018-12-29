@@ -12,12 +12,12 @@ namespace Catena {
 class BuiltinKeys {
 public:
 BuiltinKeys();
+
 // Verify the signature on the specified data, using builtin index idx
 bool Verify(size_t idx, const unsigned char* in, size_t inlen,
 		const unsigned char* sig, size_t siglen){
 	if(idx >= keys.size()){
-		std::cerr << "invalid builtin key index: " << idx << std::endl;
-		return true;
+		throw SigningException("invalid builtin key index");
 	}
 	return keys[idx].Verify(in, inlen, sig, siglen);
 }
