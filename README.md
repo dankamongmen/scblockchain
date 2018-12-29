@@ -62,6 +62,9 @@ within the payload.
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
 lookup type.
+* `patient`: generate a Patient transaction. takes as its arguments a filename
+containing the new entity's authorization public key, and an arbitrary
+JSON-encoded payload. This payload will be encrypted.
 
 Use of the `member` command requires a private key having been loaded with the
 `-u` option, along with a public key .
@@ -83,7 +86,11 @@ doc/json-schema.md.
     * Replies with application/json body of type TXRequestResult
 * POST `/exlookup`: JSON equivalent of the `exlookup` command
     * Requires an application/json body of type NewExternalLookupTX
-    * Replies with application/json body of type TXRequestResult
+    * Replies with application/json body of type TXRequestResponse
+* POST `/patient`: JSON equivalent of the `patient` command
+    * Requires an application/json body of type NewPatientTX
+    * Replies with application/json body of type NewPatientTXResponse
+or, on failure, TXRequestResponse
 
 ## Key operations
 
