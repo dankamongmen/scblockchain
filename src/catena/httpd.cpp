@@ -107,6 +107,7 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 		jblk["utc"] = b.bhdr.utc;
 		jblk["bytes"] = b.bhdr.totlen;
 		jblk["hash"] = Catena::hashOString(b.bhdr.hash);
+		jblk["prev"] = Catena::hashOString(b.bhdr.prev);
 		nlohmann::json(b.bhdr.totlen);
 		jblks.emplace_back(jblk);
 	}
