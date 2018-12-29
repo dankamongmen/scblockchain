@@ -45,6 +45,14 @@ unsigned GetBlockCount() const {
 	return blocks.GetBlockCount();
 }
 
+unsigned OutstandingTXCount() const {
+	return outstanding.TransactionCount();
+}
+
+time_t MostRecentBlock() const {
+	return blocks.GetLastUTC();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
