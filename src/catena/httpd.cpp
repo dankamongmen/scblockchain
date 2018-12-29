@@ -25,12 +25,11 @@ constexpr char htmlhdr[] =
  "td+td { width: auto; }"
  "tr:nth-child(even) td { background: #f1f1f1; }"
  "tr:nth-child(odd) td { background: #fefefe; }"
- ".hrule { margin: 1em 0 1em 0; width: 50%; height: 1px; box-shadow: 0 0 5px 1px #ff8300; }"
  "tr td:hover { background: #00dddd; }"
  "</style></head>";
 
 std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
-	ss << "<table>";
+	ss << "<h3>system</h3><table>";
 	ss << "<tr><td>cxx</td><td>" << Catena::GetCompilerID() << "</td></tr>";
 	ss << "<tr><td>libc</td><td>" << Catena::GetLibcID() << "</td></tr>";
 	ss << "<tr><td>json</td><td>JSON for Modern C++ " <<
@@ -39,6 +38,22 @@ std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 		NLOHMANN_JSON_VERSION_PATCH << "</td>";
 	ss << "<tr><td>crypto</td><td>" <<
 		SSLeay_version(SSLEAY_VERSION) << "</td></tr>";
+	ss << "</table>";
+	return ss;
+}
+
+std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
+	ss << "<h3>chain</h3><table>";
+	ss << "<tr><td>blockcount</td><td>" << chain.GetBlockCount() << "</td></tr>";
+	ss << "<tr><td>outstandingTXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
+	char timebuf[80];
+	auto lastutc = chain.MostRecentBlock();
+	if(lastutc == -1){
+		strcpy(timebuf, "n/a");
+	}else{
+		ctime_r(&lastutc, timebuf);
+	}
+	ss << "<tr><td>lastblocktime</td><td>" << timebuf << "</td></tr>";
 	ss << "</table>";
 	return ss;
 }
@@ -60,6 +75,7 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 	ss << htmlhdr;
 	ss << "<body><h1>catena node</h1>";
 	HTMLSysinfo(ss);
+	HTMLChaininfo(ss);
 	ss << "</body>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),
