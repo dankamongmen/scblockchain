@@ -110,9 +110,34 @@ std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 
 void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 				nlohmann::json& payload){
-	(void)cmspec; // FIXME validate it is CM
-	(void)elspec; // FIXME validate it is EL
-	(void)payload;
+	auto serialjson = payload.dump();
+	// Signed payload is ExternalLookup TXSpec + JSON
+	size_t len = elspec.first.size() + 4 + serialjson.length();
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	memcpy(targ, elspec.first.data(), elspec.first.size());
+	targ += elspec.first.size();
+	targ = ulong_to_nbo(elspec.second, targ, 4);
+	memcpy(targ, serialjson.c_str(), serialjson.length());
+	KeyLookup signer; // FIXME enforce cmspec-ified key
+	auto sig = tstore.Sign(buf, len, &signer);
+	if(sig.second == 0){
+		throw SigningException("couldn't sign payload");
+	}
+	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(sig.second, txbuf, 2);
+	memcpy(targ, cmspec.first.data(), cmspec.first.size());
+	targ += cmspec.first.size();
+	targ = ulong_to_nbo(cmspec.second, targ, 4);
+	memcpy(targ, sig.first.get(), sig.second);
+	targ += sig.second;
+	memcpy(targ, buf, len);
+	auto tx = std::unique_ptr<LookupAuthReqTX>(new LookupAuthReqTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
 void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
