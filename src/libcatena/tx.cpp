@@ -12,6 +12,11 @@ enum TXTypes {
 	NoOp = 0x0000,
 	ConsortiumMember = 0x0001,
 	ExternalLookup = 0x0002,
+	Patient = 0x0003,
+	PatientStatus = 0x0004,
+	LookupAuthReq = 0x0005,
+	LookupAuth = 0x0006,
+	PatientStatusDelegation = 0x0007,
 };
 
 bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
