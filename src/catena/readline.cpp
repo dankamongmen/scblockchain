@@ -114,7 +114,7 @@ int ReadlineUI::TStore(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NoOp(const Iterator start, const Iterator end){
+int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -146,6 +146,27 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	}catch(nlohmann::detail::parse_error& e){
 		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
 	}
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
+	(void)start;
+	(void)end;
 	return -1;
 }
 
@@ -194,9 +215,12 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
 		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
-		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },
+		{ .cmd = "noop", .fxn = &ReadlineUI::NewNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
 		{ .cmd = "exlookup", .fxn = &ReadlineUI::NewExternalLookup, .help = "create new ExternalLookup transaction", },
+		{ .cmd = "lauthreq", .fxn = &ReadlineUI::NewLookupAuthReq, .help = "create new ExternalLookup transaction", },
+		{ .cmd = "lauth", .fxn = &ReadlineUI::NewLookupAuth, .help = "create new ExternalLookup transaction", },
+		{ .cmd = "patient", .fxn = &ReadlineUI::NewPatient, .help = "create new ExternalLookup transaction", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;
