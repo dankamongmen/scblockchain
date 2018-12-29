@@ -19,6 +19,7 @@ struct BlockHeader {
 	unsigned totlen;
 	unsigned txcount;
 	uint64_t utc;
+	unsigned txidx; // transaction index within block, derived on read
 };
 
 struct BlockDetail {
@@ -55,6 +56,13 @@ unsigned GetBlockCount() const {
 }
 
 void GetLastHash(CatenaHash& hash) const;
+
+time_t GetLastUTC() const {
+	if(headers.empty()){
+		return -1;
+	}
+	return headers.back().utc;
+}
 
 // Pass -1 for end to leave the end unspecified. Start and end are inclusive.
 std::vector<BlockDetail> Inspect(int start, int end) const;

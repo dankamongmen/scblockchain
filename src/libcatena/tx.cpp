@@ -12,7 +12,40 @@ enum TXTypes {
 	NoOp = 0x0000,
 	ConsortiumMember = 0x0001,
 	ExternalLookup = 0x0002,
+	Patient = 0x0003,
+	PatientStatus = 0x0004,
+	LookupAuthReq = 0x0005,
+	LookupAuth = 0x0006,
+	PatientStatusDelegation = 0x0007,
 };
+
+TXSpec Transaction::StrToTXSpec(const std::string& s){
+	TXSpec ret;
+	// 2 chars for each hash byte, 1 for period, 1 min for txindex
+	if(s.size() < 2 * ret.first.size() + 2){
+		throw ConvertInputException("too small for txspec: " + s);
+	}
+	if(s[2 * ret.first.size()] != '.'){
+		throw ConvertInputException("expected '.': " + s);
+	}
+	for(size_t i = 0 ; i < ret.first.size() ; ++i){
+		char c1 = s[i * 2];
+		char c2 = s[i * 2 + 1];
+		auto hexasc_to_val = [](char nibble){
+			if(nibble >= 'a' && nibble <= 'f'){
+				return nibble - 'a' + 10;
+			}else if(nibble >= 'A' && nibble <= 'F'){
+				return nibble - 'A' + 10;
+			}else if(nibble >= '0' && nibble <= '9'){
+				return nibble - '0';
+			}
+			throw ConvertInputException("bad hex digit: " + nibble);
+		};
+		ret.first[i] = hexasc_to_val(c1) * 16 + hexasc_to_val(c2);
+	}
+	ret.second = StrToLong(s.substr(2 * ret.first.size() + 1), 0, 0xffffffff);
+	return ret;
+}
 
 bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	if(len < 2){ // 16-bit signature length
@@ -99,7 +132,7 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
 	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload, "
 		<< keylen << "b key)\n";
-	s << " signer: " << signerhash << "[" << signeridx << "]\n";
+	s << " signer: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;
@@ -208,7 +241,7 @@ std::ostream& ExternalLookupTX::TXOStream(std::ostream& s) const {
 	s << "ExternalLookup (type " << lookuptype << ", " << siglen
 		<< "b signature, " << payloadlen << "b payload, "
 		<< keylen << "b key)\n";
-	s << " registrar: " << signerhash << "[" << signeridx << "]\n";
+	s << " registrar: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetPayload(), GetPayload() + GetPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;
@@ -244,6 +277,84 @@ nlohmann::json ExternalLookupTX::JSONify() const {
 	return ret;
 }
 
+bool LookupAuthReqTX::Extract(const unsigned char* data, unsigned len) {
+	if(len < 2){ // 16-bit signature length
+		std::cerr << "no room for siglen in " << len << std::endl;
+		return true;
+	}
+	siglen = nbo_to_ulong(data, 2);
+	data += 2;
+	len -= 2;
+	if(len < signerhash.size() + sizeof(signeridx)){
+		std::cerr << "no room for sigspec in " << len << std::endl;
+		return true;
+	}
+	memcpy(signerhash.data(), data, signerhash.size());
+	data += signerhash.size();
+	len -= signerhash.size();
+	signeridx = nbo_to_ulong(data, sizeof(signeridx));
+	data += sizeof(signeridx);
+	len -= sizeof(signeridx);
+	if(len < siglen || siglen > sizeof(signature)){
+		std::cerr << "no room for signature in " << len << std::endl;
+		return true;
+	}
+	memcpy(signature, data, siglen);
+	data += siglen;
+	len -= siglen;
+	// FIXME verify that specs are valid? verify payload is valid JSON?
+	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
+	memcpy(payload.get(), data, len);
+	payloadlen = len;
+	return false;
+}
+
+bool LookupAuthReqTX::Validate(TrustStore& tstore) {
+	if(tstore.Verify({signerhash, signeridx}, payload.get(),
+				payloadlen, signature, siglen)){
+		return true;
+	}
+	// FIXME store metadata
+	return false;
+}
+
+std::ostream& LookupAuthReqTX::TXOStream(std::ostream& s) const {
+	s << "LookupAuthReq (" << siglen << "b signature, " << payloadlen << "b payload)\n";
+	s << " signer: " << signerhash << "." << signeridx << "\n";
+	// FIXME s << " elookup: " << signerhash << "." << signeridx << "\n";
+	s << " payload: ";
+	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
+	return s;
+
+}
+
+std::pair<std::unique_ptr<unsigned char[]>, size_t> LookupAuthReqTX::Serialize() const {
+	size_t len = 4 + siglen + signerhash.size() + sizeof(signeridx) +
+		payloadlen;
+	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
+	auto data = ulong_to_nbo(LookupAuthReq, ret.get(), 2);
+	data = ulong_to_nbo(siglen, data, 2);
+	memcpy(data, signerhash.data(), signerhash.size());
+	data += signerhash.size();
+	data = ulong_to_nbo(signeridx, data, 4);
+	memcpy(data, signature, siglen);
+	data += siglen;
+	memcpy(data, payload.get(), payloadlen);
+	data += payloadlen;
+	return std::make_pair(std::move(ret), len);
+}
+
+nlohmann::json LookupAuthReqTX::JSONify() const {
+	nlohmann::json ret({{"type", "LookupAuthReq"}});
+	ret["sigbytes"] = siglen;
+	ret["signerhash"] = hashOString(signerhash);
+	ret["signeridx"] = signeridx;
+	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
+	ret["payload"] = nlohmann::json::parse(pload);
+	// EL TXSpec
+	return ret;
+}
+
 // Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
 // failure to parse, or if the length is wrong for the transaction.
 std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len,
@@ -266,6 +377,9 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 		break;
 	case ExternalLookup:
 		tx = new ExternalLookupTX(blkhash, txidx);
+		break;
+	case LookupAuthReq:
+		tx = new LookupAuthReqTX(blkhash, txidx);
 		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;

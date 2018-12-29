@@ -45,6 +45,14 @@ unsigned GetBlockCount() const {
 	return blocks.GetBlockCount();
 }
 
+unsigned OutstandingTXCount() const {
+	return outstanding.TransactionCount();
+}
+
+time_t MostRecentBlock() const {
+	return blocks.GetLastUTC();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
@@ -66,6 +74,7 @@ void AddNoOp();
 void AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload);
 void AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype);
+void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, nlohmann::json& payload);
 
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.

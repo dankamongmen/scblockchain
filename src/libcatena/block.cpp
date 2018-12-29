@@ -110,12 +110,14 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 // verified blocks). If any block fails verification, the Blocks structure is
 // unchanged, and -1 is returned.
 int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
-	uint64_t prevutc = 0;
 	unsigned offset = 0;
-	if(offsets.size()){
+	uint64_t prevutc = 0;
+	auto origblockcount = GetBlockCount();
+	int blocknum = origblockcount;
+	if(blocknum){
+		prevutc = GetLastUTC();
 		offset = offsets.back() + headers.back().totlen;
 	}
-	int blocknum = 0;
 	std::vector<unsigned> new_offsets;
 	std::vector<BlockHeader> new_headers;
 	CatenaHash prevhash;
@@ -124,17 +126,14 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	while(len){
 		Block block;
 		BlockHeader chdr;
+		chdr.txidx = blocknum;
 		if(Block::ExtractHeader(&chdr, data, len, prevhash, prevutc)){
-			headers.clear();
-			offsets.clear();
 			return -1;
 		}
 		data += Block::BLOCKHEADERLEN;
 		prevhash = chdr.hash;
 		prevutc = chdr.utc;
 		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, &new_tstore)){
-			headers.clear();
-			offsets.clear();
 			return -1;
 		}
 		data += chdr.totlen - Block::BLOCKHEADERLEN;
@@ -147,7 +146,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	headers.insert(headers.end(), new_headers.begin(), new_headers.end());
 	offsets.insert(offsets.end(), new_offsets.begin(), new_offsets.end());
 	tstore = new_tstore; // FIXME another expensive copy
-	return blocknum;
+	return blocknum - origblockcount;
 }
 
 bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
@@ -176,11 +175,12 @@ bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 }
 
 bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore){
-	std::cout << "Appending " << blen << " byte block\n";
+	std::cout << "Validating " << blen << " byte block\n";
 	if(VerifyData(block, blen, tstore) <= 0){
 		return true;
 	}
 	if(filename != ""){
+		std::cout << "Appending " << blen << " byte block\n";
 		// FIXME if we have an error writing out, do we need to remove
 		// the new data from internal data structures from VerifyData?
 		// Safest thing might be to copy+append first, then verify, then
@@ -314,8 +314,7 @@ std::ostream& operator<<(std::ostream& stream, const Block& b){
 }
 
 std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
-	stream << "hash: " << bh.hash << "\nprev: " << bh.prev <<
-		"\nv" << bh.version << " transactions: " << bh.txcount <<
+	stream << std::setfill('0') << std::setw(8) << bh.txidx <<  " v" << bh.version << " transactions: " << bh.txcount <<
 		" bytes: " << bh.totlen << " ";
 	char buf[80];
 	time_t btime = bh.utc;
@@ -324,6 +323,7 @@ std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
 	}else{
 		stream << "\n";
 	}
+	stream << " hash: " << bh.hash << "\n prev: " << bh.prev << "\n";
 	return stream;
 }
 

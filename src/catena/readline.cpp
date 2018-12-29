@@ -87,7 +87,7 @@ int ReadlineUI::CommitOutstanding(const Iterator start, const Iterator end){
 	try{
 		chain.CommitOutstanding();
 	}catch(std::exception& e){
-		std::cerr << "Error committing: " << e.what();
+		std::cerr << "Error committing: " << e.what() << std::endl;
 		return -1;
 	}
 	return 0;
@@ -114,7 +114,7 @@ int ReadlineUI::TStore(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NoOp(const Iterator start, const Iterator end){
+int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
 	if(start != end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
@@ -146,6 +146,69 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	}catch(nlohmann::detail::parse_error& e){
 		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
 	}
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
+	if(start + 3 != end){
+		std::cerr << "command requires three arguments: ConsortiumMember spec, ExternalLookup spec, JSON payload" << std::endl;
+		return -1;
+	}
+	const auto& json = start[2];
+	try{
+		auto cmspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto elspec = Catena::Transaction::StrToTXSpec(start[1]);
+		auto payload = nlohmann::json::parse(json);
+		chain.AddLookupAuthReq(cmspec, elspec, payload);
+		return 0;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't extract hashspec (" << e.what() << ")" << std::endl;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
+	(void)start;
+	(void)end;
 	return -1;
 }
 
@@ -194,9 +257,15 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
 		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
-		{ .cmd = "noop", .fxn = &ReadlineUI::NoOp, .help = "create new NoOp transaction", },
+		{ .cmd = "noop", .fxn = &ReadlineUI::NewNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
 		{ .cmd = "exlookup", .fxn = &ReadlineUI::NewExternalLookup, .help = "create new ExternalLookup transaction", },
+		{ .cmd = "lauthreq", .fxn = &ReadlineUI::NewLookupAuthReq, .help = "create new LookupAuthorizationRequest transaction", },
+		{ .cmd = "lauth", .fxn = &ReadlineUI::NewLookupAuth, .help = "create new LookupAuthorization transaction", },
+		{ .cmd = "patient", .fxn = &ReadlineUI::NewPatient, .help = "create new Patient transaction", },
+		{ .cmd = "delpstatus", .fxn = &ReadlineUI::NewPatientStatusDelegation, .help = "create new PatientStatusDelegation transaction", },
+		{ .cmd = "pstatus", .fxn = &ReadlineUI::NewPatientStatus, .help = "create new PatientStatus transaction", },
+		{ .cmd = "getpstatus", .fxn = &ReadlineUI::GetPatientStatus, .help = "look up a patient's status", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;
@@ -230,9 +299,9 @@ void ReadlineUI::InputLoop(){
 			std::cerr << "unknown command: " << tokens[0] << std::endl;
 		}else if(c->fxn == nullptr){ // display help
 			for(c = cmdtable ; c->fxn ; ++c){
-				std::cout << c->cmd << ": " << c->help << '\n';
+				std::cout << c->cmd << "\033[0;37m: " << c->help << "\033[1;37m\n";
 			}
-			std::cout << "help: list commands" << std::endl;
+			std::cout << "help\033[0;37m: list commands\033[1;37m" << std::endl;
 		}
 		free(line);
 	}
