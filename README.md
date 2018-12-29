@@ -67,14 +67,18 @@ lookup type.
 * `patient`: generate a Patient transaction. takes as its arguments a filename
 containing the new entity's authorization public key, and an arbitrary
 JSON-encoded payload. This payload will be encrypted.
+* `pstatus`: generate a new Patient Status transaction
+* `getpstatus`: show the most recent PatientStatus for the specified patient
+and patient status delegation type.
 
-Use of the `member` command requires a private key having been loaded with the
-`-u` option, along with a public key .
+Use of commands that generate signed transactions requires a private key having
+been loaded with the `-u` option, along with a public key.
 
 ### HTTP services of cantena
 
 The following endpoints are provided. JSON schema are available in
-doc/json-schema.md.
+doc/json-schema.md. HTML pages are subject to change, and ought not be scraped
+nor parsed for semantic content in clients.
 
 * GET `/`: HTML status page for human consumption (do not scrape/parse)
 * GET `/show`: HTML equivalent of the `show` command
@@ -82,6 +86,8 @@ doc/json-schema.md.
 * GET `/inspect`: JSON equivalent of the `inspect` command
     * Optional query argument: `begin`, integer specifying first block
     * Optional query argument: `end`, integer specifying last block
+    * Replies with application/json body of type InspectResult
+* GET `/outstanding`: JSON equivalent of the `outstanding` command
     * Replies with application/json body of type InspectResult
 * POST `/member`: JSON equivalent of the `member` command
     * Requires an application/json body of type NewConsortiumMemberTX
@@ -99,6 +105,13 @@ doc/json-schema.md.
     * Requires an application/json body of type NewPatientTX
     * Replies with application/json body of type NewPatientTXResponse or, on
 failure, TXRequestResponse
+* POST `/pstatus`: JSON equivalent of the `pstatus` command
+    * Requires an application/json body of type NewPatientStatusTX
+    * Replies with application/json body of type TXRequestResponse
+* GET `/pstatus`: JSON equivalent of the `getpstatus` command
+    * Required query argument: `hash`, base64-encoded hash of patient block
+    * Required query argument: `txidx`, integer specifying patient transaction
+    * Required query argument: `stype`, integer specifying delegated status type
 
 ## Key operations
 
