@@ -133,7 +133,6 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		data += Block::BLOCKHEADERLEN;
 		prevhash = chdr.hash;
 		prevutc = chdr.utc;
-std::cerr << "EXTRACTING BODY" << std::endl;
 		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, &new_tstore)){
 			return -1;
 		}
