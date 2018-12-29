@@ -128,16 +128,13 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		BlockHeader chdr;
 		chdr.txidx = blocknum;
 		if(Block::ExtractHeader(&chdr, data, len, prevhash, prevutc)){
-			headers.clear();
-			offsets.clear();
 			return -1;
 		}
 		data += Block::BLOCKHEADERLEN;
 		prevhash = chdr.hash;
 		prevutc = chdr.utc;
+std::cerr << "EXTRACTING BODY" << std::endl;
 		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, &new_tstore)){
-			headers.clear();
-			offsets.clear();
 			return -1;
 		}
 		data += chdr.totlen - Block::BLOCKHEADERLEN;
@@ -179,11 +176,12 @@ bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 }
 
 bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore){
-	std::cout << "Appending " << blen << " byte block\n";
+	std::cout << "Validating " << blen << " byte block\n";
 	if(VerifyData(block, blen, tstore) <= 0){
 		return true;
 	}
 	if(filename != ""){
+		std::cout << "Appending " << blen << " byte block\n";
 		// FIXME if we have an error writing out, do we need to remove
 		// the new data from internal data structures from VerifyData?
 		// Safest thing might be to copy+append first, then verify, then
