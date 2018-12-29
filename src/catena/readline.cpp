@@ -143,7 +143,7 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 		}catch(Catena::SigningException& e){
 			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 		}
-	}catch(nlohmann::detail::parse_error &e){
+	}catch(nlohmann::detail::parse_error& e){
 		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
 	}
 	return -1;

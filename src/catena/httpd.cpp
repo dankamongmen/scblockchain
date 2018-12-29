@@ -151,9 +151,15 @@ struct PostState {
 };
 
 int HTTPDServer::ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)upload;
-	(void)uplen; // FIXME
-	ps->response = "{arp}";
+	(void)uplen;
+	nlohmann::json json;
+	try{
+		json = nlohmann::json::parse(upload);
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	ps->response = json.dump();
 	return MHD_YES;
 }
 
@@ -167,7 +173,6 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		{ "/exlookup", &HTTPDServer::ExternalLookupReq, },
 		{ nullptr, nullptr },
 	},* cmd;
-	std::cerr << "GOT US THE POST " << (upload_len ? *upload_len : 0) << "b\n";
 	int retcode = MHD_HTTP_OK; // FIXME callbacks need be able to set retcode
 	struct MHD_Response* resp = nullptr;
 	for(cmd = cmds ; cmd->uri ; ++cmd){

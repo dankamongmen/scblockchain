@@ -240,6 +240,7 @@ nlohmann::json ExternalLookupTX::JSONify() const {
 	ret["payload"] = std::string(reinterpret_cast<const char*>(GetPayload()), GetPayloadLength());
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
 	ret["pubkey"] = pubkey;
+	ret["subtype"] = lookuptype;
 	return ret;
 }
 
