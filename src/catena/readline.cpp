@@ -151,6 +151,7 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
 	(void)start;
 	(void)end;
 	return -1;
@@ -158,13 +159,30 @@ int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
-	(void)start;
-	(void)end;
+	if(start + 3 != end){
+		std::cerr << "command requires three arguments: ConsortiumMember spec, ExternalLookup spec, JSON payload" << std::endl;
+		return -1;
+	}
+	const auto& json = start[2];
+	try{
+		auto cmspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto elspec = Catena::Transaction::StrToTXSpec(start[1]);
+		auto payload = nlohmann::json::parse(json);
+		chain.AddLookupAuthReq(cmspec, elspec, payload);
+		return 0;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't extract hashspec (" << e.what() << ")" << std::endl;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}
 	return -1;
 }
 
 template <typename Iterator>
 int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
 	(void)start;
 	(void)end;
 	return -1;
@@ -172,6 +190,7 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
 	(void)start;
 	(void)end;
 	return -1;
@@ -179,6 +198,7 @@ int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
 	(void)start;
 	(void)end;
 	return -1;
@@ -186,6 +206,7 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator end){
+	std::cerr << "not yet implemented" << std::endl;
 	(void)start;
 	(void)end;
 	return -1;

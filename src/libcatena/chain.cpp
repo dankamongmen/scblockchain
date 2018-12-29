@@ -108,6 +108,13 @@ std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 	return blocks.Inspect(start, end);
 }
 
+void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
+				nlohmann::json& payload){
+	(void)cmspec; // FIXME validate it is CM
+	(void)elspec; // FIXME validate it is EL
+	(void)payload;
+}
+
 void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype){
 	// FIXME verify that pkey is a valid public key

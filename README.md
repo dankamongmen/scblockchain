@@ -72,8 +72,9 @@ JSON-encoded payload. This payload will be encrypted.
 * `getpstatus`: show the most recent PatientStatus for the specified patient
 and patient status delegation type.
 
-Use of commands that generate signed transactions requires a private key having
-been loaded with the `-u` option, along with a public key.
+Use of commands that generate signed or encrypted transactions requires an
+appropriate private key having been loaded with the `-u` option (along with
+the corresponding public key with the `-v` option).
 
 ### HTTP services of cantena
 
