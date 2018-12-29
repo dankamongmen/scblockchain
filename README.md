@@ -79,10 +79,10 @@ doc/json-schema.md.
     * Optional query argument: `end`, integer specifying last block
     * Replies with application/json body of type InspectResult
 * POST `/member`: JSON equivalent of the `member` command
-    * Requires an application/json body of type ConsortiumMemberTXRequest
+    * Requires an application/json body of type NewConsortiumMemberTX
     * Replies with application/json body of type TXRequestResult
 * POST `/exlookup`: JSON equivalent of the `exlookup` command
-    * Requires an application/json body of type ExternalLookupTXRequest
+    * Requires an application/json body of type NewExternalLookupTX
     * Replies with application/json body of type TXRequestResult
 
 ## Key operations

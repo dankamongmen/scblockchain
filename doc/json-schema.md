@@ -30,14 +30,43 @@ Map of strings to T:
 * optional `subtype`: Integer corresponding to transaction subtype
     * ExternalLookup: lookup type
 
-# ConsortiumMemberTXRequest
+# NewConsortiumMemberTX
 
-# ExternalLookupTXRequest
+Accepted by the `/member` endpoint. Map of strings to T:
+* `pubkey`: String containing PEM-encoded public key
+* `payload`: JSON payload containing freeform details related to this entity
 
-Map of strings to T:
+# NewExternalLookupTX
+
+Accepted by the `/exlookup` endpoint. Map of strings to T:
 * `pubkey`: String containing PEM-encoded public key
 * `lookuptype`: Integer, lookup type
 * `payload`: String payload, dependent on lookuptype
+
+# NewLookupAuthorizationRequestTX
+
+Map of strings to T:
+* `exthash`: String containing hex encoding of 256-bit block hash (64 chars)
+* `exttxidx`: Integer containing ExternalLookup transaction ID
+* `reqhash`: String containing hex encoding of 256-bit block hash (64 chars)
+* `reqtxidx`: Integer containing ConsortiumMember transaction ID
+* `payload`: JSON payload containing freeform details related to this request
+
+# NewLookupAuthorizationTX
+
+Map of strings to T:
+* `payload`: String containing base64-encoded AES-GCM encrypted payload (see below)
+* `refhash`: String containing hex encoding of 256-bit block hash (64 chars)
+* `reftxidx`: Integer containing LookupAuthorizationRequest transaction ID
+* `signature`: String containing PEM-encoded signature of `payload`
+
+The plaintext (binary) payload consists of a PEM-encoded symmetric key,
+followed by a 256 bit blockhash, followed by a 32-bit transaction identifier.
+This references a published Patient transaction. The symmetric key can be used
+to decrypt the Patient payload. This payload is encrypted using a symmetric key
+derived from the public keys published in the ConsortiumMember and
+ExternalLookup transactions transitively referenced through `refhash` and
+`reftxidx`.
 
 # TXRequestResponse
 
