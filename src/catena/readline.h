@@ -30,6 +30,7 @@ template <typename Iterator> int NewLookupAuthReq(const Iterator start, const It
 template <typename Iterator> int NewNoOp(const Iterator start, const Iterator end);
 template <typename Iterator> int NewPatientStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int GetPatientStatus(const Iterator start, const Iterator end);
+template <typename Iterator> int NewPatientStatusDelegation(const Iterator start, const Iterator end);
 };
 
 }
