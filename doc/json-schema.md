@@ -39,7 +39,7 @@ Accepted by the `/member` endpoint. Map of strings to T:
 # NewExternalLookupTX
 
 Accepted by the `/exlookup` endpoint. Map of strings to T:
-* `pubkey`: String containing PEM-encoded public key
+* `pubkey`: String containing PEM-encoded public key (user lookup key)
 * `lookuptype`: Integer, lookup type
 * `payload`: String payload, dependent on lookuptype
 
@@ -60,13 +60,49 @@ Map of strings to T:
 * `reftxidx`: Integer containing LookupAuthorizationRequest transaction ID
 * `signature`: String containing PEM-encoded signature of `payload`
 
-The plaintext (binary) payload consists of a PEM-encoded symmetric key,
-followed by a 256 bit blockhash, followed by a 32-bit transaction identifier.
-This references a published Patient transaction. The symmetric key can be used
-to decrypt the Patient payload. This payload is encrypted using a symmetric key
-derived from the public keys published in the ConsortiumMember and
-ExternalLookup transactions transitively referenced through `refhash` and
+The plaintext (binary) payload consists of a base64-encoded symmetric key,
+followed by a 256 bit blockhash, followed by a 32-bit NBO transaction
+identifier. This references a published Patient transaction. The symmetric key
+can be used to decrypt the Patient payload. This payload is encrypted using a
+symmetric key derived from the public keys published in the ConsortiumMember
+and ExternalLookup transactions transitively referenced through `refhash` and
 `reftxidx`.
+
+# NewPatientTX
+
+Map of strings to T:
+* `pubkey`: String containing PEM-encode public key (user delegation auth key)
+* `reqhash`: String containing hex encoding of 256-bit block hash (64 chars)
+* `reqtxidx`: Integer containing ConsortiumMember transaction ID
+* `payload`: JSON payload containing freeform details related to this request.
+This will be encrypted before being written to the ledger.
+
+## NewPatientTXResponse
+
+Map of strings to T:
+* `symkey`: String containing base64-encoded AES key used to encrypted Patient payload.
+
+# NewPatientDelegationTX
+
+Map of strings to T:
+* `statustype`: Integer identifying the type of status being delegated
+* `reqhash`: String containing hex encoding of 256-bit block hash (64 chars)
+* `reqtxidx`: Integer containing ConsortiumMember transaction ID
+* `pathash`: String containing hex encoding of 256-bit block hash (64 chars)
+* `pattxidx`: Integer containing Patient transaction ID
+
+This will be signed using the delegation authentication key specified by
+`pathash[pattxidx]`, which must have its private key loaded in the catena
+agent.
+
+# NewPatientStatusTX
+Map of strings to T:
+* `delhash`: String containing hex encoding of 256-bit block hash (64 chars)
+* `deltxidx`: Integer containing Patient transaction ID
+* `payload`: JSON payload containing freeform details related to this request.
+
+This will be signed using the consortium key specified by `delhash[deltxidx]`,
+which must have its private key loaded in the catena agent.
 
 # TXRequestResponse
 
