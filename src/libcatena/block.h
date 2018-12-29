@@ -19,6 +19,7 @@ struct BlockHeader {
 	unsigned totlen;
 	unsigned txcount;
 	uint64_t utc;
+	unsigned txidx; // transaction index within block, derived on read
 };
 
 struct BlockDetail {

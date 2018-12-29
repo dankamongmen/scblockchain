@@ -132,7 +132,7 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 std::ostream& ConsortiumMemberTX::TXOStream(std::ostream& s) const {
 	s << "ConsortiumMember (" << siglen << "b signature, " << payloadlen << "b payload, "
 		<< keylen << "b key)\n";
-	s << " signer: " << signerhash << "[" << signeridx << "]\n";
+	s << " signer: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;
@@ -241,7 +241,7 @@ std::ostream& ExternalLookupTX::TXOStream(std::ostream& s) const {
 	s << "ExternalLookup (type " << lookuptype << ", " << siglen
 		<< "b signature, " << payloadlen << "b payload, "
 		<< keylen << "b key)\n";
-	s << " registrar: " << signerhash << "[" << signeridx << "]\n";
+	s << " registrar: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetPayload(), GetPayload() + GetPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;

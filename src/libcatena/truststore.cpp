@@ -29,7 +29,7 @@ std::ostream& operator<<(std::ostream& s, const TrustStore& ts){
 		if(kp.HasPrivateKey()){
 			s << "(*) ";
 		}
-		HexOutput(s, kl.first) << ":" << kl.second << "\n";
+		HexOutput(s, kl.first) << "." << kl.second << "\n";
 		s << kp;
 	}
 	return s;

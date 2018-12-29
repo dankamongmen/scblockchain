@@ -40,7 +40,7 @@ ReadBinaryFile(const std::string& fname, size_t *len){
 		return nullptr;
 	}
 	std::unique_ptr<unsigned char[]> memblock;
-  memblock = std::make_unique<unsigned char[]>(*len);
+	memblock = std::make_unique<unsigned char[]>(*len);
 	auto r = read(fd, memblock.get(), *len);
 	if(r < 0 || r != flen){
 		throw std::ifstream::failure("error reading file");
