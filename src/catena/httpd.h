@@ -26,6 +26,7 @@ MHD_Daemon* mhd; // has no free function
 Catena::Chain& chain;
 
 struct MHD_Response* Summary(struct MHD_Connection*) const;
+struct MHD_Response* Favicon(struct MHD_Connection*) const;
 struct MHD_Response* Show(struct MHD_Connection*) const;
 struct MHD_Response* TStore(struct MHD_Connection*) const;
 struct MHD_Response* Inspect(struct MHD_Connection*) const;

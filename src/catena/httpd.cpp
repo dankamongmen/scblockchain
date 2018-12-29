@@ -4,6 +4,7 @@
 #include <libcatena/utility.h>
 #include <libcatena/chain.h>
 #include <libcatena/hash.h>
+#include "catena/favicon.h"
 #include "catena/httpd.h"
 
 namespace CatenaAgent {
@@ -40,6 +41,17 @@ std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 		SSLeay_version(SSLEAY_VERSION) << "</td></tr>";
 	ss << "</table>";
 	return ss;
+}
+
+struct MHD_Response*
+HTTPDServer::Favicon(struct MHD_Connection* conn __attribute__ ((unused))) const {
+	auto resp = MHD_create_response_from_buffer(sizeof(FaviconBMP),
+			(char*)FaviconBMP, MHD_RESPMEM_PERSISTENT);
+        if(MHD_NO == MHD_add_response_header(resp, "Content-Type", "image/vnd.microsoft.icon")){
+		MHD_destroy_response(resp);
+		return nullptr;
+	}
+	return resp;
 }
 
 struct MHD_Response*
@@ -261,6 +273,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		struct MHD_Response* (HTTPDServer::*fxn)(struct MHD_Connection*) const;
 	} cmds[] = {
 		{ "/", &HTTPDServer::Summary, },
+		{ "/favicon.ico", &HTTPDServer::Favicon, },
 		{ "/show", &HTTPDServer::Show, },
 		{ "/tstore", &HTTPDServer::TStore, },
 		{ "/inspect", &HTTPDServer::Inspect, },
