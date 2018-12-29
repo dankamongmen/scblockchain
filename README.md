@@ -62,6 +62,8 @@ within the payload.
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
 lookup type.
+* `lauthreq`: generate a LookupAuthorizationRequest transaction
+* `lauth`: generate a LookupAuthorization transaction
 * `patient`: generate a Patient transaction. takes as its arguments a filename
 containing the new entity's authorization public key, and an arbitrary
 JSON-encoded payload. This payload will be encrypted.
@@ -87,10 +89,16 @@ doc/json-schema.md.
 * POST `/exlookup`: JSON equivalent of the `exlookup` command
     * Requires an application/json body of type NewExternalLookupTX
     * Replies with application/json body of type TXRequestResponse
+* POST `/lauthreq`: JSON equivalent of the `lauthreq` command
+    * Requires an application/json body of type NewLookupAuthorizationRequestTX
+    * Replies with application/json body of type TXRequestResponse
+* POST `/lauth`: JSON equivalent of the `lauth` command
+    * Requires an application/json body of type NewLookupAuthorizationTX
+    * Replies with application/json body of type TXRequestResponse
 * POST `/patient`: JSON equivalent of the `patient` command
     * Requires an application/json body of type NewPatientTX
-    * Replies with application/json body of type NewPatientTXResponse
-or, on failure, TXRequestResponse
+    * Replies with application/json body of type NewPatientTXResponse or, on
+failure, TXRequestResponse
 
 ## Key operations
 
