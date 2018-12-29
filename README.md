@@ -62,12 +62,13 @@ within the payload.
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
 lookup type.
-* `lauthreq`: generate a LookupAuthorizationRequest transaction
-* `lauth`: generate a LookupAuthorization transaction
+* `lauthreq`: generate a LookupAuthReq transaction
+* `lauth`: generate a LookupAuth transaction
 * `patient`: generate a Patient transaction. takes as its arguments a filename
 containing the new entity's authorization public key, and an arbitrary
 JSON-encoded payload. This payload will be encrypted.
-* `pstatus`: generate a new Patient Status transaction
+* `delpstatus`: generate a PatientStatusDelegation transaction
+* `pstatus`: generate a PatientStatus transaction
 * `getpstatus`: show the most recent PatientStatus for the specified patient
 and patient status delegation type.
 
@@ -105,6 +106,9 @@ nor parsed for semantic content in clients.
     * Requires an application/json body of type NewPatientTX
     * Replies with application/json body of type NewPatientTXResponse or, on
 failure, TXRequestResponse
+* POST `/delpstatus`: JSON equivalent of the `delpstatus` command
+    * Requires an application/json body of type NewPatientStatusDelegationTX
+    * Replies with application/json body of type TXRequestResponse
 * POST `/pstatus`: JSON equivalent of the `pstatus` command
     * Requires an application/json body of type NewPatientStatusTX
     * Replies with application/json body of type TXRequestResponse
@@ -112,6 +116,7 @@ failure, TXRequestResponse
     * Required query argument: `hash`, base64-encoded hash of patient block
     * Required query argument: `txidx`, integer specifying patient transaction
     * Required query argument: `stype`, integer specifying delegated status type
+    * Replies with application/json body of type PatientStatusResult
 
 ## Key operations
 
