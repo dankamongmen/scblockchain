@@ -171,6 +171,20 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
+int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
+	(void)start;
+	(void)end;
+	return -1;
+}
+
+template <typename Iterator>
 int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
 	if(end - start != 3){
 		std::cerr << "command requires three arguments: lookup type, public key file, external ID" << std::endl;
@@ -218,9 +232,11 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "noop", .fxn = &ReadlineUI::NewNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
 		{ .cmd = "exlookup", .fxn = &ReadlineUI::NewExternalLookup, .help = "create new ExternalLookup transaction", },
-		{ .cmd = "lauthreq", .fxn = &ReadlineUI::NewLookupAuthReq, .help = "create new ExternalLookup transaction", },
-		{ .cmd = "lauth", .fxn = &ReadlineUI::NewLookupAuth, .help = "create new ExternalLookup transaction", },
-		{ .cmd = "patient", .fxn = &ReadlineUI::NewPatient, .help = "create new ExternalLookup transaction", },
+		{ .cmd = "lauthreq", .fxn = &ReadlineUI::NewLookupAuthReq, .help = "create new LookupAuthorizationRequest transaction", },
+		{ .cmd = "lauth", .fxn = &ReadlineUI::NewLookupAuth, .help = "create new LookupAuthorization transaction", },
+		{ .cmd = "patient", .fxn = &ReadlineUI::NewPatient, .help = "create new Patient transaction", },
+		{ .cmd = "pstatus", .fxn = &ReadlineUI::NewPatientStatus, .help = "create new PatientStatus transaction", },
+		{ .cmd = "getpstatus", .fxn = &ReadlineUI::GetPatientStatus, .help = "look up a patient's status", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;

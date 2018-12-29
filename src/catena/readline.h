@@ -28,6 +28,8 @@ template <typename Iterator> int NewExternalLookup(const Iterator start, const I
 template <typename Iterator> int NewLookupAuth(const Iterator start, const Iterator end);
 template <typename Iterator> int NewLookupAuthReq(const Iterator start, const Iterator end);
 template <typename Iterator> int NewNoOp(const Iterator start, const Iterator end);
+template <typename Iterator> int NewPatientStatus(const Iterator start, const Iterator end);
+template <typename Iterator> int GetPatientStatus(const Iterator start, const Iterator end);
 };
 
 }
