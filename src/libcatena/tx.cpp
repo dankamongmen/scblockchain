@@ -19,6 +19,34 @@ enum TXTypes {
 	PatientStatusDelegation = 0x0007,
 };
 
+TXSpec Transaction::StrToTXSpec(const std::string& s){
+	TXSpec ret;
+	// 2 chars for each hash byte, 1 for period, 1 min for txindex
+	if(s.size() < 2 * ret.first.size() + 2){
+		throw ConvertInputException("too small for txspec: " + s);
+	}
+	if(s[2 * ret.first.size()] != '.'){
+		throw ConvertInputException("expected '.': " + s);
+	}
+	for(size_t i = 0 ; i < ret.first.size() ; ++i){
+		char c1 = s[i * 2];
+		char c2 = s[i * 2 + 1];
+		auto hexasc_to_val = [](char nibble){
+			if(nibble >= 'a' && nibble <= 'f'){
+				return nibble - 'a' + 10;
+			}else if(nibble >= 'A' && nibble <= 'F'){
+				return nibble - 'A' + 10;
+			}else if(nibble >= '0' && nibble <= '9'){
+				return nibble - '0';
+			}
+			throw ConvertInputException("bad hex digit: " + nibble);
+		};
+		ret.first[i] = hexasc_to_val(c1) * 16 + hexasc_to_val(c2);
+	}
+	ret.second = StrToLong(s.substr(2 * ret.first.size() + 1), 0, 0xffffffff);
+	return ret;
+}
+
 bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	if(len < 2){ // 16-bit signature length
 		std::cerr << "no room for siglen in " << len << std::endl;

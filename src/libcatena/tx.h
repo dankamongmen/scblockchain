@@ -10,6 +10,8 @@
 
 namespace Catena {
 
+using TXSpec = std::pair<CatenaHash, unsigned>;
+
 class Transaction {
 public:
 Transaction() = default;
@@ -35,6 +37,11 @@ friend std::ostream& operator<<(std::ostream& s, Transaction* t){
 static std::unique_ptr<Transaction>
 lexTX(const unsigned char* data, unsigned len,
 	const CatenaHash& blkhash, unsigned txidx);
+
+// Canonical format is hex representation of block hash, followed by period,
+// followed by transaction index with optional leading zeroes. No other content
+// is allowed. Throws ConvertInputException on any lexing error.
+static TXSpec StrToTXSpec(const std::string& s);
 
 protected:
 // FIXME shouldn't need to keep these, but don't want to explicitly pass them
