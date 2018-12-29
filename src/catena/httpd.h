@@ -17,7 +17,9 @@ public:
 HTTPDServer() = delete;
 HTTPDServer(Catena::Chain& chain, unsigned port);
 
-virtual ~HTTPDServer() = default;
+HTTPDServer(const HTTPDServer&) = delete;
+HTTPDServer& operator=(HTTPDServer const&) = delete;
+virtual ~HTTPDServer();
 
 private:
 MHD_Daemon* mhd; // has no free function
@@ -33,6 +35,16 @@ std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
 static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	const char* method, const char* version, const char* upload_data,
 	size_t* upload_len, void** conn_cls);
+
+// POST handlers
+static int ExternalLookupReq(void* coninfo_cls, enum MHD_ValueKind kind,
+		const char* key, const char *filename,
+                const char* content_type, const char* transfer_encoding,
+                const char* value, uint64_t off, size_t size);
+
+int HandlePost(struct MHD_Connection* conn, const char* url,
+		const char* upload_data, size_t* upload_len,
+		void** conn_cls);
 
 };
 
