@@ -87,7 +87,7 @@ int ReadlineUI::CommitOutstanding(const Iterator start, const Iterator end){
 	try{
 		chain.CommitOutstanding();
 	}catch(std::exception& e){
-		std::cerr << "Error committing: " << e.what();
+		std::cerr << "Error committing: " << e.what() << std::endl;
 		return -1;
 	}
 	return 0;
