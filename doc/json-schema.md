@@ -21,16 +21,23 @@ a partial range of blocks are being detailed.
 ## Transaction
 
 Map of strings to T:
-* `type`: Integer transaction type
+* `type`: String containing human-readble transaction type
 * optional `sigbytes`: Integer size of the signature in bytes
 * optional `signerhash`: String containing hex encoding of 256-bit signer block
 * optional `signeridx`: Integer corresponding to signer TX index within block
 * optional `pubkey`: String containing PEM-encoded public key
-* optional `payload`: JSON payload, dependent on transaction type
+* optional `payload`: payload, dependent on transaction type and subtype
+* optional `subtype`: Integer corresponding to transaction subtype
+    * ExternalLookup: lookup type
 
 # ConsortiumMemberTXRequest
 
 # ExternalLookupTXRequest
+
+Map of strings to T:
+* `pubkey`: String containing PEM-encoded public key
+* `lookuptype`: Integer, lookup type
+* `payload`: String payload, dependent on lookuptype
 
 # TXRequestResponse
 
