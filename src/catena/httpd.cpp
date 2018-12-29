@@ -146,19 +146,14 @@ HTTPDServer::Inspect(struct MHD_Connection* conn) const {
 	return resp;
 }
 
-int HTTPDServer::ExternalLookupReq(void* coninfo_cls,
-		enum MHD_ValueKind kind, const char* key, const char *filename,
-                const char* content_type, const char* transfer_encoding,
-                const char* value, uint64_t off, size_t size){
-	(void)size;
-	(void)off;
-	(void)value;
-	(void)transfer_encoding;
-	(void)content_type;
-	(void)filename;
-	(void)key;
-	(void)kind;
-	(void)coninfo_cls;
+struct PostState {
+	std::string response;
+};
+
+int HTTPDServer::ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)upload;
+	(void)uplen; // FIXME
+	ps->response = "{arp}";
 	return MHD_YES;
 }
 
@@ -167,12 +162,9 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 				void** conn_cls){
 	const struct {
 		const char *uri;
-		int (*fxn)(void*, enum MHD_ValueKind, const char*,
-                                const char*, const char*,
-                                const char*, const char*,
-                                uint64_t, size_t);
+		int (HTTPDServer::*fxn)(struct PostState*, const char*, size_t) const;
 	} cmds[] = {
-		{ "/exlookup", ExternalLookupReq, },
+		{ "/exlookup", &HTTPDServer::ExternalLookupReq, },
 		{ nullptr, nullptr },
 	},* cmd;
 	std::cerr << "GOT US THE POST " << (upload_len ? *upload_len : 0) << "b\n";
@@ -192,20 +184,19 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		MHD_destroy_response(resp);
 		return ret;
 	}
-	auto mpp = static_cast<struct MHD_PostProcessor*>(*conn_cls);
+	auto mpp = static_cast<struct PostState*>(*conn_cls);
 	if(mpp == nullptr){
-		mpp = MHD_create_post_processor(conn, BUFSIZ, cmd->fxn, nullptr);
-		*conn_cls = mpp;
+		*conn_cls = new PostState;
 		return MHD_YES;
 	}
 	if(upload_len && *upload_len){
-		auto ret = MHD_post_process(mpp, upload_data, *upload_len);
+		auto ret = (this->*(cmd->fxn))(mpp, upload_data, *upload_len);
 		*upload_len = 0;
 		return ret;
 	}
-	MHD_destroy_post_processor(mpp);
-	char buf[1] = ""; // FIXME get resptext through mpp
-	resp = MHD_create_response_from_buffer(1, buf, MHD_RESPMEM_MUST_COPY);
+	resp = MHD_create_response_from_buffer(mpp->response.size(),
+			const_cast<char*>(mpp->response.c_str()),
+			MHD_RESPMEM_MUST_COPY);
 	if(resp == nullptr){
 		return MHD_NO;
 	}

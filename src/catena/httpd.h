@@ -37,10 +37,7 @@ static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	size_t* upload_len, void** conn_cls);
 
 // POST handlers
-static int ExternalLookupReq(void* coninfo_cls, enum MHD_ValueKind kind,
-		const char* key, const char *filename,
-                const char* content_type, const char* transfer_encoding,
-                const char* value, uint64_t off, size_t size);
+int ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const;
 
 int HandlePost(struct MHD_Connection* conn, const char* url,
 		const char* upload_data, size_t* upload_len,
