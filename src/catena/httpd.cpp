@@ -155,11 +155,40 @@ int HTTPDServer::ExternalLookupReq(struct PostState* ps, const char* upload, siz
 	nlohmann::json json;
 	try{
 		json = nlohmann::json::parse(upload);
+		auto pubkey = json.find("pubkey");
+		auto lookuptype = json.find("lookuptype");
+		auto payload = json.find("payload");
+		if(pubkey == json.end() || lookuptype == json.end() || payload == json.end()){
+			std::cerr << "missing necessary elements from ExternalLookupTXRequest" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*pubkey).is_string()){
+			std::cerr << "pubkey was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*lookuptype).is_number()){
+			std::cerr << "lookuptype was not a number" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*payload).is_string()){
+			std::cerr << "payload was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto kstr = (*pubkey).get<std::string>();
+		auto pstr = (*payload).get<std::string>();
+		auto ltype = (*lookuptype).get<int>();
+		try{
+			chain.AddExternalLookup(reinterpret_cast<const unsigned char*>(kstr.c_str()),
+					kstr.size(), pstr, ltype);
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
 	}catch(nlohmann::detail::parse_error& e){
 		std::cerr << "error extracting JSON from " << upload << std::endl;
 		return MHD_NO;
 	}
-	ps->response = json.dump();
+	ps->response = "{}";
 	return MHD_YES;
 }
 
