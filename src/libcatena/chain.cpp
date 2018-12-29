@@ -45,7 +45,6 @@ Chain::SerializeOutstanding() const {
 	blocks.GetLastHash(lasthash);
 	auto p = outstanding.SerializeBlock(lasthash);
 	return p;
-	// FIXME need kill off outstanding
 }
 
 // This needs to operator atomically -- either while trying to commit the

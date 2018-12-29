@@ -226,8 +226,10 @@ std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 	if(start < 0){
 		return ret;
 	}
-	if(end < 0 || (size_t)end > headers.size()){
+	if(end < 0 || (size_t)end + 1 > headers.size()){
 		end = headers.size();
+	}else{
+		++end;
 	}
 	if(filename == ""){ // FIXME need keep copy of internal buffer
 		throw BlockValidationException();
