@@ -2,8 +2,8 @@
 #include <gtest/gtest.h>
 #include "libcatena/sig.h"
 
-#define PUBLICKEY "test/ecdsa.pub"
-#define ECDSAKEY "test/ecdsa.pem"
+#define PUBLICKEY "test/cm-test1.pub"
+#define ECDSAKEY "test/cm-test1.pem"
 
 TEST(CatenaSigs, LoadPubkeyFile){
 	Catena::Keypair(PUBLICKEY);
