@@ -17,6 +17,18 @@ SigningException() : std::runtime_error("error signing"){}
 SigningException(const std::string& s) : std::runtime_error(s){}
 };
 
+class EncryptException : public std::runtime_error {
+public:
+EncryptException() : std::runtime_error("error encrypting"){}
+EncryptException(const std::string& s) : std::runtime_error(s){}
+};
+
+class DecryptException : public std::runtime_error {
+public:
+DecryptException() : std::runtime_error("error decrypting"){}
+DecryptException(const std::string& s) : std::runtime_error(s){}
+};
+
 using KeyLookup = std::pair<std::array<unsigned char, HASHLEN>, unsigned>;
 
 struct keylookup_hash {
@@ -56,11 +68,13 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const;
 
 // Returned ciphertext includes 128 bits of random AES IV, so size >= 16
-std::pair<std::unique_ptr<unsigned char>, size_t>
+// Throws EncryptException on error.
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Encrypt(const void* in, size_t len, const SymmetricKey& key) const;
 
 // Only the plaintext is returned. AES IV and ciphertext are provided.
-std::pair<std::unique_ptr<unsigned char>, size_t>
+// Throws DecryptException on error.
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
 
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);

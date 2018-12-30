@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <openssl/rand.h>
 #include <libcatena/truststore.h>
 #include <libcatena/builtin.h>
 #include <libcatena/hash.h>
@@ -72,3 +73,47 @@ TEST(CatenaTrustStore, SignOnlyBuiltinKeys){
 // FIXME add copy constructor test using builtin keys
 
 // FIXME add test using test keys + addKey() for full sign + verify loop
+
+TEST(CatenaTrustStore, SymmetricFail){
+	Catena::TrustStore tstore;
+	Catena::SymmetricKey key;
+	EXPECT_THROW(tstore.Encrypt(nullptr, 0, key), Catena::EncryptException);
+	EXPECT_THROW(tstore.Encrypt(nullptr, 256, key), Catena::EncryptException);
+}
+
+static const char* tests[] = {
+	"", "h", "hello", "thisisfifteenab", "thisissixteenabc",
+	"0123456789012345678901234567890", // blocksize - 1 raw, bsize with NUL
+	"0123456789012345678901234567891", // bsize raw, bsize + 1 with NUL
+	"this one is almost certainly longer than the block size, i think",
+	NULL
+
+};
+
+TEST(CatenaTrustStore, SymmetricEncryptDecryptString){
+	Catena::TrustStore tstore;
+	Catena::SymmetricKey key;
+	ASSERT_EQ(1, RAND_bytes(key.data(), key.size()));
+	for(auto t = tests ; *t ; ++t){
+		auto ret = tstore.Encrypt(*t, strlen(*t) + 1, key);
+		EXPECT_GE(ret.second, 16); // should have at least an IV
+		auto dec = tstore.Decrypt(ret.first.get(), ret.second, key);
+		ASSERT_EQ(strlen(*t) + 1, dec.second);
+		EXPECT_STREQ(*t, reinterpret_cast<char*>(dec.first.get()));
+	}
+}
+
+TEST(CatenaTrustStore, SymmetricEncryptDecryptUnterminated){
+	Catena::TrustStore tstore;
+	Catena::SymmetricKey key;
+	ASSERT_EQ(1, RAND_bytes(key.data(), key.size()));
+	for(auto t = tests ; *t ; ++t){
+		// Encrypt without the NUL terminator, and do a memcmp
+		auto ret = tstore.Encrypt(*t, strlen(*t), key);
+		EXPECT_GE(ret.second, 16); // should have at least an IV
+		auto dec = tstore.Decrypt(ret.first.get(), ret.second, key);
+		ASSERT_EQ(strlen(*t), dec.second);
+		EXPECT_EQ(0, memcmp(dec.first.get(), *t, dec.second));
+		// Secondly, encrypt without the NUL terminator, and do a memcmp
+	}
+}
