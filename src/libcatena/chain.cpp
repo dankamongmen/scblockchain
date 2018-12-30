@@ -1,4 +1,7 @@
 #include <cstring>
+#include "libcatena/externallookuptx.h"
+#include "libcatena/lookupauthreqtx.h"
+#include "libcatena/patienttx.h"
 #include "libcatena/builtin.h"
 #include "libcatena/utility.h"
 #include "libcatena/chain.h"
@@ -72,7 +75,8 @@ void Chain::AddNoOp(){
 	outstanding.AddTransaction(std::make_unique<NoOpTX>());
 }
 
-void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload){
+void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen,
+				const nlohmann::json& payload){
 	// FIXME verify that pkey is a valid public key
 	auto serialjson = payload.dump();
 	size_t len = plen + 2 + serialjson.length();
@@ -109,7 +113,7 @@ std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 }
 
 void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
-				nlohmann::json& payload){
+				const nlohmann::json& payload){
 	auto serialjson = payload.dump();
 	// Signed payload is ExternalLookup TXSpec + JSON
 	size_t len = elspec.first.size() + 4 + serialjson.length();
@@ -166,6 +170,43 @@ void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
 	targ += sig.second;
 	memcpy(targ, buf, len);
 	auto tx = std::unique_ptr<ExternalLookupTX>(new ExternalLookupTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
+}
+
+void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
+			size_t plen, SymmetricKey& symkey,
+			const nlohmann::json& payload){
+	// FIXME verify that pkey is a valid public key
+	auto serialjson = payload.dump(); // Only the JSON payload is encrypted
+	auto etext = tstore.Encrypt(serialjson.data(), serialjson.length(), symkey);
+	// etext.second is encrypted length, etext.first is ciphertext + IV
+	// The public key, keylen, IV, and encrypted payload are all signed
+	size_t len = plen + 2 + etext.second;
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	targ = ulong_to_nbo(plen, targ, 2);
+	memcpy(targ, pkey, plen);
+	targ += plen;
+	memcpy(targ, etext.first.get(), etext.second);
+	KeyLookup signer;
+	(void)cmspec; // FIXME use cmspec to choose signer
+	auto sig = tstore.Sign(buf, len, &signer);
+	if(sig.second == 0){
+		throw SigningException("couldn't sign payload");
+	}
+	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(sig.second, txbuf, 2); // siglen
+	memcpy(targ, signer.first.data(), signer.first.size()); // sighash
+	targ += signer.first.size();
+	targ = ulong_to_nbo(signer.second, targ, 4); // sigidx
+	memcpy(targ, sig.first.get(), sig.second); // signature
+	targ += sig.second;
+	memcpy(targ, buf, len); // signed payload (pkeylen, pkey, ciphertext)
+	auto tx = std::unique_ptr<PatientTX>(new PatientTX());
 	if(tx.get()->Extract(txbuf, totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
