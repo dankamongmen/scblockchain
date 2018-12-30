@@ -221,10 +221,9 @@ printable characters). Lookup types include:
 
 Transaction type 0x0003, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the registering consortium, followed by the
-128-bit IV, followed by the 16-bit encrypted payload len, followed by the
-encrypted payload. The encrypted payload together with the IV decrypt to a
 16-bit public key length, followed by the public key, followed by the
-JSON-encoded payload.
+128-bit IV, followed by the encrypted payload. The encrypted payload together
+with the IV decrypt to a JSON-encoded payload.
 
 ```
  0                   1                   2                   3
@@ -250,6 +249,9 @@ JSON-encoded payload.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                          signer index                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                ...2 bytes for DSA key length...               |
+|                      ...DSA public key...                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
 +                                                               +
 |                                                               |
@@ -258,7 +260,6 @@ JSON-encoded payload.
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            ...2 bytes for encrypted payload len...            |
 |                    ...encrypted payload...                    |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
