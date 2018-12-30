@@ -81,6 +81,13 @@ Encrypt(const void* in, size_t len, const SymmetricKey& key) const;
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
 
+KeyLookup PrivateKey() const {
+	if(signingkey == nullptr){
+		throw SigningException("no private key");
+	}
+	return *signingkey.get();
+}
+
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 
 private:

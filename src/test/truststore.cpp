@@ -48,6 +48,11 @@ TEST(CatenaTrustStore, BuiltinKeys){
 	}
 }
 
+TEST(CatenaTrustStore, PrivateKeyException){
+	Catena::TrustStore tstore;
+	EXPECT_THROW(tstore.PrivateKey(), Catena::SigningException);
+}
+
 TEST(CatenaTrustStore, CopyConstructorEmpty){
 	Catena::TrustStore tstore, tstore1;
 	tstore1 = tstore;
