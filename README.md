@@ -170,7 +170,6 @@ Cofactor:  1 (0x1)
 
 ## Runtime data
 
-Included are two files, `genesisblock` and `test/genesisblock-test`. The former
-is the first block of the official ledger as run in the Headway Catena Network.
-The latter contains a ConsortiumMemberTX record using the testing keys in
-`test/ecdsa.pem` and `test/ecdsa.pub`.
+Included are two files, `genesisblock` and `test/ledget-test`. The former is
+the first block of the official ledger as run in the Headway Catena Network.
+The latter contains several records based off the keys in `test/`.

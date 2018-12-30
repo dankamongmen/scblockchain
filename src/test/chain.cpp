@@ -1,12 +1,11 @@
 #include <gtest/gtest.h>
 #include <libcatena/chain.h>
-
-#define MOCKBLOCK "test/genesisblock-test"
+#include "test/defs.h"
 
 TEST(CatenaChain, ChainGenesisBlock){
-	Catena::Chain("genesisblock");
+	Catena::Chain(GENESISBLOCK_EXTERNAL);
 }
 
 TEST(CatenaChain, ChainGenesisMock){
-	Catena::Chain(MOCKBLOCK);
+	Catena::Chain(MOCKLEDGER);
 }
