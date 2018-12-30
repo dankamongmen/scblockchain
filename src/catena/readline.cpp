@@ -63,9 +63,13 @@ int ReadlineUI::Inspect(const Iterator start, const Iterator end){
 		}
 	}
 	auto det = chain.Inspect(b1, b2);
-	for(const auto& d : det){
-		std::cout << d;
+	for(auto it = det.begin() ; it != det.end() ; ++it){
+		std::cout << *it;
+		if(std::next(it) != det.end()){
+			std::cout << "\n";
+		}
 	}
+	std::cout << std::flush;
 	return 0;
 }
 
