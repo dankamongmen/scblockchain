@@ -86,7 +86,10 @@ nlohmann::json PatientTX::JSONify() const {
 	ret["sigbytes"] = siglen;
 	ret["signerhash"] = hashOString(signerhash);
 	ret["signeridx"] = signeridx;
-	ret["payload"] = std::string(reinterpret_cast<const char*>(GetPayload()), GetPayloadLength());
+	// FIXME when decrypted, maybe print that out? probably not...?
+	std::stringstream ss;
+	HexOutput(ss, GetPayload(), GetPayloadLength());
+	ret["encpayload"] = ss.str();
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
 	ret["pubkey"] = pubkey;
 	return ret;
