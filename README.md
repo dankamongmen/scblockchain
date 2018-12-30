@@ -1,4 +1,4 @@
-# catena -- ShareCare blockchain for health information
+# catena - a distributed ledger for health information
 
 ## Building
 
