@@ -29,7 +29,7 @@ DecryptException() : std::runtime_error("error decrypting"){}
 DecryptException(const std::string& s) : std::runtime_error(s){}
 };
 
-using KeyLookup = std::pair<std::array<unsigned char, HASHLEN>, unsigned>;
+using KeyLookup = std::pair<CatenaHash, unsigned>;
 
 struct keylookup_hash {
 	template <class T1, class T2>
