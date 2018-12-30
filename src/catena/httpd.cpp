@@ -178,7 +178,7 @@ struct PostState {
 	std::string response;
 };
 
-int HTTPDServer::ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const {
+int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
 	(void)uplen;
 	nlohmann::json json;
 	try{
@@ -220,6 +220,27 @@ int HTTPDServer::ExternalLookupReq(struct PostState* ps, const char* upload, siz
 	return MHD_YES;
 }
 
+int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
 int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 				const char* upload_data, size_t* upload_len,
 				void** conn_cls){
@@ -227,7 +248,10 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		const char *uri;
 		int (HTTPDServer::*fxn)(struct PostState*, const char*, size_t) const;
 	} cmds[] = {
-		{ "/exlookup", &HTTPDServer::ExternalLookupReq, },
+		{ "/member", &HTTPDServer::MemberTXReq, },
+		{ "/exlookup", &HTTPDServer::ExternalLookupTXReq, },
+		{ "/lauthreq", &HTTPDServer::LookupAuthReqTXReq, },
+		{ "/patient", &HTTPDServer::PatientTXReq, },
 		{ nullptr, nullptr },
 	},* cmd;
 	int retcode = MHD_HTTP_OK; // FIXME callbacks need be able to set retcode
@@ -253,6 +277,9 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 	}
 	if(upload_len && *upload_len){
 		auto ret = (this->*(cmd->fxn))(mpp, upload_data, *upload_len);
+		if(ret == MHD_NO){
+			std::cerr << "error handling " << url << std::endl;
+		}
 		*upload_len = 0;
 		return ret;
 	}

@@ -40,7 +40,10 @@ static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	size_t* upload_len, void** conn_cls);
 
 // POST handlers
-int ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int ExternalLookupTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int MemberTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
 
 int HandlePost(struct MHD_Connection* conn, const char* url,
 		const char* upload_data, size_t* upload_len,
