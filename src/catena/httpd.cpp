@@ -226,6 +226,13 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 	return MHD_YES;
 }
 
+int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
 int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
 	(void)ps;
 	(void)upload;
@@ -247,6 +254,20 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t u
 	return MHD_NO;
 }
 
+int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
 int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 				const char* upload_data, size_t* upload_len,
 				void** conn_cls){
@@ -257,7 +278,10 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		{ "/member", &HTTPDServer::MemberTXReq, },
 		{ "/exlookup", &HTTPDServer::ExternalLookupTXReq, },
 		{ "/lauthreq", &HTTPDServer::LookupAuthReqTXReq, },
+		{ "/lauth", &HTTPDServer::LookupAuthTXReq, },
 		{ "/patient", &HTTPDServer::PatientTXReq, },
+		{ "/delpstatus", &HTTPDServer::PatientDelegationTXReq, },
+		{ "/pstatus", &HTTPDServer::PatientStatusTXReq, },
 		{ nullptr, nullptr },
 	},* cmd;
 	int retcode = MHD_HTTP_OK; // FIXME callbacks need be able to set retcode
