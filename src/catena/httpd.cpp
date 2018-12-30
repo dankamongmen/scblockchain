@@ -17,16 +17,20 @@ HTTPDServer::~HTTPDServer(){
 
 constexpr char htmlhdr[] =
  "<!DOCTYPE html>"
- "<html><link rel=\"stylesheet\" type=\"text/css\" href=\"//fonts.googleapis.com/css?family=Open+Sans\" />"
- "<head><title>catena node</title>"
- "<style>body { font-family: \"Open Sans\"; margin: 5px ; padding: 5px; background: whitesmoke; }"
+ "<html lang=\"en\"><link rel=\"stylesheet\" type=\"text/css\" href=\"//fonts.googleapis.com/css?family=Open+Sans\" />"
+ "<head>"
+ "<meta name=\"google\" content=\"notranslate\">"
+ "<title>catena node</title>"
+ "<style>"
+ "body { font-family: \"Open Sans\"; margin: 5px ; padding: 5px; background: whitesmoke; }"
  "table { table-layout: fixed; border-collapse; collapse: border-spacing: 0; width: 90%; }"
  "td { width: 10%; background: #dfdfdf; border: 1px solid transparent; transition: all 0.3s; }"
  "td+td { width: auto; }"
  "tr:nth-child(even) td { background: #f1f1f1; }"
  "tr:nth-child(odd) td { background: #fefefe; }"
  "tr td:hover { background: #00dddd; }"
- "</style></head>";
+ "</style>"
+ "</head>";
 
 std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 	ss << "<h3>system</h3><table>";
