@@ -45,3 +45,37 @@ AgEBA0IABOTv5jWDTZHbdQWSVLAu/XDs7lRnznmu70IqP5VxOXId7rQlF6+wPWv9
 3TcA+ygpe41Uw5DDEzogV1HdBe9r/wM=
 -----END PUBLIC KEY-----
 ```
+
+## Patient keys
+
+Each patient has two keypairs (the Delegation Authorization keypair, and the
+Lookup Authorization keypair) and a symmetric key. The Delegation Authorization
+public key is written into a Patient transaction. The Lookup Authorization
+public key is written into an ExternalLookup transaction. The symmetric key is
+encrypted and written into LookupAuth transactions.
+
+### Test patient Delegation Authorization key (475 bytes)
+```
+-----BEGIN PUBLIC KEY-----
+MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA////////////////
+/////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5m
+fvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0
+SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFB
+AgEBA0IABM97jqaKaNs9PDS7yr49Ec4PwqyNKBhVMNGC9cJKy/yx94rbWLMt7AW9
+MEpgSYdUrSgG3xkdQEnpZc9k0Tht2QA=
+-----END PUBLIC KEY-----
+```
+
+### Test patient Lookup Authorization key (475 bytes)
+```
+-----BEGIN PUBLIC KEY-----
+MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA////////////////
+/////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5m
+fvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0
+SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFB
+AgEBA0IABBXZN8y7o3wiR9QAsGAs/aIJ3sxqWfG3zB4Q4/Us9fzGwBSKowvHiEN+
+5ea/Xj3eFkNUaNlShsucr9+h/+7oBqU=
+-----END PUBLIC KEY-----
+```
