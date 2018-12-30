@@ -57,6 +57,11 @@ int PubkeyCount() const {
 	return tstore.PubkeyCount();
 }
 
+// Total size of the serialized chain, in bytes (does not include outstandings)
+size_t Size() const {
+	return blocks.Size();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
