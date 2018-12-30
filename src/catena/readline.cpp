@@ -11,6 +11,7 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <libcatena/utility.h>
+#include <libcatena/truststore.h>
 #include <catena/readline.h>
 
 namespace CatenaAgent {
@@ -126,23 +127,21 @@ int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
 template <typename Iterator>
 int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	if(end - start != 2){
-		std::cerr << "command requires two arguments: public key file, JSON payload" << std::endl;
+		std::cerr << "2 arguments required: public key file, JSON payload" << std::endl;
 		return -1;
 	}
 	const auto& keyfile = start[0];
 	const auto& json = start[1];
 	try{
 		auto payload = nlohmann::json::parse(json);
-		try{
-			size_t plen;
-			auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
-			chain.AddConsortiumMember(pkey.get(), plen, payload);
-			return 0;
-		}catch(std::ifstream::failure& e){
-			std::cerr << "couldn't read a public key from " << keyfile << std::endl;
-		}catch(Catena::SigningException& e){
-			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
-		}
+		size_t plen;
+		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
+		chain.AddConsortiumMember(pkey.get(), plen, payload);
+		return 0;
+	}catch(std::ifstream::failure& e){
+		std::cerr << "couldn't read a public key from " << keyfile << std::endl;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 	}catch(nlohmann::detail::parse_error& e){
 		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
 	}
@@ -151,16 +150,39 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
-	std::cerr << "not yet implemented" << std::endl;
-	(void)start;
-	(void)end;
+	if(end - start != 4){
+		std::cerr << "4 arguments required: ConsortiumMember spec, public key file, asymmetric key file, JSON payload" << std::endl;
+		return -1;
+	}
+	const auto& json = start[3];
+	try{
+		auto cmspec = Catena::Transaction::StrToTXSpec(start[0]);
+		size_t plen, symlen;
+		auto pkey = Catena::ReadBinaryFile(start[1], &plen);
+		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
+		Catena::SymmetricKey skey;
+		if(symlen != skey.size()){
+			std::cerr << "invalid " << symlen << "b symmetric key at " << start[2] << std::endl;
+			return -1;
+		}
+		memcpy(skey.data(), symkey.get(), skey.size());
+		auto payload = nlohmann::json::parse(json);
+		chain.AddPatient(cmspec, pkey.get(), plen, skey, payload);
+		return 0;
+	}catch(std::ifstream::failure& e){
+		std::cerr << "couldn't read a public key (" << e.what() << ")" << std::endl;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}
 	return -1;
 }
 
 template <typename Iterator>
 int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
 	if(start + 3 != end){
-		std::cerr << "command requires three arguments: ConsortiumMember spec, ExternalLookup spec, JSON payload" << std::endl;
+		std::cerr << "3 arguments required: ConsortiumMember spec, ExternalLookup spec, JSON payload" << std::endl;
 		return -1;
 	}
 	const auto& json = start[2];
@@ -215,7 +237,7 @@ int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator 
 template <typename Iterator>
 int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
 	if(end - start != 3){
-		std::cerr << "command requires three arguments: lookup type, public key file, external ID" << std::endl;
+		std::cerr << "3 arguments required: lookup type, public key file, external ID" << std::endl;
 		return -1;
 	}
 	long ltype;
