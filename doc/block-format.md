@@ -126,7 +126,7 @@ Transaction type 0x0000.
 
 #### Consortium Member
 
-Transaction type 0x0001, followed by a 16 bit signature length, followed by
+Transaction type 0x0001, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the signing party, followed by the
 signature. ECDSA SHA256 signatures are 70, 71, or 72 bytes. A signer hash
 of all 1s indicates a builtin key. The signature is taken over the DSA public
@@ -176,9 +176,9 @@ The JSON payload is free-form. An example payload might be:
 
 #### External Lookup
 
-Transaction type 0x0002, followed by a 16 bit lookup type, followed by the
-256-bit hash and 32-bit index of the registering consortium, followed by the 16
-bit signature length, followed by the signature, 16 bit public key length,
+Transaction type 0x0002, followed by a 16-bit lookup type, followed by the
+256-bit hash and 32-bit index of the registering consortium, followed by the
+16-bit signature length, followed by the signature, 16-bit public key length,
 followed by the public key, followed by the external identifier, of form
 determined by the lookup type (the external identifier should only contain
 printable characters). Lookup types include:
@@ -217,11 +217,57 @@ printable characters). Lookup types include:
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
+#### Patient
+
+Transaction type 0x0003, followed by a 16-bit signature length, followed by
+the 256-bit hash and 32-bit index of the registering consortium, followed by the
+128-bit IV, followed by the 16-bit encrypted payload len, followed by the
+encrypted payload. The encrypted payload together with the IV decrypt to a
+16-bit public key length, followed by the public key, followed by the
+JSON-encoded payload.
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         type (0x0005)         |            siglength          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                           signer hash                         +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          signer index                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                             AES IV                            +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|            ...2 bytes for encrypted payload len...            |
+|                    ...encrypted payload...                    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
 #### LookupAuthReq
 
-Transaction type 0x0005, followed by a 16 bit signature length, followed by
+Transaction type 0x0005, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the requesting consortium, followed by the
-16 bit signature length, followed by the signature, followed by the 256-bit
+16-bit signature length, followed by the signature, followed by the 256-bit
 hash and 32-bit index of the referenced ExternalLookup transaction, followed by
 the JSON-encoded payload.
 
