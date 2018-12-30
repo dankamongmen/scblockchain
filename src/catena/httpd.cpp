@@ -56,7 +56,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 		ss << "n/a</td></tr>";
 	}
 	ss << "<tr><td>chain bytes</td><td>" << chain.Size() << "</td></tr>";
-	ss << "<tr><td>block count</td><td>" << chain.GetBlockCount() << "</td></tr>";
+	ss << "<tr><td>blocks</td><td>" << chain.GetBlockCount() << "</td></tr>";
 	ss << "<tr><td>outstanding TXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
 	char timebuf[80];
 	auto lastutc = chain.MostRecentBlock();
@@ -66,7 +66,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 		ctime_r(&lastutc, timebuf);
 	}
 	ss << "<tr><td>last block time</td><td>" << timebuf << "</td></tr>";
-	ss << "<tr><td>public key count</td><td>" << chain.PubkeyCount() << "</td></tr>";
+	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
 	ss << "</table>";
 	return ss;
 }
