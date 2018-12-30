@@ -75,7 +75,7 @@ encrypted.
 * `delpstatus`: generate a PatientStatusDelegation transaction
 * `pstatus`: generate a PatientStatus transaction
 * `getpstatus`: show the most recent PatientStatus for the specified patient
-and patient status delegation type.
+and patient status delegation type
 
 Use of commands that generate signed or encrypted transactions requires an
 appropriate private key having been loaded with the `-u` option (along with
