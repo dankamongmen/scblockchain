@@ -84,7 +84,8 @@ This will be encrypted before being written to the ledger.
 ## NewPatientTXResponse
 
 Map of strings to T:
-* `symkey`: String containing base64-encoded AES key used to encrypted Patient payload.
+* `symkey`: String containing base64-encoded AES key used to encrypt Patient
+payload.
 
 # NewPatientDelegationTX
 
