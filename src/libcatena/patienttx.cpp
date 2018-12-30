@@ -58,16 +58,14 @@ std::ostream& PatientTX::TXOStream(std::ostream& s) const {
 	s << "Patient (" << siglen << "b signature, " << payloadlen
 		<< "b payload, " << keylen << "b key)\n";
 	s << " registrar: " << signerhash << "." << signeridx << "\n";
-	// FIXME payload is encrypted!
-	s << " payload: ";
-	std::copy(GetPayload(), GetPayload() + GetPayloadLength(), std::ostream_iterator<char>(s, ""));
+	// FIXME payload is encrypted! decrypt if possible
+	s << " payload is encrypted";
 	return s;
 }
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 PatientTX::Serialize() const {
-	size_t len = 4 + signerhash.size() + sizeof(signeridx) + siglen +
-		2 + keylen + payloadlen;
+	size_t len = 4 + signerhash.size() + sizeof(signeridx) + siglen + payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
 	auto data = TXType_to_nbo(TXTypes::Patient, ret.get());
 	data = ulong_to_nbo(siglen, data, 2);
