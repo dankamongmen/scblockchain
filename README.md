@@ -42,8 +42,11 @@ the `-p` parameter. Specifying a port of 0 will disable HTTP service.
 
 ### Interactive use of catena
 
-The following commands are available when catena is invoked interactively (this
-list can be accessed by running the `help` command):
+`catena` supports a REPL command line interactive mode with full Readline
+support (command line editing, history, etc.). Single quotes are supported, as
+is escaping with backslash. The following commands are available when catena is
+invoked interactively (this list can be accessed by running the `help`
+command):
 
 * `help`: summary of available commands
 * `quit`: exit catena
@@ -56,8 +59,7 @@ list can be accessed by running the `help` command):
 * `noop`: generate a NoOp transaction
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
 filename containing the new member's public key, and an arbitrary JSON-encoded
-payload. Use single quotes to enclose the payload, escaping any single quotes
-within the payload.
+payload.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
