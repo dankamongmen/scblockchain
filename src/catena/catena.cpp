@@ -64,26 +64,31 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 	std::cout << "Loading ledger from " << chain_file << std::endl;
-	// FIXME throw this in a try block and handle file errors more nicely
-	Catena::Chain chain(chain_file);
-	if(pubkey_file || privkey_file){
-		if(!pubkey_file || !privkey_file){
-			std::cerr << "-u must be provided with -v" << std::endl;
-			usage(std::cerr, argv[0]);
-			return EXIT_FAILURE;
+	try{
+		Catena::Chain chain(chain_file);
+		if(pubkey_file || privkey_file){
+			if(!pubkey_file || !privkey_file){
+				std::cerr << "-u must be provided with -v" << std::endl;
+				usage(std::cerr, argv[0]);
+				return EXIT_FAILURE;
+			}
+			// FIXME catch exceptions here
+			Catena::Keypair kp(pubkey_file, privkey_file);
+			chain.AddSigningKey(kp);
 		}
-		Catena::Keypair kp(pubkey_file, privkey_file);
-		chain.AddSigningKey(kp);
-	}
-	std::unique_ptr<HTTPDServer> httpd;
-	if(httpd_port){
-		httpd = std::make_unique<HTTPDServer>(chain, httpd_port);
-	}
-	if(daemonize){
-		// FIXME daemonize out, wait on signal
-	}else{
-		ReadlineUI rline(chain);
-		rline.InputLoop();
+		std::unique_ptr<HTTPDServer> httpd;
+		if(httpd_port){
+			httpd = std::make_unique<HTTPDServer>(chain, httpd_port);
+		}
+		if(daemonize){
+			// FIXME daemonize out, wait on signal
+		}else{
+			ReadlineUI rline(chain);
+			rline.InputLoop();
+		}
+	}catch(std::ifstream::failure& e){
+		std::cerr << chain_file << ": " << e.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 }
