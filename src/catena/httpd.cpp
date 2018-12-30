@@ -144,6 +144,12 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 }
 
 struct MHD_Response*
+HTTPDServer::Pstatus(struct MHD_Connection* conn) const {
+	(void)conn;
+	return nullptr; // FIXME
+}
+
+struct MHD_Response*
 HTTPDServer::Inspect(struct MHD_Connection* conn) const {
 	auto sstart = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "begin");
 	auto sstop = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "end");
@@ -320,6 +326,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		{ "/show", &HTTPDServer::Show, },
 		{ "/tstore", &HTTPDServer::TStore, },
 		{ "/inspect", &HTTPDServer::Inspect, },
+		{ "/pstatus", &HTTPDServer::Pstatus, },
 		{ nullptr, nullptr },
 	},* cmd;
 	struct MHD_Response* resp = nullptr;
