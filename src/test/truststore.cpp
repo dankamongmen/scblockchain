@@ -117,3 +117,5 @@ TEST(CatenaTrustStore, SymmetricEncryptDecryptUnterminated){
 		// Secondly, encrypt without the NUL terminator, and do a memcmp
 	}
 }
+
+// FIXME add standard test vectors to ensure interoperability

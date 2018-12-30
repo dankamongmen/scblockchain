@@ -50,7 +50,9 @@ bool PatientTX::Validate(TrustStore& tstore) {
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	// FIXME store metadata
+	// FIXME store Patient metadata?
+	Keypair kp(payload.get() + 2, keylen);
+	tstore.addKey(&kp, {blockhash, txidx});
 	return false;
 }
 

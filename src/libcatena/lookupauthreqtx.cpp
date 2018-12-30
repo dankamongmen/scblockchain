@@ -40,7 +40,7 @@ bool LookupAuthReqTX::Validate(TrustStore& tstore) {
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	// FIXME store metadata
+	// FIXME store metadata?
 	return false;
 }
 

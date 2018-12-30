@@ -86,19 +86,8 @@ bool ConsortiumMemberTX::Validate(TrustStore& tstore){
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	const unsigned char* data = payload.get();
-	size_t len = payloadlen;
-	uint16_t keylen;
-	if(len < sizeof(keylen)){
-		return true;
-	}
-	keylen = nbo_to_ulong(data, sizeof(keylen));
-	len -= sizeof(keylen);
-	data += sizeof(keylen);
-	std::array<unsigned char, sizeof(blockhash)> bhash;
-	bhash = blockhash;
-	Keypair kp(data, keylen);
-	tstore.addKey(&kp, {bhash, txidx});
+	Keypair kp(payload.get() + 2, keylen);
+	tstore.addKey(&kp, {blockhash, txidx});
 	return false;
 }
 
