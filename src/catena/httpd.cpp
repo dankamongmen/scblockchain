@@ -48,6 +48,13 @@ std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 
 std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<h3>chain</h3><table>";
+	ss << "<tr><td>private key</td><td>";
+	try{
+		auto kl = chain.PrivateKeyTXSpec();
+		ss << Catena::hashOString(kl.first) << "." << kl.second << "</td></tr>";
+	}catch(Catena::SigningException& e){
+		ss << "n/a</td></tr>";
+	}
 	ss << "<tr><td>chain bytes</td><td>" << chain.Size() << "</td></tr>";
 	ss << "<tr><td>block count</td><td>" << chain.GetBlockCount() << "</td></tr>";
 	ss << "<tr><td>outstanding TXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
