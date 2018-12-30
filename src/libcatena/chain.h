@@ -62,6 +62,10 @@ size_t Size() const {
 	return blocks.Size();
 }
 
+KeyLookup PrivateKeyTXSpec() const {
+	return tstore.PrivateKey();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
