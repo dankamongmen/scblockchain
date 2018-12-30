@@ -9,6 +9,8 @@
 
 namespace Catena {
 
+using SymmetricKey = std::array<unsigned char, 32>; // 256-bit AES key
+
 class SigningException : public std::runtime_error {
 public:
 SigningException() : std::runtime_error("error signing"){}
@@ -52,6 +54,14 @@ const KeyLookup& GetLookup(const Keypair& kp);
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const;
+
+// Returned ciphertext includes 128 bits of random AES IV, so size >= 16
+std::pair<std::unique_ptr<unsigned char>, size_t>
+Encrypt(const void* in, size_t len, const SymmetricKey& key) const;
+
+// Only the plaintext is returned. AES IV and ciphertext are provided.
+std::pair<std::unique_ptr<unsigned char>, size_t>
+Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
 
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 
