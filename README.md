@@ -126,7 +126,8 @@ failure, TXRequestResponse
 
 ### Generating ECDSA material
 
-* Generate ECDSA key at `outfile.pem`: `openssl ecparam -name secp256k1 -genkey -noout -out outfile.pem -param_enc explicit`
+* Generate ECDSA key at `outfile.pem`:
+    * `openssl ecparam -name secp256k1 -genkey -noout -out outfile.pem -param_enc explicit`
 * Verify ECDSA keypair at `outfile.pem`:
 ```
 openssl ec -in outfile.pem -text -noout
@@ -161,7 +162,8 @@ Order:
     36:41:41
 Cofactor:  1 (0x1)
 ```
-* Extract public ECDSA key from `outfile.pem` to `outfile.pub`: `openssl ec -in outfile.pem -pubout -out outfile.pub`
+* Extract public ECDSA key from `outfile.pem` to `outfile.pub`:
+    *`openssl ec -in outfile.pem -pubout -out outfile.pub`
 
 ## Runtime data
 
