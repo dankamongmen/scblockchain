@@ -17,16 +17,20 @@ HTTPDServer::~HTTPDServer(){
 
 constexpr char htmlhdr[] =
  "<!DOCTYPE html>"
- "<html><link rel=\"stylesheet\" type=\"text/css\" href=\"//fonts.googleapis.com/css?family=Open+Sans\" />"
- "<head><title>catena node</title>"
- "<style>body { font-family: \"Open Sans\"; margin: 5px ; padding: 5px; background: whitesmoke; }"
+ "<html lang=\"en\"><link rel=\"stylesheet\" type=\"text/css\" href=\"//fonts.googleapis.com/css?family=Open+Sans\" />"
+ "<head>"
+ "<meta name=\"google\" content=\"notranslate\">"
+ "<title>catena node</title>"
+ "<style>"
+ "body { font-family: \"Open Sans\"; margin: 5px ; padding: 5px; background: whitesmoke; }"
  "table { table-layout: fixed; border-collapse; collapse: border-spacing: 0; width: 90%; }"
  "td { width: 10%; background: #dfdfdf; border: 1px solid transparent; transition: all 0.3s; }"
  "td+td { width: auto; }"
  "tr:nth-child(even) td { background: #f1f1f1; }"
  "tr:nth-child(odd) td { background: #fefefe; }"
  "tr td:hover { background: #00dddd; }"
- "</style></head>";
+ "</style>"
+ "</head>";
 
 std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 	ss << "<h3>system</h3><table>";
@@ -44,8 +48,16 @@ std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 
 std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<h3>chain</h3><table>";
-	ss << "<tr><td>blockcount</td><td>" << chain.GetBlockCount() << "</td></tr>";
-	ss << "<tr><td>outstandingTXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
+	ss << "<tr><td>private key</td><td>";
+	try{
+		auto kl = chain.PrivateKeyTXSpec();
+		ss << Catena::hashOString(kl.first) << "." << kl.second << "</td></tr>";
+	}catch(Catena::SigningException& e){
+		ss << "n/a</td></tr>";
+	}
+	ss << "<tr><td>chain bytes</td><td>" << chain.Size() << "</td></tr>";
+	ss << "<tr><td>block count</td><td>" << chain.GetBlockCount() << "</td></tr>";
+	ss << "<tr><td>outstanding TXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
 	char timebuf[80];
 	auto lastutc = chain.MostRecentBlock();
 	if(lastutc == -1){
@@ -53,7 +65,8 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	}else{
 		ctime_r(&lastutc, timebuf);
 	}
-	ss << "<tr><td>lastblocktime</td><td>" << timebuf << "</td></tr>";
+	ss << "<tr><td>last block time</td><td>" << timebuf << "</td></tr>";
+	ss << "<tr><td>public key count</td><td>" << chain.PubkeyCount() << "</td></tr>";
 	ss << "</table>";
 	return ss;
 }
@@ -144,6 +157,12 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 }
 
 struct MHD_Response*
+HTTPDServer::Pstatus(struct MHD_Connection* conn) const {
+	(void)conn;
+	return nullptr; // FIXME
+}
+
+struct MHD_Response*
 HTTPDServer::Inspect(struct MHD_Connection* conn) const {
 	auto sstart = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "begin");
 	auto sstop = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "end");
@@ -178,7 +197,7 @@ struct PostState {
 	std::string response;
 };
 
-int HTTPDServer::ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const {
+int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
 	(void)uplen;
 	nlohmann::json json;
 	try{
@@ -220,6 +239,48 @@ int HTTPDServer::ExternalLookupReq(struct PostState* ps, const char* upload, siz
 	return MHD_YES;
 }
 
+int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
+int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+	(void)ps;
+	(void)upload;
+	(void)uplen;
+	return MHD_NO;
+}
+
 int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 				const char* upload_data, size_t* upload_len,
 				void** conn_cls){
@@ -227,7 +288,13 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		const char *uri;
 		int (HTTPDServer::*fxn)(struct PostState*, const char*, size_t) const;
 	} cmds[] = {
-		{ "/exlookup", &HTTPDServer::ExternalLookupReq, },
+		{ "/member", &HTTPDServer::MemberTXReq, },
+		{ "/exlookup", &HTTPDServer::ExternalLookupTXReq, },
+		{ "/lauthreq", &HTTPDServer::LookupAuthReqTXReq, },
+		{ "/lauth", &HTTPDServer::LookupAuthTXReq, },
+		{ "/patient", &HTTPDServer::PatientTXReq, },
+		{ "/delpstatus", &HTTPDServer::PatientDelegationTXReq, },
+		{ "/pstatus", &HTTPDServer::PatientStatusTXReq, },
 		{ nullptr, nullptr },
 	},* cmd;
 	int retcode = MHD_HTTP_OK; // FIXME callbacks need be able to set retcode
@@ -253,6 +320,9 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 	}
 	if(upload_len && *upload_len){
 		auto ret = (this->*(cmd->fxn))(mpp, upload_data, *upload_len);
+		if(ret == MHD_NO){
+			std::cerr << "error handling " << url << std::endl;
+		}
 		*upload_len = 0;
 		return ret;
 	}
@@ -293,6 +363,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		{ "/show", &HTTPDServer::Show, },
 		{ "/tstore", &HTTPDServer::TStore, },
 		{ "/inspect", &HTTPDServer::Inspect, },
+		{ "/pstatus", &HTTPDServer::Pstatus, },
 		{ nullptr, nullptr },
 	},* cmd;
 	struct MHD_Response* resp = nullptr;

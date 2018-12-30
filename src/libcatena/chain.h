@@ -53,6 +53,19 @@ time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
 }
 
+int PubkeyCount() const {
+	return tstore.PubkeyCount();
+}
+
+// Total size of the serialized chain, in bytes (does not include outstandings)
+size_t Size() const {
+	return blocks.Size();
+}
+
+KeyLookup PrivateKeyTXSpec() const {
+	return tstore.PrivateKey();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
@@ -71,10 +84,12 @@ void AddSigningKey(const Keypair& kp);
 
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
-void AddConsortiumMember(const unsigned char* pkey, size_t plen, nlohmann::json& payload);
+void AddConsortiumMember(const unsigned char* pkey, size_t plen, const nlohmann::json& payload);
 void AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype);
-void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, nlohmann::json& payload);
+void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
+void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
+		SymmetricKey& symkey, const nlohmann::json& payload);
 
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.

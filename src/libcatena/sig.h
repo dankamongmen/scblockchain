@@ -10,6 +10,12 @@
 
 namespace Catena {
 
+class KeypairException : public std::runtime_error {
+public:
+KeypairException() : std::runtime_error("keypair error"){}
+KeypairException(const std::string& s) : std::runtime_error(s){}
+};
+
 class Keypair {
 public:
 Keypair() = delete;

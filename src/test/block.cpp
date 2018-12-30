@@ -1,11 +1,9 @@
 #include <fstream>
 #include <gtest/gtest.h>
-#include "libcatena/truststore.h"
-#include "libcatena/builtin.h"
-#include "libcatena/block.h"
-
-#define GENESISBLOCKTEST_EXTERNAL "test/genesisblock-test"
-#define GENESISBLOCK_EXTERNAL "genesisblock"
+#include <libcatena/block.h>
+#include <libcatena/builtin.h>
+#include <libcatena/truststore.h>
+#include "test/defs.h"
 
 TEST(CatenaBlocks, BlocksGenesisBlock){
 	Catena::TrustStore tstore;
@@ -16,13 +14,13 @@ TEST(CatenaBlocks, BlocksGenesisBlock){
 	EXPECT_EQ(1, cbs.GetBlockCount());
 }
 
-TEST(CatenaBlocks, BlocksGenesisMock){
+TEST(CatenaBlocks, BlocksMockLedger){
 	Catena::TrustStore tstore;
 	Catena::BuiltinKeys bkeys;
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
-	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCKTEST_EXTERNAL, tstore));
-	EXPECT_EQ(2, cbs.GetBlockCount());
+	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, tstore));
+	EXPECT_EQ(MOCKLEDGER_BLOCKS, cbs.GetBlockCount());
 }
 
 TEST(CatenaBlocks, BlocksInvalidFile){
@@ -149,13 +147,13 @@ TEST(CatenaBlocks, BlockAppendBlock){
 	EXPECT_EQ(2, cbs.GetBlockCount());
 }
 
-TEST(CatenaBlocks, BlockInspectGenesis){
+TEST(CatenaBlocks, BlockInspectMockLedger){
 	Catena::TrustStore tstore;
 	Catena::BuiltinKeys bkeys;
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
-	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCKTEST_EXTERNAL, tstore));
-	EXPECT_EQ(2, cbs.GetBlockCount());
+	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, tstore));
+	EXPECT_EQ(MOCKLEDGER_BLOCKS, cbs.GetBlockCount());
 	auto i = cbs.Inspect(0, cbs.GetBlockCount());
 	ASSERT_EQ(cbs.GetBlockCount(), i.size());
 	EXPECT_EQ(1, i[0].transactions.size());

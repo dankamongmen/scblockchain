@@ -25,22 +25,31 @@ private:
 MHD_Daemon* mhd; // has no free function
 Catena::Chain& chain;
 
+nlohmann::json InspectJSON(int start, int end) const;
+
+std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
+std::stringstream& HTMLChaininfo(std::stringstream& ss) const;
+
+// GET handlers
 struct MHD_Response* Summary(struct MHD_Connection*) const;
 struct MHD_Response* Favicon(struct MHD_Connection*) const;
 struct MHD_Response* Show(struct MHD_Connection*) const;
 struct MHD_Response* TStore(struct MHD_Connection*) const;
 struct MHD_Response* Inspect(struct MHD_Connection*) const;
-nlohmann::json InspectJSON(int start, int end) const;
-
-std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
-std::stringstream& HTMLChaininfo(std::stringstream& ss) const;
+struct MHD_Response* Pstatus(struct MHD_Connection*) const;
 
 static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	const char* method, const char* version, const char* upload_data,
 	size_t* upload_len, void** conn_cls);
 
 // POST handlers
-int ExternalLookupReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int ExternalLookupTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int LookupAuthTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int PatientDelegationTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int PatientStatusTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
+int MemberTXReq(struct PostState* ps, const char* upload, size_t uplen) const;
 
 int HandlePost(struct MHD_Connection* conn, const char* url,
 		const char* upload_data, size_t* upload_len,

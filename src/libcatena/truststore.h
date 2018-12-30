@@ -9,13 +9,27 @@
 
 namespace Catena {
 
+using SymmetricKey = std::array<unsigned char, 32>; // 256-bit AES key
+
 class SigningException : public std::runtime_error {
 public:
 SigningException() : std::runtime_error("error signing"){}
 SigningException(const std::string& s) : std::runtime_error(s){}
 };
 
-using KeyLookup = std::pair<std::array<unsigned char, HASHLEN>, unsigned>;
+class EncryptException : public std::runtime_error {
+public:
+EncryptException() : std::runtime_error("error encrypting"){}
+EncryptException(const std::string& s) : std::runtime_error(s){}
+};
+
+class DecryptException : public std::runtime_error {
+public:
+DecryptException() : std::runtime_error("error decrypting"){}
+DecryptException(const std::string& s) : std::runtime_error(s){}
+};
+
+using KeyLookup = std::pair<CatenaHash, unsigned>;
 
 struct keylookup_hash {
 	template <class T1, class T2>
@@ -50,8 +64,29 @@ bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 
 const KeyLookup& GetLookup(const Keypair& kp);
 
+int PubkeyCount() const {
+	return keys.size();
+}
+
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const;
+
+// Returned ciphertext includes 128 bits of random AES IV, so size >= 16
+// Throws EncryptException on error.
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+Encrypt(const void* in, size_t len, const SymmetricKey& key) const;
+
+// Only the plaintext is returned. AES IV and ciphertext are provided.
+// Throws DecryptException on error.
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
+
+KeyLookup PrivateKey() const {
+	if(signingkey == nullptr){
+		throw SigningException("no private key");
+	}
+	return *signingkey.get();
+}
 
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 

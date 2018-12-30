@@ -1,4 +1,4 @@
-# catena -- ShareCare blockchain for health information
+# catena - a distributed ledger for health information
 
 ## Building
 
@@ -9,7 +9,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 
 * C++ compiler and GNU Make 4.2.1+
     * Tested with clang++ 7.0.1 and g++ 8.2.0
-* Google Test (libgtest-dev)
+* Google Test 1.8.1+ (libgtest-dev)
 * OpenSSL 1.1+ (libopenssl-dev)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
@@ -42,8 +42,11 @@ the `-p` parameter. Specifying a port of 0 will disable HTTP service.
 
 ### Interactive use of catena
 
-The following commands are available when catena is invoked interactively (this
-list can be accessed by running the `help` command):
+`catena` supports a REPL command line interactive mode with full Readline
+support (command line editing, history, etc.). Single quotes are supported, as
+is escaping with backslash. The following commands are available when catena is
+invoked interactively (this list can be accessed by running the `help`
+command):
 
 * `help`: summary of available commands
 * `quit`: exit catena
@@ -56,21 +59,23 @@ list can be accessed by running the `help` command):
 * `noop`: generate a NoOp transaction
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
 filename containing the new member's public key, and an arbitrary JSON-encoded
-payload. Use single quotes to enclose the payload, escaping any single quotes
-within the payload.
+payload.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
 lookup type.
-* `lauthreq`: generate a LookupAuthReq transaction
+* `lauthreq`: generate a LookupAuthReq transaction. takes as its arguments
+a TXSpec for the requesting ConsortiumMember, a TXSpec for the referenced
+ExternalLookup, and a JSON payload.
 * `lauth`: generate a LookupAuth transaction
 * `patient`: generate a Patient transaction. takes as its arguments a filename
-containing the new entity's authorization public key, and an arbitrary
-JSON-encoded payload. This payload will be encrypted.
+containing the new entity's authorization public key, a filename containing the
+raw symmetric key, and an arbitrary JSON payload. This payload will be
+encrypted.
 * `delpstatus`: generate a PatientStatusDelegation transaction
 * `pstatus`: generate a PatientStatus transaction
 * `getpstatus`: show the most recent PatientStatus for the specified patient
-and patient status delegation type.
+and patient status delegation type
 
 Use of commands that generate signed or encrypted transactions requires an
 appropriate private key having been loaded with the `-u` option (along with
@@ -117,13 +122,15 @@ failure, TXRequestResponse
     * Required query argument: `hash`, base64-encoded hash of patient block
     * Required query argument: `txidx`, integer specifying patient transaction
     * Required query argument: `stype`, integer specifying delegated status type
-    * Replies with application/json body of type PatientStatusResult
+    * Replies with application/json body of type PatientStatusResult or, on
+failure, TXRequestResponse
 
 ## Key operations
 
 ### Generating ECDSA material
 
-* Generate ECDSA key at `outfile.pem`: `openssl ecparam -name secp256k1 -genkey -noout -out outfile.pem -param_enc explicit`
+* Generate ECDSA key at `outfile.pem`:
+    * `openssl ecparam -name secp256k1 -genkey -noout -out outfile.pem -param_enc explicit`
 * Verify ECDSA keypair at `outfile.pem`:
 ```
 openssl ec -in outfile.pem -text -noout
@@ -158,11 +165,11 @@ Order:
     36:41:41
 Cofactor:  1 (0x1)
 ```
-* Extract public ECDSA key from `outfile.pem` to `outfile.pub`: `openssl ec -in outfile.pem -pubout -out outfile.pub`
+* Extract public ECDSA key from `outfile.pem` to `outfile.pub`:
+    *`openssl ec -in outfile.pem -pubout -out outfile.pub`
 
 ## Runtime data
 
-Included are two files, `genesisblock` and `test/genesisblock-test`. The former
-is the first block of the official ledger as run in the Headway Catena Network.
-The latter contains a ConsortiumMemberTX record using the testing keys in
-`test/ecdsa.pem` and `test/ecdsa.pub`.
+Included are two files, `genesisblock` and `test/ledget-test`. The former is
+the first block of the official ledger as run in the Headway Catena Network.
+The latter contains several records based off the keys in `test/`.

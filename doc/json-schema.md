@@ -8,7 +8,7 @@ Returned by the `/inspect` endpoint. Array of BlockDetails structures.
 
 Map of strings to T:
 * `version`: Integer corresponding to block spec version
-* `transactions`: Array of Transaction structures
+* `transactions`: Array of TransactionDetails structures
 * `hash`: String containing hex encoding of 256-bit block hash (64 chars)
 * `prev`: String containing hex encoding of 256-bit block hash (64 chars)
 * `utc`: Integer block creation UTC timestamp
@@ -18,7 +18,7 @@ Map of strings to T:
 previous hash of all ones, and so that the previous hash is available when only
 a partial range of blocks are being detailed.
 
-## Transaction
+## TransactionDetails
 
 Map of strings to T:
 * `type`: String containing human-readble transaction type
@@ -29,6 +29,10 @@ Map of strings to T:
 * optional `payload`: payload, dependent on transaction type and subtype
 * optional `subtype`: Integer corresponding to transaction subtype
     * ExternalLookup: lookup type
+
+# PatientStatusResult
+
+Returned by the `/pstatus` endpoint. Freeform JSON payload.
 
 # NewConsortiumMemberTX
 
@@ -80,7 +84,8 @@ This will be encrypted before being written to the ledger.
 ## NewPatientTXResponse
 
 Map of strings to T:
-* `symkey`: String containing base64-encoded AES key used to encrypted Patient payload.
+* `symkey`: String containing base64-encoded AES key used to encrypt Patient
+payload.
 
 # NewPatientDelegationTX
 

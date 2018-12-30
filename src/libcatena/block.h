@@ -55,6 +55,14 @@ unsigned GetBlockCount() const {
 	return offsets.size();
 }
 
+// Total size of the serialized chain, in bytes (does not include outstandings)
+size_t Size() const {
+	if(offsets.empty()){
+		return 0;
+	}
+	return offsets.back() + headers.back().totlen;
+}
+
 void GetLastHash(CatenaHash& hash) const;
 
 time_t GetLastUTC() const {
