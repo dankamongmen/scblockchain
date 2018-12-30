@@ -62,11 +62,14 @@ within the payload.
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
 lookup type.
-* `lauthreq`: generate a LookupAuthReq transaction
+* `lauthreq`: generate a LookupAuthReq transaction. takes as its arguments
+a TXSpec for the requesting ConsortiumMember, a TXSpec for the referenced
+ExternalLookup, and a JSON payload.
 * `lauth`: generate a LookupAuth transaction
 * `patient`: generate a Patient transaction. takes as its arguments a filename
-containing the new entity's authorization public key, and an arbitrary
-JSON-encoded payload. This payload will be encrypted.
+containing the new entity's authorization public key, a filename containing the
+raw symmetric key, and an arbitrary JSON payload. This payload will be
+encrypted.
 * `delpstatus`: generate a PatientStatusDelegation transaction
 * `pstatus`: generate a PatientStatus transaction
 * `getpstatus`: show the most recent PatientStatus for the specified patient
