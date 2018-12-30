@@ -46,7 +46,7 @@ bool LookupAuthReqTX::Validate(TrustStore& tstore) {
 
 std::ostream& LookupAuthReqTX::TXOStream(std::ostream& s) const {
 	s << "LookupAuthReq (" << siglen << "b signature, " << payloadlen << "b payload)\n";
-	s << " signer: " << signerhash << "." << signeridx << "\n";
+	s << " requester: " << signerhash << "." << signeridx << "\n";
 	// FIXME s << " elookup: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
