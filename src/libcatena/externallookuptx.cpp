@@ -10,6 +10,11 @@ bool ExternalLookupTX::Extract(const unsigned char* data, unsigned len) {
 		return true;
 	}
 	lookuptype = nbo_to_ulong(data, 2);
+	// FIXME get us some enums
+	if(lookuptype){
+		std::cerr << "unknown external lookup type " << lookuptype << std::endl;
+		return true;
+	}
 	data += 2;
 	len -= 2;
 	if(len < signerhash.size() + sizeof(signeridx)){
@@ -45,7 +50,7 @@ bool ExternalLookupTX::Extract(const unsigned char* data, unsigned len) {
 		std::cerr << "no room for key in " << len << std::endl;
 		return true;
 	}
-	// FIXME verify that key is valid? verify payload is valid JSON?
+	// FIXME verify that key is valid? verify payload is valid for type?
 	// Key length is part of the signed payload, so don't advance data
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
@@ -71,6 +76,10 @@ std::ostream& ExternalLookupTX::TXOStream(std::ostream& s) const {
 	s << " registrar: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetPayload(), GetPayload() + GetPayloadLength(), std::ostream_iterator<char>(s, ""));
+	switch(lookuptype){
+		case 0: s << " (SCID)"; break;
+		default: s << " (Unknown type)"; break;
+	}
 	return s;
 }
 
