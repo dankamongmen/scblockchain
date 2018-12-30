@@ -64,6 +64,10 @@ bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 
 const KeyLookup& GetLookup(const Keypair& kp);
 
+int PubkeyCount() const {
+	return keys.size();
+}
+
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const;
 

@@ -53,6 +53,10 @@ time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
 }
 
+int PubkeyCount() const {
+	return tstore.PubkeyCount();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 

@@ -20,7 +20,7 @@ TEST(CatenaBlocks, BlocksMockLedger){
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, tstore));
-	EXPECT_EQ(2, cbs.GetBlockCount());
+	EXPECT_EQ(MOCKLEDGER_BLOCKS, cbs.GetBlockCount());
 }
 
 TEST(CatenaBlocks, BlocksInvalidFile){
@@ -153,7 +153,7 @@ TEST(CatenaBlocks, BlockInspectMockLedger){
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, tstore));
-	EXPECT_EQ(2, cbs.GetBlockCount());
+	EXPECT_EQ(MOCKLEDGER_BLOCKS, cbs.GetBlockCount());
 	auto i = cbs.Inspect(0, cbs.GetBlockCount());
 	ASSERT_EQ(cbs.GetBlockCount(), i.size());
 	EXPECT_EQ(1, i[0].transactions.size());
