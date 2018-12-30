@@ -5,12 +5,29 @@
 #include <cstring>
 #include <nlohmann/json.hpp>
 #include <libcatena/truststore.h>
+#include <libcatena/utility.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
 
 namespace Catena {
 
 using TXSpec = std::pair<CatenaHash, unsigned>;
+
+enum class TXTypes {
+	NoOp = 0x0000,
+	ConsortiumMember = 0x0001,
+	ExternalLookup = 0x0002,
+	Patient = 0x0003,
+	PatientStatus = 0x0004,
+	LookupAuthReq = 0x0005,
+	LookupAuth = 0x0006,
+	PatientStatusDelegation = 0x0007,
+};
+
+// TXType is always serialized as a 16-bit unsigned integer
+inline unsigned char* TXType_to_nbo(TXTypes tt, unsigned char* data){
+	return ulong_to_nbo(static_cast<unsigned long>(tt), data, 2);
+}
 
 class Transaction {
 public:
@@ -96,74 +113,6 @@ GetJSONPayload() const {
 
 size_t GetJSONPayloadLength() const {
 	return payloadlen - keylen - 2;
-}
-
-};
-
-class ExternalLookupTX : public Transaction {
-public:
-ExternalLookupTX() = default;
-ExternalLookupTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
-bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore) override;
-std::ostream& TXOStream(std::ostream& s) const override;
-std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
-nlohmann::json JSONify() const override;
-
-private:
-unsigned char signature[SIGLEN];
-CatenaHash signerhash;
-uint32_t signeridx;
-uint16_t lookuptype;
-size_t siglen; // length of signature, up to SIGLEN
-std::unique_ptr<unsigned char[]> payload;
-size_t keylen; // length of public key within payload
-size_t payloadlen; // total length of signed payload
-
-const unsigned char*
-GetPubKey() const {
-	return payload.get() + 2;
-}
-
-const unsigned char*
-GetPayload() const {
-	return payload.get() + 2 + keylen;
-}
-
-size_t GetPayloadLength() const {
-	return payloadlen - keylen - 2;
-}
-
-};
-
-class LookupAuthReqTX : public Transaction {
-public:
-LookupAuthReqTX() = default;
-LookupAuthReqTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
-bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore) override;
-std::ostream& TXOStream(std::ostream& s) const override;
-std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
-nlohmann::json JSONify() const override;
-
-private:
-unsigned char signature[SIGLEN];
-
-// specifier of who signed this tx
-CatenaHash signerhash;
-uint32_t signeridx; // must be exactly 32 bits for serialization
-size_t siglen; // length of signature, up to SIGLEN
-std::unique_ptr<unsigned char[]> payload;
-size_t keylen; // length of public key
-size_t payloadlen; // total length of signed payload
-
-const unsigned char*
-GetJSONPayload() const {
-	return payload.get() + 32 + 4;
-}
-
-size_t GetJSONPayloadLength() const {
-	return payloadlen - 32 - 4;
 }
 
 };
