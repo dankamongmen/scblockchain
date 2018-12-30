@@ -122,7 +122,8 @@ failure, TXRequestResponse
     * Required query argument: `hash`, base64-encoded hash of patient block
     * Required query argument: `txidx`, integer specifying patient transaction
     * Required query argument: `stype`, integer specifying delegated status type
-    * Replies with application/json body of type PatientStatusResult
+    * Replies with application/json body of type PatientStatusResult or, on
+failure, TXRequestResponse
 
 ## Key operations
 
