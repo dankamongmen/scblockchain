@@ -8,48 +8,48 @@
 namespace Catena {
 
 Keypair::Keypair(const char* pubfile, const char* privfile){
+	std::string pubstr = pubfile;
 	FILE* fp = fopen(pubfile, "r");
 	if(!fp){
-		std::cerr << "couldn't open pubkey file " << pubfile << std::endl;
-		throw std::runtime_error("error opening pubkey file");
+		throw KeypairException("error opening pubkey file " + pubstr);
 	}
 	EC_KEY* ec = PEM_read_EC_PUBKEY(fp, NULL, NULL, NULL);
 	if(!ec){
 		fclose(fp);
-		throw std::runtime_error("error loading PEM keyfile");
+		throw KeypairException("error loading PEM pubkey " + pubstr);
 	}
 	fclose(fp);
 	if(1 != EC_KEY_check_key(ec)){
-		throw std::runtime_error("error verifying pubkey");
+		throw KeypairException("error verifying PEM pubkey " + pubstr);
 	}
 	pubkey = EVP_PKEY_new();
 	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec)){
 		EVP_PKEY_free(pubkey);
-		throw std::runtime_error("error binding EC pubkey");
+		throw KeypairException("error binding EC pubkey " + pubstr);
 	}
 	if(privfile){
+		std::string privstr = privfile;
 		fp = fopen(privfile, "r");
 		if(!fp){
-			std::cerr << "couldn't open ec file " << privfile << std::endl;
 			EVP_PKEY_free(pubkey);
-			throw std::runtime_error("error opening ec file");
+			throw KeypairException("error opening ec file " + privstr);
 		}
 		if(!(ec = PEM_read_ECPrivateKey(fp, NULL, NULL, NULL))){
 			fclose(fp);
 			EVP_PKEY_free(pubkey);
-			throw std::runtime_error("error loading PEM ecfile");
+			throw KeypairException("error loading PEM privkey " + privstr);
 		}
 		fclose(fp);
 		if(1 != EC_KEY_check_key(ec)){
 			fclose(fp);
 			EVP_PKEY_free(pubkey);
-			throw std::runtime_error("error verifying PEM ecfile");
+			throw KeypairException("error verifying PEM privkey " + privstr);
 		}
 		privkey = EVP_PKEY_new();
 		if(1 != EVP_PKEY_assign_EC_KEY(privkey, ec)){
 			EVP_PKEY_free(privkey);
 			EVP_PKEY_free(pubkey);
-			throw std::runtime_error("error binding EC key");
+			throw KeypairException("error binding EC privkey " + privstr);
 		}
 	}else{
 		privkey = 0;
@@ -61,15 +61,15 @@ Keypair::Keypair(const unsigned char* pubblob, size_t len){
 	EC_KEY* ec = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL, NULL);
 	BIO_free(bio);
 	if(!ec){
-		throw std::runtime_error("error extracting pubkey");
+		throw KeypairException("error extracting PEM pubkey");
 	}
 	if(1 != EC_KEY_check_key(ec)){
-		throw std::runtime_error("error verifying pubkey");
+		throw KeypairException("error verifying PEM pubkey ");
 	}
 	pubkey = EVP_PKEY_new();
 	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec)){
 		EVP_PKEY_free(pubkey);
-		throw std::runtime_error("error binding EC pubkey");
+		throw KeypairException("error binding PEM pubkey ");
 	}
 	privkey = 0;
 }

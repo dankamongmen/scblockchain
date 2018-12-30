@@ -9,16 +9,22 @@ TEST(CatenaSigs, LoadPubkeyFile){
 	Catena::Keypair(PUBLICKEY);
 }
 
+TEST(CatenaSigs, LoadECMaterial){
+	Catena::Keypair(PUBLICKEY, ECDSAKEY);
+}
+
+TEST(CatenaSigs, LoadMemoryInvalid){
+	EXPECT_THROW(Catena::Keypair(reinterpret_cast<const unsigned char*>(""), 0), Catena::KeypairException);
+	EXPECT_THROW(Catena::Keypair(reinterpret_cast<const unsigned char*>(""), 1), Catena::KeypairException);
+}
+
 TEST(CatenaSigs, LoadPubkeyFileInvalid){
-	EXPECT_THROW(Catena::Keypair(ECDSAKEY), std::runtime_error);
+	EXPECT_THROW(Catena::Keypair(ECDSAKEY), Catena::KeypairException);
 }
 
 TEST(CatenaSigs, LoadECMaterialInvalid){
-	EXPECT_THROW(Catena::Keypair(PUBLICKEY, PUBLICKEY), std::runtime_error);
-}
-
-TEST(CatenaSigs, LoadECMaterial){
-	Catena::Keypair(PUBLICKEY, ECDSAKEY);
+	EXPECT_THROW(Catena::Keypair(PUBLICKEY, PUBLICKEY), Catena::KeypairException);
+	EXPECT_THROW(Catena::Keypair(ECDSAKEY, ECDSAKEY), Catena::KeypairException);
 }
 
 TEST(CatenaSigs, ECSign){
