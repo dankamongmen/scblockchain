@@ -72,9 +72,13 @@ int main(int argc, char **argv){
 				usage(std::cerr, argv[0]);
 				return EXIT_FAILURE;
 			}
-			// FIXME catch exceptions here
-			Catena::Keypair kp(pubkey_file, privkey_file);
-			chain.AddSigningKey(kp);
+			try{
+				Catena::Keypair kp(pubkey_file, privkey_file);
+				chain.AddSigningKey(kp);
+			}catch(Catena::KeypairException& e){
+				std::cerr << e.what() << std::endl;
+				return EXIT_FAILURE;
+			}
 		}
 		std::unique_ptr<HTTPDServer> httpd;
 		if(httpd_port){
