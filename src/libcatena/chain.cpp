@@ -237,11 +237,33 @@ void Chain::AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payloa
 	(void)payload; // FIXME
 }
 
-void Chain::AddPatientStatusDelegation(const TXSpec& cmspec,
-		const TXSpec& patspec, const nlohmann::json& payload){
-	(void)cmspec;
-	(void)patspec;
-	(void)payload; // FIXME
+void Chain::AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patspec,
+				int stype, const nlohmann::json& payload){
+	auto serialjson = payload.dump();
+	// FIXME verify that patspec and cmspec are appropriate
+	size_t len = serialjson.length() + 4 + 4 + cmspec.first.size();
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	memcpy(targ, cmspec.first.data(), cmspec.first.size());
+	targ += cmspec.first.size();
+	targ = ulong_to_nbo(cmspec.second, targ, 4);
+	targ = ulong_to_nbo(stype, targ, 4);
+	memcpy(targ, serialjson.c_str(), serialjson.length());
+	auto sig = tstore.Sign(buf, len, patspec);
+	size_t totlen = len + sig.second + 4 + patspec.first.size() + 2;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(sig.second, txbuf, 2);
+	memcpy(targ, patspec.first.data(), patspec.first.size());
+	targ += patspec.first.size();
+	targ = ulong_to_nbo(patspec.second, targ, 4);
+	memcpy(targ, sig.first.get(), sig.second);
+	targ += sig.second;
+	memcpy(targ, buf, len);
+	auto tx = std::unique_ptr<PatientStatusDelegationTX>(new PatientStatusDelegationTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
 nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const {

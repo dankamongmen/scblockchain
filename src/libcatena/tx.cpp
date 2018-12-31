@@ -182,6 +182,9 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 	case TXTypes::LookupAuth:
 		tx = new LookupAuthTX(blkhash, txidx);
 		break;
+	case TXTypes::PatientStatusDelegation:
+		tx = new PatientStatusDelegationTX(blkhash, txidx);
+		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;
 		return nullptr;

@@ -28,6 +28,7 @@ inline unsigned long nbo_to_ulong(const unsigned char* data, int bytes){
 // Write an unsigned integer into the specified bytes using network byte order,
 // zeroing out any unused leading bytes. Returns the memory following the
 // written bytes.
+// FIXME throw exception if hbo won't fit in bytes
 // FIXME rewrite as template<bytes> atop std::array
 inline unsigned char* ulong_to_nbo(unsigned long hbo, unsigned char* data, int bytes){
 	int offset = bytes;

@@ -451,6 +451,6 @@ subtype-dependent JSON-encoded payload.
 |            ...32 bytes for ConsortiumMember hash...           |
 |            ...4 bytes for ConsortiumMember txidx...           |
 |                 ...4 bytes for status type...                 |
-|                   ...json request payload...                  |
+|                      ...json payload...                       |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
