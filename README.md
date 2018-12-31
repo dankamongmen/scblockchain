@@ -126,11 +126,12 @@ failure, TXRequestResponse
     * Requires an application/json body of type NewPatientStatusTX
     * Replies with application/json body of type TXRequestResponse
 * GET `/pstatus`: JSON equivalent of the `getpstatus` command
-    * Required query argument: `hash`, base64-encoded hash of patient block
-    * Required query argument: `txidx`, integer specifying patient transaction
+    * Required query argument: `patient`, TXSpec of Patient
     * Required query argument: `stype`, integer specifying delegated status type
     * Replies with application/json body of type PatientStatusResult or, on
 failure, TXRequestResponse
+* GET `/showpstatus`: HTML equivalent of `/pstatus`
+    * Accepts same query arguments as `/pstatus`
 
 ## Key operations
 

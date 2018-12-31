@@ -182,9 +182,70 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 }
 
 struct MHD_Response*
-HTTPDServer::Pstatus(struct MHD_Connection* conn) const {
-	(void)conn;
-	return nullptr; // FIXME
+HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
+	auto patspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "patient");
+	auto stypestr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "stype");
+	if(patspecstr == nullptr || stypestr == nullptr){
+		std::cerr << "missing required arguments in /showpstatus" << std::endl;
+		return nullptr;
+	}
+	MHD_Response* resp = nullptr;
+	try{
+		auto patspec = Catena::Transaction::StrToTXSpec(patspecstr);
+		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
+		auto json = chain.PatientStatus(patspec, stype).dump();
+		std::stringstream ss;
+		ss << htmlhdr;
+		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+		ss << "<h3>Patient " << patspecstr << "</h3>";
+		ss << "<span>" << stype << "</span><span>" << json << "</span>";
+		ss << "</body>";
+		auto s = ss.str();
+		resp = MHD_create_response_from_buffer(s.size(), const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);
+	}catch(Catena::InvalidTXSpecException& e){
+		std::cerr << "bad txspec (" << e.what() << ")" << std::endl;
+		return nullptr; // FIXME return error
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+		return nullptr;
+	}
+	if(resp){
+		if(MHD_NO == MHD_add_response_header(resp, MHD_HTTP_HEADER_CONTENT_TYPE, "text/html; charset=UTF-8")){
+			MHD_destroy_response(resp);
+			return nullptr;
+		}
+	}
+	return resp;
+}
+
+struct MHD_Response*
+HTTPDServer::PstatusJSON(struct MHD_Connection* conn) const {
+	auto patspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "patient");
+	auto stypestr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "stype");
+	if(patspecstr == nullptr || stypestr == nullptr){
+		std::cerr << "missing required arguments in /pstatus" << std::endl;
+		return nullptr;
+	}
+	MHD_Response* resp = nullptr;
+	try{
+		auto patspec = Catena::Transaction::StrToTXSpec(patspecstr);
+		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
+		auto json = chain.PatientStatus(patspec, stype).dump();
+		resp = MHD_create_response_from_buffer(json.size(), const_cast<char*>(json.c_str()), MHD_RESPMEM_MUST_COPY);
+	}catch(Catena::InvalidTXSpecException& e){
+		std::cerr << "bad txspec (" << e.what() << ")" << std::endl;
+		return MHD_NO; // FIXME return error response
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+		return MHD_NO; // FIXME return error response
+	}
+	if(resp){
+		if(MHD_NO == MHD_add_response_header(resp, MHD_HTTP_HEADER_CONTENT_TYPE, "application/json")){
+			MHD_destroy_response(resp);
+			return nullptr;
+		}
+	}
+	return resp;
 }
 
 struct MHD_Response*
@@ -400,7 +461,8 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		{ "/show", &HTTPDServer::Show, },
 		{ "/tstore", &HTTPDServer::TStore, },
 		{ "/inspect", &HTTPDServer::Inspect, },
-		{ "/pstatus", &HTTPDServer::Pstatus, },
+		{ "/pstatus", &HTTPDServer::PstatusJSON, },
+		{ "/showpstatus", &HTTPDServer::PstatusHTML, },
 		{ nullptr, nullptr },
 	},* cmd;
 	struct MHD_Response* resp = nullptr;

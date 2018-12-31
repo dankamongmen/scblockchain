@@ -36,7 +36,8 @@ struct MHD_Response* Favicon(struct MHD_Connection*) const;
 struct MHD_Response* Show(struct MHD_Connection*) const;
 struct MHD_Response* TStore(struct MHD_Connection*) const;
 struct MHD_Response* Inspect(struct MHD_Connection*) const;
-struct MHD_Response* Pstatus(struct MHD_Connection*) const;
+struct MHD_Response* PstatusHTML(struct MHD_Connection* conn) const;
+struct MHD_Response* PstatusJSON(struct MHD_Connection* conn) const;
 
 static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	const char* method, const char* version, const char* upload_data,
