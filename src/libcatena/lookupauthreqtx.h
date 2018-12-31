@@ -63,6 +63,22 @@ size_t payloadlen; // total length of signed payload
 
 };
 
+class LookupRequest {
+public:
+LookupRequest(const TXSpec& elspec, const TXSpec& cmspec) :
+	elspec(elspec),
+	cmspec(cmspec) {}
+
+bool IsAuthorized() const {
+	return authorized;
+}
+
+private:
+bool authorized; // Have we seen a LookupAuthTX?
+TXSpec elspec; // ExternalLookupTX
+TXSpec cmspec; // ConsortiumMemberTX
+};
+
 }
 
 #endif

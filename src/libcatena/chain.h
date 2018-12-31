@@ -2,6 +2,7 @@
 #define CATENA_LIBCATENA_CHAIN
 
 #include <nlohmann/json.hpp>
+#include <libcatena/lookupauthreqtx.h>
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
@@ -55,6 +56,25 @@ unsigned TXCount() const {
 
 time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
+}
+
+// Total number of LookupAuthReq transactions in the ledger
+unsigned LookupRequestCount() const {
+	return extlookups.size();
+}
+
+// Number of LookupAuthReqs that (authorized==true) have a corresponding
+// LookupAuth, or (authorized==false) do not.
+unsigned LookupRequestCount(bool authorized) const {
+	auto authed = std::accumulate(extlookups.begin(), extlookups.end(), 0,
+			[](int total, const decltype(extlookups)::value_type& lr){
+				return total + lr.second.IsAuthorized();
+			});
+	if(authorized){
+		return authed;
+	}else{
+		return LookupRequestCount() - authorized;
+	}
 }
 
 int PubkeyCount() const {
@@ -115,6 +135,7 @@ std::vector<BlockDetail> Inspect(int start, int end) const;
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
+std::map<TXSpec, LookupRequest> extlookups;
 TrustStore tstore;
 Blocks blocks;
 Block outstanding;

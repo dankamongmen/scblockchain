@@ -212,8 +212,8 @@ void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
 void Chain::AddLookupAuth(const TXSpec& larspec, const SymmetricKey& symkey){
 	// FIXME lookup elspec, cmspec from larspec
 	TXSpec elspec; // FIXME
-	// FIXME derive key from elspec and cmspec
-	SymmetricKey derivedkey; // FIXME
+	TXSpec cmspec; // FIXME
+	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(elspec, cmspec);
 	// Encrypted payload is Patient TXSpec, 16-bit keytype, key
 	auto plainlen = symkey.size() + 2 + elspec.first.size() + 4;
 	unsigned char plaintext[plainlen], *targ;
