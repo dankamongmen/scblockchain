@@ -191,18 +191,13 @@ void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, etext.first.get(), etext.second);
-	KeyLookup signer;
-	(void)cmspec; // FIXME use cmspec to choose signer
-	auto sig = tstore.Sign(buf, len, &signer);
-	if(sig.second == 0){
-		throw SigningException("couldn't sign payload");
-	}
-	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
+	auto sig = tstore.Sign(buf, len, cmspec);
+	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2); // siglen
-	memcpy(targ, signer.first.data(), signer.first.size()); // sighash
-	targ += signer.first.size();
-	targ = ulong_to_nbo(signer.second, targ, 4); // sigidx
+	memcpy(targ, cmspec.first.data(), cmspec.first.size()); // sighash
+	targ += cmspec.first.size();
+	targ = ulong_to_nbo(cmspec.second, targ, 4); // sigidx
 	memcpy(targ, sig.first.get(), sig.second); // signature
 	targ += sig.second;
 	memcpy(targ, buf, len); // signed payload (pkeylen, pkey, ciphertext)
@@ -214,9 +209,34 @@ void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
 }
 
 // FIXME can only work with AES256 (keytype 1) currently
-void Chain::AddLookupAuth(const TXSpec& elspec, const SymmetricKey& symkey){
-	(void)symkey;
-	(void)elspec; // FIXME
+void Chain::AddLookupAuth(const TXSpec& larspec, const SymmetricKey& symkey){
+	// FIXME lookup elspec, cmspec from larspec
+	TXSpec elspec; // FIXME
+	// FIXME derive key from elspec and cmspec
+	SymmetricKey derivedkey; // FIXME
+	// Encrypted payload is Patient TXSpec, 16-bit keytype, key
+	auto plainlen = symkey.size() + 2 + elspec.first.size() + 4;
+	unsigned char plaintext[plainlen], *targ;
+	memcpy(plaintext, elspec.first.data(), elspec.first.size());
+	targ = plaintext + elspec.first.size();
+	targ = ulong_to_nbo(static_cast<unsigned>(LookupAuthTX::Keytype::AES256), targ, 2);
+	memcpy(targ, symkey.data(), symkey.size());
+	auto etext = tstore.Encrypt(plaintext, plainlen, derivedkey);
+	auto sig = tstore.Sign(etext.first.get(), etext.second, elspec);
+	size_t totlen = etext.second + sig.second + 4 + larspec.first.size() + 2;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(sig.second, txbuf, 2); // siglen
+	memcpy(targ, elspec.first.data(), elspec.first.size()); // sighash
+	targ += elspec.first.size();
+	targ = ulong_to_nbo(elspec.second, targ, 4); // sigidx
+	memcpy(targ, sig.first.get(), sig.second); // signature
+	targ += sig.second;
+	memcpy(targ, etext.first.get(), etext.second); // signed, encrypted payload
+	auto tx = std::unique_ptr<LookupAuthTX>(new LookupAuthTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
 void Chain::AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload){

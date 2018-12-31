@@ -64,3 +64,5 @@ TEST(CatenaSigs, ECSign){
 				strlen(t->data), sig, siglen));
 	}
 }
+
+// FIXME add some external test vectors to ensure interoperability
