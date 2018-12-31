@@ -10,6 +10,8 @@
 
 namespace Catena {
 
+using SymmetricKey = std::array<unsigned char, 32>; // 256-bit AES key
+
 class KeypairException : public std::runtime_error {
 public:
 KeypairException() : std::runtime_error("keypair error"){}
@@ -61,6 +63,10 @@ inline bool operator==(const Keypair& rhs) const {
 bool HasPrivateKey() const {
 	return privkey != nullptr;
 }
+
+// Derive a symmetric key from this keypair together with peer. At least one
+// must have a private key loaded.
+SymmetricKey DeriveSymmetricKey(const Keypair& peer) const;
 
 static std::ostream& PrintPublicKey(std::ostream& s, const EVP_PKEY* evp);
 

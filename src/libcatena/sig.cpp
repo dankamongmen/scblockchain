@@ -181,4 +181,42 @@ std::ostream& Keypair::PrintPublicKey(std::ostream& s, const EVP_PKEY* evp){
 	return s;
 }
 
+SymmetricKey Keypair::DeriveSymmetricKey(const Keypair& peer) const {
+	if(!privkey && !peer.HasPrivateKey()){
+		throw SigningException("neither keypair has a private key");
+	}
+	if(!privkey){
+		return peer.DeriveSymmetricKey(*this);
+	}
+	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
+	if(nullptr == ctx){
+		throw SigningException("couldn't allocate pkey ctx");
+	}
+	if(1 != EVP_PKEY_derive_init(ctx)){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("couldn't initialize KDF");
+	}
+	if(1 != EVP_PKEY_derive_set_peer(ctx, peer.pubkey)){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("couldn't set KDF peer");
+	}
+	size_t skeylen;
+	if(1 != EVP_PKEY_derive(ctx, NULL, &skeylen)){
+std::cerr << "SKEYLEN: " << skeylen << "\n";
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("couldn't get derived key len");
+	}
+	SymmetricKey ret;
+	if(skeylen != ret.size()){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("bad derived key len");
+	}
+	if(1 != EVP_PKEY_derive(ctx, ret.data(), &skeylen)){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("error running KDF");
+	}
+	EVP_PKEY_CTX_free(ctx);
+	return ret;
+}
+
 }
