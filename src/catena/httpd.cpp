@@ -115,8 +115,20 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 
 struct MHD_Response*
 HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
+	char hname[128];
+	gethostname(hname, sizeof(hname));
+	hname[sizeof(hname) - 1] = '\0'; // gethostname() doesn't truncate
 	std::stringstream ss;
-	ss << chain;
+	ss << htmlhdr;
+	ss << "<body><h2>catena v" << VERSION << " on " << hname << "</h2>";
+	ss << "<div id='output'><pre>" << chain << "</pre></div>";
+	ss << "<script type=\"text/javascript\">"
+"fetch('/inspect')"
+".then(function(response) { return response.json(); })"
+".then(function(data) { document.getElementById('output').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>'; })"
+".catch(function(err) { document.getElementById('output').innerHTML = 'a world of shite' });"
+"</script>";
+	ss << "</body>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),
 			const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);
@@ -132,7 +144,9 @@ HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
 struct MHD_Response*
 HTTPDServer::TStore(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
+	ss << "<pre>";
 	chain.DumpTrustStore(ss);
+	ss << "</pre>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),
 			const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);
