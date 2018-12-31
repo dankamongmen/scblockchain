@@ -70,9 +70,8 @@ which must have its private key loaded in the catena agent.
 # NewLookupAuthorizationTX
 
 Map of strings to T:
-* `payload`: String containing base64-encoded AES-GCM encrypted payload (see below)
 * `refspec`: String containing TXSpec of subject LookupAuthReq
-* `signature`: String containing PEM-encoded signature of `payload`
+* `patspec`: String containing TXSpec of unveiled Patient
 
 This will be signed using the patient lookup key referenced by `refspec`,
 which must have its private key loaded in the catena agent.

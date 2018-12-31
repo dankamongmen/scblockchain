@@ -381,6 +381,11 @@ current key types are:
 * 0x0000 - No symmetric key provided, Patient TXSpec lookup only
 * 0x0001 - 256-bit (32 byte) AES key
 
+Though this transaction bears a LookupAuthReq TXSpec, it is signed by the key
+associated with the ExternalLookup TXSpec in that LookupAuthReq. A
+LookupAuthReq transaction does not itself publish a public key.
+
+
 ```
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1

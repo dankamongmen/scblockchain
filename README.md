@@ -68,8 +68,8 @@ lookup type.
 a TXSpec for the requesting ConsortiumMember, a TXSpec for the referenced
 ExternalLookup, and a JSON payload.
 * `lauth`: generate a LookupAuth transaction. takes as its arguments a TXSpec
-for the referenced LookupAuthReq, and a filename containing the patient's
-symmetric key.
+for the referenced LookupAuthReq, a TXSpec for the unveiled Patient, and a
+filename containing the patient's symmetric key.
 * `patient`: generate a Patient transaction. takes as its arguments a filename
 containing the new entity's authorization public key, a filename containing the
 raw symmetric key, and an arbitrary JSON payload. This payload will be
