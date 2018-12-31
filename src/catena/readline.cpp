@@ -130,17 +130,18 @@ int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewMember(const Iterator start, const Iterator end){
-	if(end - start != 2){
-		std::cerr << "2 arguments required: public key file, JSON payload" << std::endl;
+	if(end - start != 3){
+		std::cerr << "3 arguments required: signing key TXSpec, public key file, JSON payload" << std::endl;
 		return -1;
 	}
-	const auto& keyfile = start[0];
-	const auto& json = start[1];
+	const auto& keyfile = start[1];
+	const auto& json = start[2];
 	try{
+		const auto& txspec = Catena::Transaction::StrToTXSpec(start[0]);
 		auto payload = nlohmann::json::parse(json);
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
-		chain.AddConsortiumMember(pkey.get(), plen, payload);
+		chain.AddConsortiumMember(txspec, pkey.get(), plen, payload);
 		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read a public key from " << keyfile << std::endl;
@@ -148,6 +149,8 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 	}catch(nlohmann::detail::parse_error& e){
 		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't extract hashspec (" << e.what() << ")" << std::endl;
 	}
 	return -1;
 }
