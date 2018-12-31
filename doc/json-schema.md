@@ -104,11 +104,10 @@ agent.
 
 # NewPatientStatusTX
 Map of strings to T:
-* `delhash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `deltxidx`: Integer containing Patient transaction ID
+* `psdspec`: String containing TXSpec of authorizing PatientStatusDelegation
 * `payload`: JSON payload containing freeform details related to this request.
 
-This will be signed using the consortium key specified by `delhash[deltxidx]`,
+This will be signed using the consortium key referenced by `psdspec`,
 which must have its private key loaded in the catena agent.
 
 # TXRequestResponse
