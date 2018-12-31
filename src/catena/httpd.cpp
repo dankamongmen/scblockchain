@@ -1,10 +1,12 @@
 #include <sstream>
 #include <iostream>
+#include <unistd.h>
 #include <microhttpd.h>
 #include <libcatena/utility.h>
 #include <libcatena/chain.h>
 #include <libcatena/hash.h>
 #include "catena/favicon.h"
+#include "catena/version.h"
 #include "catena/httpd.h"
 
 namespace CatenaAgent {
@@ -61,6 +63,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>outstanding TXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
 	ss << "<tr><td>lookup requests</td><td>" << chain.LookupRequestCount() << "</td></tr>";
 	ss << "<tr><td>lookup authorizations</td><td>" << chain.LookupRequestCount(true) << "</td></tr>";
+	ss << "<tr><td>external IDs</td><td>" << chain.ExternalLookupCount() << "</td></tr>";
 	char timebuf[80];
 	auto lastutc = chain.MostRecentBlock();
 	if(lastutc == -1){
@@ -87,9 +90,12 @@ HTTPDServer::Favicon(struct MHD_Connection* conn __attribute__ ((unused))) const
 
 struct MHD_Response*
 HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const {
+	char hname[128];
+	gethostname(hname, sizeof(hname));
+	hname[sizeof(hname) - 1] = '\0'; // gethostname() doesn't truncate
 	std::stringstream ss;
 	ss << htmlhdr;
-	ss << "<body><h1>catena node</h1>";
+	ss << "<body><h2>catena v" << VERSION << " on " << hname << "</h2>";
 	HTMLSysinfo(ss);
 	HTMLChaininfo(ss);
 	ss << "</body>";
