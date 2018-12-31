@@ -75,8 +75,8 @@ void Chain::AddNoOp(){
 	outstanding.AddTransaction(std::make_unique<NoOpTX>());
 }
 
-void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen,
-				const nlohmann::json& payload){
+void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
+				size_t plen, const nlohmann::json& payload){
 	// FIXME verify that pkey is a valid public key
 	auto serialjson = payload.dump();
 	size_t len = plen + 2 + serialjson.length();
@@ -86,17 +86,13 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen,
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	KeyLookup signer;
-	auto sig = tstore.Sign(buf, len, &signer);
-	if(sig.second == 0){
-		throw SigningException("couldn't sign payload");
-	}
-	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
+	auto sig = tstore.Sign(buf, len, keyspec);
+	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2);
-	memcpy(targ, signer.first.data(), signer.first.size());
-	targ += signer.first.size();
-	targ = ulong_to_nbo(signer.second, targ, 4);
+	memcpy(targ, keyspec.first.data(), keyspec.first.size());
+	targ += keyspec.first.size();
+	targ = ulong_to_nbo(keyspec.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
 	memcpy(targ, buf, len);
@@ -123,12 +119,8 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	targ += elspec.first.size();
 	targ = ulong_to_nbo(elspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	KeyLookup signer; // FIXME enforce cmspec-ified key
-	auto sig = tstore.Sign(buf, len, &signer);
-	if(sig.second == 0){
-		throw SigningException("couldn't sign payload");
-	}
-	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
+	auto sig = tstore.Sign(buf, len, cmspec);
+	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2);
 	memcpy(targ, cmspec.first.data(), cmspec.first.size());

@@ -52,13 +52,13 @@ class PatientMap {
 public:
 
 // Total number of LookupAuthReq transactions in the ledger
-unsigned LookupRequestCount() const {
+int LookupRequestCount() const {
 	return lookupreqs.size();
 }
 
 // Number of LookupAuthReqs that (authorized==true) have a corresponding
 // LookupAuth, or (authorized==false) do not.
-unsigned LookupRequestCount(bool authorized) const {
+int LookupRequestCount(bool authorized) const {
 	auto authed = std::accumulate(lookupreqs.begin(), lookupreqs.end(), 0,
 			[](int total, const decltype(lookupreqs)::value_type& lr){
 				return total + lr.second.IsAuthorized();
@@ -68,6 +68,10 @@ unsigned LookupRequestCount(bool authorized) const {
 	}else{
 		return LookupRequestCount() - authed;
 	}
+}
+
+int ExternalLookupCount() const {
+	return extlookups.size();
 }
 
 LookupRequest& LookupReq(const TXSpec& lar) {

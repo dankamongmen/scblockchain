@@ -58,8 +58,8 @@ command):
 * `flush`: flush (drop) outstanding transactions.
 * `noop`: generate a NoOp transaction.
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
-filename containing the new member's public key, and an arbitrary JSON-encoded
-payload.
+TXSpec for the signing key, a filename containing the new member's public key,
+and an arbitrary JSON-encoded payload.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
