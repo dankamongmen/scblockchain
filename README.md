@@ -173,10 +173,10 @@ Order:
 Cofactor:  1 (0x1)
 ```
 * Extract public ECDSA key from `outfile.pem` to `outfile.pub`:
-    *`openssl ec -in outfile.pem -pubout -out outfile.pub`
+    * `openssl ec -in outfile.pem -pubout -out outfile.pub`
 
 ## Runtime data
 
-Included are two files, `genesisblock` and `test/ledget-test`. The former is
+Included are two files, `genesisblock` and `test/ledger-test`. The former is
 the first block of the official ledger as run in the Headway Catena Network.
 The latter contains several records based off the keys in `test/`.
