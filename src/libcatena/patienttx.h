@@ -11,7 +11,7 @@ public:
 PatientTX() = default;
 PatientTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore) override;
+bool Validate(TrustStore& tstore, PatientMap& pmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 nlohmann::json JSONify() const override;

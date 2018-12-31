@@ -1,9 +1,9 @@
 #include <cstring>
 #include <gtest/gtest.h>
+#include "libcatena/truststore.h"
+#include "libcatena/utility.h"
 #include "libcatena/sig.h"
-
-#define PUBLICKEY "test/cm-test1.pub"
-#define ECDSAKEY "test/cm-test1.pem"
+#include "test/defs.h"
 
 TEST(CatenaSigs, LoadPubkeyFile){
 	Catena::Keypair(PUBLICKEY);
@@ -27,6 +27,15 @@ TEST(CatenaSigs, LoadECMaterialInvalid){
 	EXPECT_THROW(Catena::Keypair(ECDSAKEY, ECDSAKEY), Catena::KeypairException);
 }
 
+TEST(CatenaSigs, ECSignNoPrivateKey){
+	Catena::Keypair kv(PUBLICKEY);
+	unsigned char sig[SIGLEN] = {0};
+	EXPECT_THROW(kv.Sign(reinterpret_cast<const unsigned char*>(""),
+				0, sig, sizeof(sig)), Catena::SigningException);
+	EXPECT_THROW(kv.Sign(reinterpret_cast<const unsigned char*>(""), 0),
+				Catena::SigningException);
+}
+
 TEST(CatenaSigs, ECSign){
 	static const struct {
 		const char *data;
@@ -41,7 +50,6 @@ TEST(CatenaSigs, ECSign){
 			.data = NULL,
 		}
 	}, *t;
-
 	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
 	for(t = tests ; t->data ; ++t){
 		unsigned char sig[SIGLEN];
@@ -55,4 +63,42 @@ TEST(CatenaSigs, ECSign){
 		EXPECT_TRUE(kv.Verify(reinterpret_cast<const unsigned char *>(t->data),
 				strlen(t->data), sig, siglen));
 	}
+}
+
+// FIXME add some external test vectors to ensure interoperability
+
+TEST(CatenaSigs, ECDSADeriveKey){
+	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY);
+	auto key1 = kv.DeriveSymmetricKey(peer);
+	auto key2 = peer.DeriveSymmetricKey(kv);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
+}
+
+TEST(CatenaSigs, ECDSADeriveKeySingleKey){
+	// Shouldn't work with two equal keyspecs, neither with a private key...
+	Catena::Keypair kv(PUBLICKEY);
+	Catena::Keypair peer(PUBLICKEY);
+	EXPECT_THROW(kv.DeriveSymmetricKey(peer), Catena::SigningException);
+	EXPECT_THROW(peer.DeriveSymmetricKey(kv), Catena::SigningException);
+	// But it should work fine once we have a private key
+	Catena::Keypair kv2(PUBLICKEY, ECDSAKEY);
+	auto key1 = kv2.DeriveSymmetricKey(peer);
+	auto key2 = peer.DeriveSymmetricKey(kv2);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
+}
+
+TEST(CatenaSigs, ECDSADeriveKeyNoPrivates){
+	Catena::Keypair kv(PUBLICKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY);
+	EXPECT_THROW(kv.DeriveSymmetricKey(peer), Catena::SigningException);
+	EXPECT_THROW(peer.DeriveSymmetricKey(kv), Catena::SigningException);
+}
+
+TEST(CatenaSigs, ECDSADeriveKeyBothPrivates){
+	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY, ELOOK_TEST_PRIVKEY);
+	auto key1 = kv.DeriveSymmetricKey(peer);
+	auto key2 = peer.DeriveSymmetricKey(kv);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
 }

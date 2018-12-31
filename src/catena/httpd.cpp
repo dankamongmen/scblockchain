@@ -56,8 +56,11 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 		ss << "n/a</td></tr>";
 	}
 	ss << "<tr><td>chain bytes</td><td>" << chain.Size() << "</td></tr>";
-	ss << "<tr><td>block count</td><td>" << chain.GetBlockCount() << "</td></tr>";
+	ss << "<tr><td>blocks</td><td>" << chain.GetBlockCount() << "</td></tr>";
+	ss << "<tr><td>transactions</td><td>" << chain.TXCount() << "</td></tr>";
 	ss << "<tr><td>outstanding TXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
+	ss << "<tr><td>lookup requests</td><td>" << chain.LookupRequestCount() << "</td></tr>";
+	ss << "<tr><td>lookup authorizations</td><td>" << chain.LookupRequestCount(true) << "</td></tr>";
 	char timebuf[80];
 	auto lastutc = chain.MostRecentBlock();
 	if(lastutc == -1){
@@ -66,7 +69,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 		ctime_r(&lastutc, timebuf);
 	}
 	ss << "<tr><td>last block time</td><td>" << timebuf << "</td></tr>";
-	ss << "<tr><td>public key count</td><td>" << chain.PubkeyCount() << "</td></tr>";
+	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
 	ss << "</table>";
 	return ss;
 }

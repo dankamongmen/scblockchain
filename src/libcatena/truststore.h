@@ -9,8 +9,6 @@
 
 namespace Catena {
 
-using SymmetricKey = std::array<unsigned char, 32>; // 256-bit AES key
-
 class SigningException : public std::runtime_error {
 public:
 SigningException() : std::runtime_error("error signing"){}
@@ -29,6 +27,7 @@ DecryptException() : std::runtime_error("error decrypting"){}
 DecryptException(const std::string& s) : std::runtime_error(s){}
 };
 
+// This is just a TXSpec...FIXME?
 using KeyLookup = std::pair<CatenaHash, unsigned>;
 
 struct keylookup_hash {
@@ -68,8 +67,12 @@ int PubkeyCount() const {
 	return keys.size();
 }
 
+// FIXME get rid of this; always require specification of signing key
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const;
+
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer) const;
 
 // Returned ciphertext includes 128 bits of random AES IV, so size >= 16
 // Throws EncryptException on error.
@@ -80,6 +83,10 @@ Encrypt(const void* in, size_t len, const SymmetricKey& key) const;
 // Throws DecryptException on error.
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
+
+// At least one KeyLookup must map to a Keypair with a private key, and both
+// KeyLookups must map to valid
+SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const;
 
 KeyLookup PrivateKey() const {
 	if(signingkey == nullptr){

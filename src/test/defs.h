@@ -3,6 +3,11 @@
 
 #define GENESISBLOCK_EXTERNAL "genesisblock"
 #define MOCKLEDGER "test/ledger-test"
-#define MOCKLEDGER_BLOCKS 3
+#define MOCKLEDGER_BLOCKS 4
+#define MOCKLEDGER_TXS 5
+#define PUBLICKEY "test/cm-test1.pub"
+#define ECDSAKEY "test/cm-test1.pem"
+#define ELOOK_TEST_PUBKEY "test/elook-test1.pub"
+#define ELOOK_TEST_PRIVKEY "test/elook-test1.pem"
 
 #endif

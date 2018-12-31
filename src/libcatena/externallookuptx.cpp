@@ -10,6 +10,11 @@ bool ExternalLookupTX::Extract(const unsigned char* data, unsigned len) {
 		return true;
 	}
 	lookuptype = nbo_to_ulong(data, 2);
+	// FIXME get us some enums
+	if(lookuptype){
+		std::cerr << "unknown external lookup type " << lookuptype << std::endl;
+		return true;
+	}
 	data += 2;
 	len -= 2;
 	if(len < signerhash.size() + sizeof(signeridx)){
@@ -45,7 +50,7 @@ bool ExternalLookupTX::Extract(const unsigned char* data, unsigned len) {
 		std::cerr << "no room for key in " << len << std::endl;
 		return true;
 	}
-	// FIXME verify that key is valid? verify payload is valid JSON?
+	// FIXME verify that key is valid? verify payload is valid for type?
 	// Key length is part of the signed payload, so don't advance data
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
@@ -53,7 +58,8 @@ bool ExternalLookupTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool ExternalLookupTX::Validate(TrustStore& tstore) {
+bool ExternalLookupTX::Validate(TrustStore& tstore,
+				PatientMap& lookups) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
@@ -61,6 +67,8 @@ bool ExternalLookupTX::Validate(TrustStore& tstore) {
 	const unsigned char* data = payload.get() + 2;
 	Keypair kp(data, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
+	// FIXME check that this has not been registered before
+	lookups.AddExtLookup({signerhash, signeridx});
 	return false;
 }
 
@@ -71,6 +79,10 @@ std::ostream& ExternalLookupTX::TXOStream(std::ostream& s) const {
 	s << " registrar: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetPayload(), GetPayload() + GetPayloadLength(), std::ostream_iterator<char>(s, ""));
+	switch(lookuptype){
+		case 0: s << " (SCID)"; break;
+		default: s << " (Unknown type)"; break;
+	}
 	return s;
 }
 
@@ -95,8 +107,9 @@ ExternalLookupTX::Serialize() const {
 nlohmann::json ExternalLookupTX::JSONify() const {
 	nlohmann::json ret({{"type", "ExternalLookup"}});
 	ret["sigbytes"] = siglen;
-	ret["signerhash"] = hashOString(signerhash);
-	ret["signeridx"] = signeridx;
+	std::stringstream ss;
+	ss << signerhash << "." << signeridx;
+	ret["signerspec"] = ss.str();
 	ret["payload"] = std::string(reinterpret_cast<const char*>(GetPayload()), GetPayloadLength());
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
 	ret["pubkey"] = pubkey;

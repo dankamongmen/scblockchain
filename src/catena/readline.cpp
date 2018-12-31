@@ -155,7 +155,7 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 template <typename Iterator>
 int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
 	if(end - start != 4){
-		std::cerr << "4 arguments required: ConsortiumMember spec, public key file, asymmetric key file, JSON payload" << std::endl;
+		std::cerr << "4 arguments required: ConsortiumMember spec, public key file, symmetric key file, JSON payload" << std::endl;
 		return -1;
 	}
 	const auto& json = start[3];
@@ -174,7 +174,7 @@ int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
 		chain.AddPatient(cmspec, pkey.get(), plen, skey, payload);
 		return 0;
 	}catch(std::ifstream::failure& e){
-		std::cerr << "couldn't read a public key (" << e.what() << ")" << std::endl;
+		std::cerr << "couldn't read a key (" << e.what() << ")" << std::endl;
 	}catch(Catena::SigningException& e){
 		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 	}catch(nlohmann::detail::parse_error& e){
@@ -208,33 +208,89 @@ int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
-	std::cerr << "not yet implemented" << std::endl;
-	(void)start;
-	(void)end;
+	// FIXME make symmetric key file optional for anonymous passthrough
+	if(start + 3 != end){
+		std::cerr << "3 arguments required: LookupAuthReq spec, Patient spec, symmetric key file" << std::endl;
+		return -1;
+	}
+	try{
+		auto larspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto patspec = Catena::Transaction::StrToTXSpec(start[1]);
+		size_t symlen;
+		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
+		Catena::SymmetricKey skey;
+		if(symlen != skey.size()){
+			std::cerr << "invalid " << symlen << "b symmetric key at " << start[2] << std::endl;
+			return -1;
+		}
+		memcpy(skey.data(), symkey.get(), skey.size());
+		chain.AddLookupAuth(larspec, patspec, skey);
+		return 0;
+	}catch(std::ifstream::failure& e){
+		std::cerr << "couldn't read symmetric key (" << e.what() << ")" << std::endl;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't extract hashspec (" << e.what() << ")" << std::endl;
+	}
 	return -1;
 }
 
 template <typename Iterator>
 int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
-	std::cerr << "not yet implemented" << std::endl;
-	(void)start;
-	(void)end;
+	if(start + 2 != end){
+		std::cerr << "2 arguments required: PatientStatusDelegation spec, JSON payload" << std::endl;
+		return -1;
+	}
+	const auto& json = start[1];
+	try{
+		auto psdspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto payload = nlohmann::json::parse(json);
+		chain.AddPatientStatus(psdspec, payload);
+		return 0;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}
 	return -1;
 }
 
 template <typename Iterator>
 int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
-	std::cerr << "not yet implemented" << std::endl;
-	(void)start;
-	(void)end;
+	if(start + 2 != end){
+		std::cerr << "2 arguments required: Patient spec, status type" << std::endl;
+		return -1;
+	}
+	try{
+		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto stype = Catena::StrToLong(start[1], 0, LONG_MAX);
+		auto json = chain.PatientStatus(patspec, stype);
+		std::cout << json.dump() << "\n";
+		return 0;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
+	}
 	return -1;
 }
 
 template <typename Iterator>
 int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator end){
-	std::cerr << "not yet implemented" << std::endl;
-	(void)start;
-	(void)end;
+	if(start + 3 != end){
+		std::cerr << "3 arguments required: Patient spec, ConsortiumMember spec, status type" << std::endl;
+		return -1;
+	}
+	try{
+		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto cmspec = Catena::Transaction::StrToTXSpec(start[1]);
+		auto stype = Catena::StrToLong(start[2], 0, LONG_MAX);
+		chain.AddPatientStatusDelegation(cmspec, patspec, stype);
+		return 0;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+	}
 	return -1;
 }
 

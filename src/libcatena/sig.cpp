@@ -3,6 +3,7 @@
 #include <iterator>
 #include <openssl/pem.h>
 #include <openssl/evp.h>
+#include "libcatena/truststore.h"
 #include "libcatena/sig.h"
 
 namespace Catena {
@@ -83,7 +84,7 @@ Keypair::~Keypair(){
 
 size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen) const {
 	if(!privkey){
-		return 0;
+		throw SigningException("no private key loaded");
 	}
 	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
 	if(1 != EVP_PKEY_sign_init(ctx)){
@@ -110,7 +111,7 @@ size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Keypair::Sign(const unsigned char* in, size_t inlen) const {
 	if(!privkey){
-		return std::make_pair(nullptr, 0);
+		throw SigningException("no private key loaded");
 	}
 	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
 	if(1 != EVP_PKEY_sign_init(ctx)){
@@ -178,6 +179,43 @@ std::ostream& Keypair::PrintPublicKey(std::ostream& s, const EVP_PKEY* evp){
 	std::copy(buf, buf + len, std::ostream_iterator<char>(s, ""));
 	BIO_free(bio);
 	return s;
+}
+
+SymmetricKey Keypair::DeriveSymmetricKey(const Keypair& peer) const {
+	if(!privkey && !peer.HasPrivateKey()){
+		throw SigningException("neither keypair has a private key");
+	}
+	if(!privkey){
+		return peer.DeriveSymmetricKey(*this);
+	}
+	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
+	if(nullptr == ctx){
+		throw SigningException("couldn't allocate pkey ctx");
+	}
+	if(1 != EVP_PKEY_derive_init(ctx)){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("couldn't initialize KDF");
+	}
+	if(1 != EVP_PKEY_derive_set_peer(ctx, peer.pubkey)){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("couldn't set KDF peer");
+	}
+	size_t skeylen;
+	if(1 != EVP_PKEY_derive(ctx, NULL, &skeylen)){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("couldn't get derived key len");
+	}
+	SymmetricKey ret;
+	if(skeylen != ret.size()){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("bad derived key len");
+	}
+	if(1 != EVP_PKEY_derive(ctx, ret.data(), &skeylen)){
+		EVP_PKEY_CTX_free(ctx);
+		throw SigningException("error running KDF");
+	}
+	EVP_PKEY_CTX_free(ctx);
+	return ret;
 }
 
 }

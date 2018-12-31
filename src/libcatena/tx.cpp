@@ -81,13 +81,14 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	return false;
 }
 
-bool ConsortiumMemberTX::Validate(TrustStore& tstore){
+bool ConsortiumMemberTX::Validate(TrustStore& tstore, PatientMap& pmap){
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
+	(void)pmap; // FIXME add new CM to pmap
 	return false;
 }
 
@@ -139,8 +140,9 @@ ConsortiumMemberTX::Serialize() const {
 nlohmann::json ConsortiumMemberTX::JSONify() const {
 	nlohmann::json ret({{"type", "ConsortiumMember"}});
 	ret["sigbytes"] = siglen;
-	ret["signerhash"] = hashOString(signerhash);
-	ret["signeridx"] = signeridx;
+	std::stringstream ss;
+	ss << signerhash << "." << signeridx;
+	ret["signerspec"] = ss.str();
 	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
 	ret["payload"] = nlohmann::json::parse(pload);
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
@@ -176,6 +178,9 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 		break;
 	case TXTypes::LookupAuthReq:
 		tx = new LookupAuthReqTX(blkhash, txidx);
+		break;
+	case TXTypes::LookupAuth:
+		tx = new LookupAuthTX(blkhash, txidx);
 		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;

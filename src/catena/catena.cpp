@@ -65,6 +65,8 @@ int main(int argc, char **argv){
 	}
 	std::cout << "Loading ledger from " << chain_file << std::endl;
 	try{
+		// FIXME we'll want to provide privkey prior to loading the
+		// chain, since we need it to decode LookupAuth transactions...
 		Catena::Chain chain(chain_file);
 		if(pubkey_file || privkey_file){
 			if(!pubkey_file || !privkey_file){

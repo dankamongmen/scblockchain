@@ -5,13 +5,12 @@
 #include <cstring>
 #include <nlohmann/json.hpp>
 #include <libcatena/truststore.h>
+#include <libcatena/patientmap.h>
 #include <libcatena/utility.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
 
 namespace Catena {
-
-using TXSpec = std::pair<CatenaHash, unsigned>;
 
 enum class TXTypes {
 	NoOp = 0x0000,
@@ -38,7 +37,7 @@ Transaction(const CatenaHash& hash, unsigned idx) :
 
 virtual ~Transaction() = default;
 virtual bool Extract(const unsigned char* data, unsigned len) = 0;
-virtual bool Validate(TrustStore& tstore) = 0;
+virtual bool Validate(TrustStore& tstore, PatientMap& pmap) = 0;
 virtual nlohmann::json JSONify() const = 0;
 
 // Send oneself to an ostream
@@ -72,7 +71,8 @@ public:
 NoOpTX() = default;
 NoOpTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore __attribute__ ((unused))) override {
+bool Validate(TrustStore& tstore __attribute__ ((unused)),
+		PatientMap& map __attribute__ ((unused))) override {
 	return false;
 }
 nlohmann::json JSONify() const override;
@@ -85,7 +85,7 @@ public:
 ConsortiumMemberTX() = default;
 ConsortiumMemberTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore) override;
+bool Validate(TrustStore& tstore, PatientMap& pmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 nlohmann::json JSONify() const override;

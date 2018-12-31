@@ -49,6 +49,10 @@ unsigned OutstandingTXCount() const {
 	return outstanding.TransactionCount();
 }
 
+unsigned TXCount() const {
+	return blocks.TXCount();
+}
+
 time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
 }
@@ -62,7 +66,15 @@ size_t Size() const {
 	return blocks.Size();
 }
 
-KeyLookup PrivateKeyTXSpec() const {
+unsigned LookupRequestCount() const {
+	return pmap.LookupRequestCount();
+}
+
+unsigned LookupRequestCount(bool authorized) const {
+	return pmap.LookupRequestCount(authorized);
+}
+
+KeyLookup PrivateKeyTXSpec() const { // FIXME deprecated, rid ourselves of this
 	return tstore.PrivateKey();
 }
 
@@ -82,14 +94,23 @@ void FlushOutstanding();
 
 void AddSigningKey(const Keypair& kp);
 
+// Retrieve the most recent PatientStatus published for this patient of this
+// type. Returns a trivial JSON object if no such statuses have been published.
+// Throws InvalidTXSpec if no such patient exists.
+nlohmann::json PatientStatus(const TXSpec& patspec, unsigned stype) const;
+
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
 void AddConsortiumMember(const unsigned char* pkey, size_t plen, const nlohmann::json& payload);
 void AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
+void AddLookupAuth(const TXSpec& elspec, const TXSpec& patspec, const SymmetricKey& symkey);
 void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
-		SymmetricKey& symkey, const nlohmann::json& payload);
+		const SymmetricKey& symkey, const nlohmann::json& payload);
+void AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload);
+void AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patspec,
+				const nlohmann::json& payload);
 
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.
@@ -103,6 +124,7 @@ friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
 TrustStore tstore;
+PatientMap pmap;
 Blocks blocks;
 Block outstanding;
 

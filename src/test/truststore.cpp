@@ -4,6 +4,7 @@
 #include <libcatena/builtin.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
+#include "test/defs.h"
 
 TEST(CatenaTrustStore, BuiltinKeys){
 	Catena::BuiltinKeys bkeys;
@@ -59,6 +60,14 @@ TEST(CatenaTrustStore, CopyConstructorEmpty){
 	Catena::TrustStore tstore2 = tstore;
 }
 
+TEST(CatenaTrustStore, CopyConstructorBuiltins){
+	Catena::TrustStore tstore, tstore1;
+	Catena::BuiltinKeys bkeys;
+	bkeys.AddToTrustStore(tstore);
+	tstore1 = tstore;
+	Catena::TrustStore tstore2 = tstore;
+}
+
 TEST(CatenaTrustStore, SignNoKeys){
 	Catena::TrustStore tstore;
 	unsigned char buf[] = {0};
@@ -75,10 +84,6 @@ TEST(CatenaTrustStore, SignOnlyBuiltinKeys){
 	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), &kl), Catena::SigningException);
 }
 
-// FIXME add copy constructor test using builtin keys
-
-// FIXME add test using test keys + addKey() for full sign + verify loop
-
 TEST(CatenaTrustStore, SymmetricFail){
 	Catena::TrustStore tstore;
 	Catena::SymmetricKey key;
@@ -94,6 +99,21 @@ static const char* tests[] = {
 	NULL
 
 };
+
+TEST(CatenaTrustStore, SignTestCMKey){
+	Catena::TrustStore tstore;
+	Catena::Keypair kp(PUBLICKEY, ECDSAKEY);
+	Catena::KeyLookup kl;
+	RAND_bytes(kl.first.data(), kl.first.size());
+	kl.second = 5;
+	tstore.addKey(&kp, kl);
+	for(auto t = tests ; *t ; ++t){
+		auto sig = tstore.Sign(reinterpret_cast<const unsigned char*>(*t),
+					strlen(*t), kl);
+		EXPECT_FALSE(tstore.Verify(kl, reinterpret_cast<const unsigned char*>(*t),
+					strlen(*t), sig.first.get(), sig.second));
+	}
+}
 
 TEST(CatenaTrustStore, SymmetricEncryptDecryptString){
 	Catena::TrustStore tstore;
@@ -124,3 +144,20 @@ TEST(CatenaTrustStore, SymmetricEncryptDecryptUnterminated){
 }
 
 // FIXME add standard test vectors to ensure interoperability
+
+TEST(CatenaTrustStore, KeyDerivation){
+	Catena::TrustStore tstore;
+	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY);
+	Catena::KeyLookup kl1, kl2;
+	RAND_bytes(kl1.first.data(), kl1.first.size());
+	RAND_bytes(kl2.first.data(), kl2.first.size());
+	kl1.second = kl2.second = 0;
+	tstore.addKey(&kv, kl1);
+	tstore.addKey(&peer, kl2);
+	auto key1 = tstore.DeriveSymmetricKey(kl1, kl2);
+	auto key2 = tstore.DeriveSymmetricKey(kl2, kl1);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
+}
+
+// FIXME test KDF against builtin key

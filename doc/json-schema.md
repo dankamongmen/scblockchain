@@ -23,12 +23,14 @@ a partial range of blocks are being detailed.
 Map of strings to T:
 * `type`: String containing human-readble transaction type
 * optional `sigbytes`: Integer size of the signature in bytes
-* optional `signerhash`: String containing hex encoding of 256-bit signer block
-* optional `signeridx`: Integer corresponding to signer TX index within block
+* optional `signerspec`: String containing TXSpec of signer
 * optional `pubkey`: String containing PEM-encoded public key
-* optional `payload`: payload, dependent on transaction type and subtype
 * optional `subtype`: Integer corresponding to transaction subtype
-    * ExternalLookup: lookup type
+* optional `subjectspec`: String containing TXSpec of subject
+* optional `payload`: payload, dependent on transaction type and subtype
+* optional `envpayload`: String containing hex encoding of encrypted payload
+
+`payload` and `encpayload` are mutually exclusive.
 
 # PatientStatusResult
 
@@ -38,48 +40,52 @@ Returned by the `/pstatus` endpoint. Freeform JSON payload.
 
 Accepted by the `/member` endpoint. Map of strings to T:
 * `pubkey`: String containing PEM-encoded public key
+* `regspec`: String containing TXSpec of registering ConsortiumMember
 * `payload`: JSON payload containing freeform details related to this entity
+
+This will be signed using the consortium key referenced by `regspec`,
+which must have its private key loaded in the catena agent.
 
 # NewExternalLookupTX
 
 Accepted by the `/exlookup` endpoint. Map of strings to T:
 * `pubkey`: String containing PEM-encoded public key (user lookup key)
+* `regspec`: String containing TXSpec of registering ConsortiumMember
 * `lookuptype`: Integer, lookup type
 * `payload`: String payload, dependent on lookuptype
+
+This will be signed using the consortium key referenced by `regspec`,
+which must have its private key loaded in the catena agent.
 
 # NewLookupAuthorizationRequestTX
 
 Map of strings to T:
-* `exthash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `exttxidx`: Integer containing ExternalLookup transaction ID
-* `reqhash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `reqtxidx`: Integer containing ConsortiumMember transaction ID
+* `extspec`: String containing TXSpec of requested ExternalLookup
+* `reqspec`: String containing TXSpec of requesting ConsortiumMember
 * `payload`: JSON payload containing freeform details related to this request
+
+This will be signed using the consortium key referenced by `reqspec`,
+which must have its private key loaded in the catena agent.
 
 # NewLookupAuthorizationTX
 
 Map of strings to T:
-* `payload`: String containing base64-encoded AES-GCM encrypted payload (see below)
-* `refhash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `reftxidx`: Integer containing LookupAuthorizationRequest transaction ID
-* `signature`: String containing PEM-encoded signature of `payload`
+* `refspec`: String containing TXSpec of subject LookupAuthReq
+* `patspec`: String containing TXSpec of unveiled Patient
 
-The plaintext (binary) payload consists of a base64-encoded symmetric key,
-followed by a 256 bit blockhash, followed by a 32-bit NBO transaction
-identifier. This references a published Patient transaction. The symmetric key
-can be used to decrypt the Patient payload. This payload is encrypted using a
-symmetric key derived from the public keys published in the ConsortiumMember
-and ExternalLookup transactions transitively referenced through `refhash` and
-`reftxidx`.
+This will be signed using the patient lookup key referenced by `refspec`,
+which must have its private key loaded in the catena agent.
 
 # NewPatientTX
 
 Map of strings to T:
 * `pubkey`: String containing PEM-encode public key (user delegation auth key)
-* `reqhash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `reqtxidx`: Integer containing ConsortiumMember transaction ID
+* `regspec`: String containing TXSpec of registering ConsortiumMember
 * `payload`: JSON payload containing freeform details related to this request.
 This will be encrypted before being written to the ledger.
+
+This will be signed using the consortium key specified by `regspec`, which must
+have its private key loaded in the catena agent.
 
 ## NewPatientTXResponse
 
@@ -91,22 +97,18 @@ payload.
 
 Map of strings to T:
 * `statustype`: Integer identifying the type of status being delegated
-* `reqhash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `reqtxidx`: Integer containing ConsortiumMember transaction ID
-* `pathash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `pattxidx`: Integer containing Patient transaction ID
+* `delspec`: String containing TXSpec of delegated ConsortiumMember
+* `patspec`: String containing TXSpec of delegating Patient
 
 This will be signed using the delegation authentication key specified by
-`pathash[pattxidx]`, which must have its private key loaded in the catena
-agent.
+`patspec`, which must have its private key loaded in the catena agent.
 
 # NewPatientStatusTX
 Map of strings to T:
-* `delhash`: String containing hex encoding of 256-bit block hash (64 chars)
-* `deltxidx`: Integer containing Patient transaction ID
+* `psdspec`: String containing TXSpec of authorizing PatientStatusDelegation
 * `payload`: JSON payload containing freeform details related to this request.
 
-This will be signed using the consortium key specified by `delhash[deltxidx]`,
+This will be signed using the consortium key referenced by `psdspec`,
 which must have its private key loaded in the catena agent.
 
 # TXRequestResponse

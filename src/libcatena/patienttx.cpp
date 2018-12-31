@@ -45,14 +45,14 @@ bool PatientTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool PatientTX::Validate(TrustStore& tstore) {
+bool PatientTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	// FIXME store Patient metadata?
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
+	(void)pmap; // FIXME store Patient metadata?
 	return false;
 }
 
@@ -60,7 +60,6 @@ std::ostream& PatientTX::TXOStream(std::ostream& s) const {
 	s << "Patient (" << siglen << "b signature, " << payloadlen
 		<< "b payload, " << keylen << "b key)\n";
 	s << " registrar: " << signerhash << "." << signeridx << "\n";
-	// FIXME payload is encrypted! decrypt if possible
 	s << " payload is encrypted";
 	return s;
 }
@@ -84,9 +83,12 @@ PatientTX::Serialize() const {
 nlohmann::json PatientTX::JSONify() const {
 	nlohmann::json ret({{"type", "Patient"}});
 	ret["sigbytes"] = siglen;
-	ret["signerhash"] = hashOString(signerhash);
-	ret["signeridx"] = signeridx;
-	ret["payload"] = std::string(reinterpret_cast<const char*>(GetPayload()), GetPayloadLength());
+	std::stringstream ss;
+	ss << signerhash << "." << signeridx;
+	ret["signerspec"] = ss.str();
+	ss.clear();
+	HexOutput(ss, GetPayload(), GetPayloadLength());
+	ret["encpayload"] = ss.str();
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
 	ret["pubkey"] = pubkey;
 	return ret;

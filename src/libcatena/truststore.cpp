@@ -60,7 +60,6 @@ void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
 	}
 }
 
-// FIXME should probably throw exceptions on errors
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 TrustStore::Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const {
 	if(signingkey == nullptr){
@@ -71,6 +70,15 @@ TrustStore::Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const
 		throw SigningException("couldn't find signing key");
 	}
 	*signer = it->first;
+	return it->second.Sign(in, inlen);
+}
+
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+TrustStore::Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer) const {
+	const auto& it = keys.find(signer);
+	if(it == keys.end()){
+		throw SigningException("no such entry in truststore");
+	}
 	return it->second.Sign(in, inlen);
 }
 
@@ -149,6 +157,16 @@ TrustStore::Decrypt(const void* in, size_t len, const SymmetricKey& key) const {
 	ret.second += dlen;
 	EVP_CIPHER_CTX_free(ctx);
 	return ret;
+}
+
+SymmetricKey
+TrustStore::DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const {
+	auto kit1 = keys.find(k1);
+	auto kit2 = keys.find(k2);
+	if(kit1 == keys.end() || kit2 == keys.end()){
+		throw SigningException("key not found for derivation");
+	}
+	return kit1->second.DeriveSymmetricKey(kit2->second);
 }
 
 }
