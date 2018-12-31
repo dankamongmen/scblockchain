@@ -144,3 +144,20 @@ TEST(CatenaTrustStore, SymmetricEncryptDecryptUnterminated){
 }
 
 // FIXME add standard test vectors to ensure interoperability
+
+TEST(CatenaTrustStore, KeyDerivation){
+	Catena::TrustStore tstore;
+	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY);
+	Catena::KeyLookup kl1, kl2;
+	RAND_bytes(kl1.first.data(), kl1.first.size());
+	RAND_bytes(kl2.first.data(), kl2.first.size());
+	kl1.second = kl2.second = 0;
+	tstore.addKey(&kv, kl1);
+	tstore.addKey(&peer, kl2);
+	auto key1 = tstore.DeriveSymmetricKey(kl1, kl2);
+	auto key2 = tstore.DeriveSymmetricKey(kl2, kl1);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
+}
+
+// FIXME test KDF against builtin key

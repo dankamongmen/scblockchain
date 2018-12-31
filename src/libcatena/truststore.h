@@ -84,6 +84,10 @@ Encrypt(const void* in, size_t len, const SymmetricKey& key) const;
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
 
+// At least one KeyLookup must map to a Keypair with a private key, and both
+// KeyLookups must map to valid
+SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const;
+
 KeyLookup PrivateKey() const {
 	if(signingkey == nullptr){
 		throw SigningException("no private key");
