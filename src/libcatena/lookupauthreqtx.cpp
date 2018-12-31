@@ -134,7 +134,7 @@ bool LookupAuthTX::Extract(const unsigned char* data, unsigned len) {
 }
 
 nlohmann::json LookupAuthTX::JSONify() const {
-	nlohmann::json ret({{"type", "LookupAuthReq"}});
+	nlohmann::json ret({{"type", "LookupAuth"}});
 	ret["sigbytes"] = siglen;
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;
