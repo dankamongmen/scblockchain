@@ -75,6 +75,19 @@ TEST(CatenaSigs, ECDSADeriveKey){
 	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
 }
 
+TEST(CatenaSigs, ECDSADeriveKeySingleKey){
+	// Shouldn't work with two equal keyspecs, neither with a private key...
+	Catena::Keypair kv(PUBLICKEY);
+	Catena::Keypair peer(PUBLICKEY);
+	EXPECT_THROW(kv.DeriveSymmetricKey(peer), Catena::SigningException);
+	EXPECT_THROW(peer.DeriveSymmetricKey(kv), Catena::SigningException);
+	// But it should work fine once we have a private key
+	Catena::Keypair kv2(PUBLICKEY, ECDSAKEY);
+	auto key1 = kv2.DeriveSymmetricKey(peer);
+	auto key2 = peer.DeriveSymmetricKey(kv2);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
+}
+
 TEST(CatenaSigs, ECDSADeriveKeyNoPrivates){
 	Catena::Keypair kv(PUBLICKEY);
 	Catena::Keypair peer(ELOOK_TEST_PUBKEY);

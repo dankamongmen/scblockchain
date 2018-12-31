@@ -202,7 +202,6 @@ SymmetricKey Keypair::DeriveSymmetricKey(const Keypair& peer) const {
 	}
 	size_t skeylen;
 	if(1 != EVP_PKEY_derive(ctx, NULL, &skeylen)){
-std::cerr << "SKEYLEN: " << skeylen << "\n";
 		EVP_PKEY_CTX_free(ctx);
 		throw SigningException("couldn't get derived key len");
 	}
