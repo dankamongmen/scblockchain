@@ -48,15 +48,15 @@ is escaping with backslash. The following commands are available when catena is
 invoked interactively (this list can be accessed by running the `help`
 command):
 
-* `help`: summary of available commands
-* `quit`: exit catena
-* `show`: print the chain in a human-readable format
-* `tstore`: print the trust store (known keys) in a human-readable format
-* `inspect`: print detailed information about a range of the chain
-* `outstanding`: print outstanding transactions in a human-readable format
-* `commit`: coalesce outstanding transactions into a block and add it to ledger
-* `flush`: flush outstanding transactions
-* `noop`: generate a NoOp transaction
+* `help`: summarize available commands.
+* `quit`: exit catena.
+* `show`: print the chain in a human-readable format.
+* `tstore`: print the trust store (known keys) in a human-readable format.
+* `inspect`: print detailed information about a range of the chain.
+* `outstanding`: print outstanding transactions in a human-readable format.
+* `commit`: coalesce outstanding transactions and add them to ledger.
+* `flush`: flush (drop) outstanding transactions.
+* `noop`: generate a NoOp transaction.
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
 filename containing the new member's public key, and an arbitrary JSON-encoded
 payload.
@@ -67,15 +67,20 @@ lookup type.
 * `lauthreq`: generate a LookupAuthReq transaction. takes as its arguments
 a TXSpec for the requesting ConsortiumMember, a TXSpec for the referenced
 ExternalLookup, and a JSON payload.
-* `lauth`: generate a LookupAuth transaction
+* `lauth`: generate a LookupAuth transaction. takes as its arguments a TXSpec
+for the referenced LookupAuthReq, and a filename containing the patient's
+symmetric key.
 * `patient`: generate a Patient transaction. takes as its arguments a filename
 containing the new entity's authorization public key, a filename containing the
 raw symmetric key, and an arbitrary JSON payload. This payload will be
 encrypted.
-* `delpstatus`: generate a PatientStatusDelegation transaction
-* `pstatus`: generate a PatientStatus transaction
+* `delpstatus`: generate a PatientStatusDelegation transaction. takes as its
+arguments a TXSpec for the delegating Patient, a TXSpec for the delegated
+ConsortiumMember, and a status type.
+* `pstatus`: generate a PatientStatus transaction. takes as its arguments a
+TXSpec for the referenced PatientStatusDelegation, and a JSON payload.
 * `getpstatus`: show the most recent PatientStatus for the specified patient
-and patient status delegation type
+and patient status delegation type.
 
 Use of commands that generate signed or encrypted transactions requires an
 appropriate private key having been loaded with the `-u` option (along with
