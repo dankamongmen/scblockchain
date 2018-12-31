@@ -12,6 +12,7 @@ TEST(CatenaBlocks, BlocksGenesisBlock){
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCK_EXTERNAL, tstore));
 	EXPECT_EQ(1, cbs.GetBlockCount());
+	EXPECT_EQ(1, cbs.TXCount());
 }
 
 TEST(CatenaBlocks, BlocksMockLedger){
@@ -21,6 +22,7 @@ TEST(CatenaBlocks, BlocksMockLedger){
 	Catena::Blocks cbs;
 	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, tstore));
 	EXPECT_EQ(MOCKLEDGER_BLOCKS, cbs.GetBlockCount());
+	EXPECT_EQ(MOCKLEDGER_TXS, cbs.TXCount());
 }
 
 TEST(CatenaBlocks, BlocksInvalidFile){
@@ -145,6 +147,7 @@ TEST(CatenaBlocks, BlockAppendBlock){
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s2);
 	EXPECT_FALSE(cbs.AppendBlock(b2.get(), s2, tstore));
 	EXPECT_EQ(2, cbs.GetBlockCount());
+	EXPECT_EQ(0, cbs.TXCount());
 }
 
 TEST(CatenaBlocks, BlockInspectMockLedger){
