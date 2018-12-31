@@ -114,14 +114,37 @@ table (transactions ought not have trailing padding).
 
 #### NoOp
 
-Transaction type 0x0000.
+Transaction type 0x0000, followed by a 16-bit signature length, followed by
+the 256-bit hash and 32-bit index of the signing party, followed by the
+signature, followed by an arbitrary payload.
 
 ```
- 0                   1
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         type (0x0000)         |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         type (0x0000)         |            siglength          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                           signer hash                         +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          signer index                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|              ...ECDSA signature (70--72 bytes)...             |
+|                          ...payload...                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
 #### Consortium Member
