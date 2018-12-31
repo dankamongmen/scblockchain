@@ -55,12 +55,10 @@ enum class Keytype {
 private:
 unsigned char signature[SIGLEN];
 
-// specifier of who signed this tx
-CatenaHash signerhash;
+CatenaHash signerhash; // specifier of who signed this tx
 uint32_t signeridx; // must be exactly 32 bits for serialization
 size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;
-uint32_t subjectidx; // subject idx of request (LookupAuthReqTX), from payload
 size_t payloadlen; // total length of signed payload
 
 };
