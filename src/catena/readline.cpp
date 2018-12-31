@@ -251,6 +251,8 @@ int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
 		auto payload = nlohmann::json::parse(json);
 		chain.AddPatientStatus(psdspec, payload);
 		return 0;
+	}catch(Catena::InvalidTXSpecException& e){
+		std::cerr << "bad PatientStatusDelegation (" << e.what() << ")" << std::endl;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
 	}catch(Catena::SigningException& e){
