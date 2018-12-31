@@ -88,7 +88,7 @@ nlohmann::json LookupAuthReqTX::JSONify() const {
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;
 	ret["signerspec"] = ss.str();
-	ss.clear();
+	ss.str(std::string());
 	hashOStream(ss, payload.get());
 	ss << "." << subjectidx;
 	ret["subjectspec"] = ss.str();
@@ -139,7 +139,7 @@ nlohmann::json LookupAuthTX::JSONify() const {
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;
 	ret["signerspec"] = ss.str();
-	ss.clear();
+	ss.str(std::string());
 	HexOutput(ss, payload.get(), payloadlen);
         ret["encpayload"] = ss.str();
 	return ret;
