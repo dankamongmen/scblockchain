@@ -49,6 +49,10 @@ unsigned OutstandingTXCount() const {
 	return outstanding.TransactionCount();
 }
 
+unsigned TXCount() const {
+	return blocks.TXCount();
+}
+
 time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
 }

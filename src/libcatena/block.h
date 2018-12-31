@@ -63,6 +63,13 @@ size_t Size() const {
 	return offsets.back() + headers.back().totlen;
 }
 
+unsigned TXCount() const {
+	return std::accumulate(headers.begin(), headers.end(), 0,
+		[](int total, const BlockHeader& bhdr){
+			return total + bhdr.txcount;
+		});
+}
+
 void GetLastHash(CatenaHash& hash) const;
 
 time_t GetLastUTC() const {
