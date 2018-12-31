@@ -16,4 +16,8 @@ TEST(CatenaChain, ChainGenesisMock){
 	EXPECT_EQ(MOCKLEDGER_BLOCKS, chain.GetBlockCount());
 	EXPECT_EQ(MOCKLEDGER_TXS, chain.TXCount());
 	EXPECT_EQ(0, chain.OutstandingTXCount());
+	EXPECT_EQ(chain.LookupRequestCount(),
+		chain.LookupRequestCount(true) + chain.LookupRequestCount(false));
+	EXPECT_GE(chain.LookupRequestCount(true), 0);
+	EXPECT_GE(chain.LookupRequestCount(false), 0);
 }

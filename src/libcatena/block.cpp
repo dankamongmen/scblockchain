@@ -12,7 +12,7 @@ const int Block::BLOCKVERSION;
 const int Block::BLOCKHEADERLEN;
 
 bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
-			unsigned len, TrustStore* tstore){
+			unsigned len, PatientMap* pmap, TrustStore* tstore){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
@@ -41,7 +41,7 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 			return true;
 		}
 		if(tstore){
-			if(tx->Validate(*tstore)){
+			if(tx->Validate(*tstore, *pmap)){
 				return true;
 			}
 		}
@@ -109,7 +109,8 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 // Verify new blocks relative to the loaded blocks (i.e., do not replay already-
 // verified blocks). If any block fails verification, the Blocks structure is
 // unchanged, and -1 is returned.
-int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tstore){
+int Blocks::VerifyData(const unsigned char *data, unsigned len, PatientMap& pmap,
+			TrustStore& tstore){
 	unsigned offset = 0;
 	uint64_t prevutc = 0;
 	auto origblockcount = GetBlockCount();
@@ -122,7 +123,8 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	std::vector<BlockHeader> new_headers;
 	CatenaHash prevhash;
 	GetLastHash(prevhash);
-	TrustStore new_tstore = tstore; // FIXME expensive copy here :(
+	TrustStore new_tstore = tstore; // FIXME expensive copies here :(
+	auto new_pmap = pmap;
 	while(len){
 		Block block;
 		BlockHeader chdr;
@@ -133,7 +135,8 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 		data += Block::BLOCKHEADERLEN;
 		prevhash = chdr.hash;
 		prevutc = chdr.utc;
-		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN, &new_tstore)){
+		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN,
+					&new_pmap, &new_tstore)){
 			return -1;
 		}
 		data += chdr.totlen - Block::BLOCKHEADERLEN;
@@ -145,22 +148,23 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, TrustStore& tsto
 	}
 	headers.insert(headers.end(), new_headers.begin(), new_headers.end());
 	offsets.insert(offsets.end(), new_offsets.begin(), new_offsets.end());
-	tstore = new_tstore; // FIXME another expensive copy
+	tstore = new_tstore; // FIXME another set of expensive copies (swap? move?)
+	pmap = new_pmap;
 	return blocknum - origblockcount;
 }
 
-bool Blocks::LoadData(const void* data, unsigned len, TrustStore& tstore){
+bool Blocks::LoadData(const void* data, unsigned len, PatientMap& pmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	auto blocknum = VerifyData(static_cast<const unsigned char*>(data),
-					len, tstore);
+					len, pmap, tstore);
 	if(blocknum < 0){
 		return true;
 	}
 	return false;
 }
 
-bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
+bool Blocks::LoadFile(const std::string& fname, PatientMap& pmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	filename = "";
@@ -168,15 +172,15 @@ bool Blocks::LoadFile(const std::string& fname, TrustStore& tstore){
 	// Returns nullptr on zero-byte file, but LoadData handles that fine
 	const auto& memblock = ReadBinaryFile(fname, &size);
 	bool ret;
-	if(!(ret = LoadData(memblock.get(), size, tstore))){
+	if(!(ret = LoadData(memblock.get(), size, pmap, tstore))){
 		filename = fname;
 	}
 	return ret;
 }
 
-bool Blocks::AppendBlock(const unsigned char* block, size_t blen, TrustStore& tstore){
+bool Blocks::AppendBlock(const unsigned char* block, size_t blen, PatientMap& pmap, TrustStore& tstore){
 	std::cout << "Validating " << blen << " byte block\n";
-	if(VerifyData(block, blen, tstore) <= 0){
+	if(VerifyData(block, blen, pmap, tstore) <= 0){
 		return true;
 	}
 	if(filename != ""){
@@ -215,7 +219,7 @@ Block::Inspect(const unsigned char* b, const BlockHeader* chdr){
 	if(hash != chdr->hash){
 		throw BlockValidationException("bad hash on inspection");
 	}
-	if(ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr)){
+	if(ExtractBody(chdr, b + BLOCKHEADERLEN, chdr->totlen - BLOCKHEADERLEN, nullptr, nullptr)){
 		throw BlockValidationException();
 	}
 	return std::move(transactions);

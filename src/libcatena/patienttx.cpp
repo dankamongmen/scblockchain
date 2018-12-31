@@ -45,14 +45,14 @@ bool PatientTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool PatientTX::Validate(TrustStore& tstore) {
+bool PatientTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	// FIXME store Patient metadata?
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
+	(void)pmap; // FIXME store Patient metadata?
 	return false;
 }
 

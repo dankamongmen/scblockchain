@@ -2,7 +2,6 @@
 #define CATENA_LIBCATENA_CHAIN
 
 #include <nlohmann/json.hpp>
-#include <libcatena/lookupauthreqtx.h>
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
@@ -58,25 +57,6 @@ time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
 }
 
-// Total number of LookupAuthReq transactions in the ledger
-unsigned LookupRequestCount() const {
-	return extlookups.size();
-}
-
-// Number of LookupAuthReqs that (authorized==true) have a corresponding
-// LookupAuth, or (authorized==false) do not.
-unsigned LookupRequestCount(bool authorized) const {
-	auto authed = std::accumulate(extlookups.begin(), extlookups.end(), 0,
-			[](int total, const decltype(extlookups)::value_type& lr){
-				return total + lr.second.IsAuthorized();
-			});
-	if(authorized){
-		return authed;
-	}else{
-		return LookupRequestCount() - authorized;
-	}
-}
-
 int PubkeyCount() const {
 	return tstore.PubkeyCount();
 }
@@ -86,7 +66,15 @@ size_t Size() const {
 	return blocks.Size();
 }
 
-KeyLookup PrivateKeyTXSpec() const {
+unsigned LookupRequestCount() const {
+	return pmap.LookupRequestCount();
+}
+
+unsigned LookupRequestCount(bool authorized) const {
+	return pmap.LookupRequestCount(authorized);
+}
+
+KeyLookup PrivateKeyTXSpec() const { // FIXME deprecated, rid ourselves of this
 	return tstore.PrivateKey();
 }
 
@@ -117,7 +105,7 @@ void AddConsortiumMember(const unsigned char* pkey, size_t plen, const nlohmann:
 void AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
-void AddLookupAuth(const TXSpec& elspec, const SymmetricKey& symkey);
+void AddLookupAuth(const TXSpec& elspec, const TXSpec& patspec, const SymmetricKey& symkey);
 void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
 		const SymmetricKey& symkey, const nlohmann::json& payload);
 void AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload);
@@ -135,8 +123,8 @@ std::vector<BlockDetail> Inspect(int start, int end) const;
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
-std::map<TXSpec, LookupRequest> extlookups;
 TrustStore tstore;
+PatientMap pmap;
 Blocks blocks;
 Block outstanding;
 

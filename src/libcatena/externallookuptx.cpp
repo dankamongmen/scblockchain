@@ -58,7 +58,8 @@ bool ExternalLookupTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool ExternalLookupTX::Validate(TrustStore& tstore) {
+bool ExternalLookupTX::Validate(TrustStore& tstore,
+				PatientMap& lookups) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
@@ -66,6 +67,8 @@ bool ExternalLookupTX::Validate(TrustStore& tstore) {
 	const unsigned char* data = payload.get() + 2;
 	Keypair kp(data, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
+	// FIXME check that this has not been registered before
+	lookups.AddExtLookup({signerhash, signeridx});
 	return false;
 }
 

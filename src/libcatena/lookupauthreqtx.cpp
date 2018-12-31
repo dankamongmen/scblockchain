@@ -1,5 +1,6 @@
 #include <iostream>
 #include <libcatena/lookupauthreqtx.h>
+#include <libcatena/chain.h>
 #include <libcatena/hash.h>
 
 namespace Catena {
@@ -41,12 +42,16 @@ bool LookupAuthReqTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool LookupAuthReqTX::Validate(TrustStore& tstore) {
+bool LookupAuthReqTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	// FIXME store metadata?
+	TXSpec elspec;
+	memcpy(elspec.first.data(), payload.get(), elspec.first.size());
+	elspec.second = subjectidx;
+	auto cmspec = TXSpec(signerhash, signeridx);
+	pmap.AddLookupReq({blockhash, txidx}, elspec, cmspec);
 	return false;
 }
 
@@ -144,7 +149,7 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> LookupAuthTX::Serialize() co
 	size_t len = 4 + siglen + signerhash.size() + sizeof(signeridx) +
 		payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
-	auto data = TXType_to_nbo(TXTypes::LookupAuthReq, ret.get());
+	auto data = TXType_to_nbo(TXTypes::LookupAuth, ret.get());
 	data = ulong_to_nbo(siglen, data, 2);
 	memcpy(data, signerhash.data(), signerhash.size());
 	data += signerhash.size();
@@ -158,20 +163,32 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> LookupAuthTX::Serialize() co
 
 std::ostream& LookupAuthTX::TXOStream(std::ostream& s) const {
 	s << "LookupAuth (" << siglen << "b signature, " << payloadlen << "b payload)\n";
-	// FIXME print lar members (elspec, cmspec)
 	s << " authorizes: " << signerhash << "." << signeridx << "\n";
 	s << " payload is encrypted";
 	return s;
 
 }
 
-bool LookupAuthTX::Validate(TrustStore& tstore) {
-	if(tstore.Verify({signerhash, signeridx}, payload.get(),
-				payloadlen, signature, siglen)){
+bool LookupAuthTX::Validate(TrustStore& tstore, PatientMap& pmap) {
+	// Bears a TXSpec for a LookupAuthReq TX; need to check it to get the
+	// ExternalLookup with the actual signing key.
+	auto& lar = pmap.LookupReq({signerhash, signeridx});
+	TXSpec elspec = lar.ELSpec();
+	if(tstore.Verify(elspec, payload.get(), payloadlen, signature, siglen)){
 		return true;
 	}
-	// FIXME break down larspec, check cmspec and elspec
-	// FIXME store metadata?
+	/* FIXME catch exceptions here, maybe do this in Extract()?
+	auto cmspec = lar.CMSpec();
+	auto key = tstore.DeriveSymmetricKey(elspec, cmspec);
+	auto ptext = tstore.Decrypt(payload.get(), payloadlen, key);
+	if(ptext.second < elspec.first.size() + 4){
+		throw BlockValidationException("plaintext too small for txspec");
+	}
+	TXSpec patspec;
+	memcpy(patspec.first.data(), ptext.first.get(), patspec.first.size());
+	patspec.second = nbo_to_ulong(ptext.first.get() + patspec.first.size(), 4);
+	// FIXME do something with patspec? verify it is patient? */
+	lar.Authorize();
 	return false;
 }
 

@@ -10,7 +10,7 @@ public:
 LookupAuthReqTX() = default;
 LookupAuthReqTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore) override;
+bool Validate(TrustStore& tstore, PatientMap& pmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 nlohmann::json JSONify() const override;
@@ -42,7 +42,7 @@ public:
 LookupAuthTX() = default;
 LookupAuthTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore) override;
+bool Validate(TrustStore& tstore, PatientMap& pmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 nlohmann::json JSONify() const override;
@@ -61,22 +61,6 @@ size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;
 size_t payloadlen; // total length of signed payload
 
-};
-
-class LookupRequest {
-public:
-LookupRequest(const TXSpec& elspec, const TXSpec& cmspec) :
-	elspec(elspec),
-	cmspec(cmspec) {}
-
-bool IsAuthorized() const {
-	return authorized;
-}
-
-private:
-bool authorized; // Have we seen a LookupAuthTX?
-TXSpec elspec; // ExternalLookupTX
-TXSpec cmspec; // ConsortiumMemberTX
 };
 
 }

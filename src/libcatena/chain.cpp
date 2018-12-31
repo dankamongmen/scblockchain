@@ -18,7 +18,7 @@ void Chain::LoadBuiltinKeys(){
 
 Chain::Chain(const std::string& fname){
 	LoadBuiltinKeys();
-	if(blocks.LoadFile(fname, tstore)){
+	if(blocks.LoadFile(fname, pmap, tstore)){
 		throw BlockValidationException();
 	}
 }
@@ -26,7 +26,7 @@ Chain::Chain(const std::string& fname){
 // A Chain instantiated from memory will not write out new blocks.
 Chain::Chain(const void* data, unsigned len){
 	LoadBuiltinKeys();
-	if(blocks.LoadData(data, len, tstore)){
+	if(blocks.LoadData(data, len, pmap, tstore)){
 		throw BlockValidationException();
 	}
 }
@@ -56,7 +56,7 @@ Chain::SerializeOutstanding() const {
 // merge them back on failure.
 void Chain::CommitOutstanding(){
 	auto p = SerializeOutstanding();
-	if(blocks.AppendBlock(p.first.get(), p.second, tstore)){
+	if(blocks.AppendBlock(p.first.get(), p.second, pmap, tstore)){
 		throw BlockValidationException();
 	}
 	FlushOutstanding();
@@ -209,16 +209,17 @@ void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
 }
 
 // FIXME can only work with AES256 (keytype 1) currently
-void Chain::AddLookupAuth(const TXSpec& larspec, const SymmetricKey& symkey){
-	// FIXME lookup elspec, cmspec from larspec
-	TXSpec elspec; // FIXME
-	TXSpec cmspec; // FIXME
+void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& patspec, const SymmetricKey& symkey){
+	const auto& lar = pmap.LookupReq(larspec);
+	TXSpec elspec = lar.ELSpec();
+	TXSpec cmspec = lar.CMSpec();
 	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(elspec, cmspec);
 	// Encrypted payload is Patient TXSpec, 16-bit keytype, key
-	auto plainlen = symkey.size() + 2 + elspec.first.size() + 4;
+	auto plainlen = symkey.size() + 2 + patspec.first.size() + 4;
 	unsigned char plaintext[plainlen], *targ;
-	memcpy(plaintext, elspec.first.data(), elspec.first.size());
-	targ = plaintext + elspec.first.size();
+	memcpy(plaintext, patspec.first.data(), patspec.first.size());
+	targ = plaintext + patspec.first.size();
+	targ = ulong_to_nbo(patspec.second, targ, 4);
 	targ = ulong_to_nbo(static_cast<unsigned>(LookupAuthTX::Keytype::AES256), targ, 2);
 	memcpy(targ, symkey.data(), symkey.size());
 	auto etext = tstore.Encrypt(plaintext, plainlen, derivedkey);
@@ -226,9 +227,9 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const SymmetricKey& symkey){
 	size_t totlen = etext.second + sig.second + 4 + larspec.first.size() + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2); // siglen
-	memcpy(targ, elspec.first.data(), elspec.first.size()); // sighash
-	targ += elspec.first.size();
-	targ = ulong_to_nbo(elspec.second, targ, 4); // sigidx
+	memcpy(targ, larspec.first.data(), larspec.first.size()); // sighash
+	targ += larspec.first.size();
+	targ = ulong_to_nbo(larspec.second, targ, 4); // sigidx
 	memcpy(targ, sig.first.get(), sig.second); // signature
 	targ += sig.second;
 	memcpy(targ, etext.first.get(), etext.second); // signed, encrypted payload

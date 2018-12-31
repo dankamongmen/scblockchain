@@ -81,13 +81,14 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	return false;
 }
 
-bool ConsortiumMemberTX::Validate(TrustStore& tstore){
+bool ConsortiumMemberTX::Validate(TrustStore& tstore, PatientMap& pmap){
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
+	(void)pmap; // FIXME add new CM to pmap
 	return false;
 }
 
@@ -177,6 +178,9 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 		break;
 	case TXTypes::LookupAuthReq:
 		tx = new LookupAuthReqTX(blkhash, txidx);
+		break;
+	case TXTypes::LookupAuth:
+		tx = new LookupAuthTX(blkhash, txidx);
 		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;
