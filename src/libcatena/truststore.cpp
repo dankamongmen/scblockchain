@@ -60,7 +60,6 @@ void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
 	}
 }
 
-// FIXME should probably throw exceptions on errors
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 TrustStore::Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const {
 	if(signingkey == nullptr){
@@ -71,6 +70,15 @@ TrustStore::Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const
 		throw SigningException("couldn't find signing key");
 	}
 	*signer = it->first;
+	return it->second.Sign(in, inlen);
+}
+
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+TrustStore::Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer) const {
+	const auto& it = keys.find(signer);
+	if(it == keys.end()){
+		throw SigningException("no such entry in truststore");
+	}
 	return it->second.Sign(in, inlen);
 }
 

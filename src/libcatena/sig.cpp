@@ -3,6 +3,7 @@
 #include <iterator>
 #include <openssl/pem.h>
 #include <openssl/evp.h>
+#include "libcatena/truststore.h"
 #include "libcatena/sig.h"
 
 namespace Catena {
@@ -110,7 +111,7 @@ size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Keypair::Sign(const unsigned char* in, size_t inlen) const {
 	if(!privkey){
-		return std::make_pair(nullptr, 0);
+		throw SigningException("no private key loaded");
 	}
 	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
 	if(1 != EVP_PKEY_sign_init(ctx)){
