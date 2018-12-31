@@ -367,7 +367,7 @@ ExternalLookup transaction, followed by the JSON-encoded payload.
 #### LookupAuth
 
 Transaction type 0x0006, followed by a 16-bit signature length, followed by
-the 256-bit hash and 32-bit index of the ExternalLookup being authorized,
+the 256-bit hash and 32-bit index of the LookupAuthReq being authorized,
 followed by the signature, followed by the encrypted payload. The encrypted
 payload is decrypted via a symmetric key derived from the ConsortiumMember
 and ExternalLookup transactions referenced by the signing ExternalLookup
@@ -394,7 +394,7 @@ current key types are:
 |                                                               |
 +                                                               +
 |                                                               |
-+                      ExternalLookup hash                      +
++                       LookupAuthReq hash                      +
 |                                                               |
 +                                                               +
 |                                                               |
@@ -403,7 +403,7 @@ current key types are:
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                     ExternalLookup index                      |
+|                      LookupAuthReq index                      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |              ...ECDSA signature (70--72 bytes)...             |
 |                    ...encrypted payload...                    |

@@ -232,7 +232,6 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract hashspec (" << e.what() << ")" << std::endl;
 	}
-	std::cerr << "not yet implemented" << std::endl;
 	return -1;
 }
 
