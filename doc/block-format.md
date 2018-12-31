@@ -320,8 +320,8 @@ PatientStatusDelegation transaction, followed by the JSON-encoded payload.
 |                    ConsortiumMember index                     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |              ...ECDSA signature (70--72 bytes)...             |
-|             ...32 bytes for ExternalLookup hash...            |
-|             ...4 bytes for ExternalLookup txidx...            |
+|         ...32 bytes for PatientStatusDelegation hash...       |
+|         ...4 bytes for PatientStatusDelegation txidx...       |
 |                    ...json status payload...                  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
@@ -451,6 +451,6 @@ subtype-dependent JSON-encoded payload.
 |            ...32 bytes for ConsortiumMember hash...           |
 |            ...4 bytes for ConsortiumMember txidx...           |
 |                 ...4 bytes for status type...                 |
-|                   ...json request payload...                  |
+|                      ...json payload...                       |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```

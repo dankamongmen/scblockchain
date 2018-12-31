@@ -41,6 +41,37 @@ size_t GetPayloadLength() const {
 
 };
 
+class PatientStatusDelegationTX : public Transaction {
+public:
+PatientStatusDelegationTX() = default;
+PatientStatusDelegationTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
+bool Extract(const unsigned char* data, unsigned len) override;
+bool Validate(TrustStore& tstore, PatientMap& pmap) override;
+std::ostream& TXOStream(std::ostream& s) const override;
+std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
+nlohmann::json JSONify() const override;
+
+private:
+unsigned char signature[SIGLEN];
+CatenaHash signerhash;
+uint32_t signeridx;
+size_t siglen; // length of signature, up to SIGLEN
+std::unique_ptr<unsigned char[]> payload; // key + ciphertext
+uint32_t cmidx; // ConsortiumMember idx, from payload
+int statustype; // extracted from the payload
+size_t payloadlen; // total length of signed payload
+
+const unsigned char*
+GetJSONPayload() const {
+	return payload.get() + 4 + signerhash.size() + 4;
+}
+
+size_t GetJSONPayloadLength() const {
+	return payloadlen - signerhash.size() - 4 - 4;
+}
+
+};
+
 }
 
 #endif

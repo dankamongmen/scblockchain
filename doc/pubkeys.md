@@ -48,7 +48,7 @@ AgEBA0IABOTv5jWDTZHbdQWSVLAu/XDs7lRnznmu70IqP5VxOXId7rQlF6+wPWv9
 -----END PUBLIC KEY-----
 ```
 
-### Test consortium member key (174 bytes)
+### Test consortium member key 1 (174 bytes)
 The corresponding private key is in `test/cm-test1.pem`.
 ```
 -----BEGIN PUBLIC KEY-----
@@ -57,6 +57,19 @@ Raq6hzx2H0+Ie/w1cpXeg8avew0QSJxuTqB8jMCXMmkLBv3jEkYN6w==
 -----END PUBLIC KEY-----
 ```
 
+### Test consortium member key 2 (475 bytes)
+The corresponding private key is in `test/cm-test2.pem`.
+```
+-----BEGIN PUBLIC KEY-----
+MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA////////////////
+/////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5m
+fvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0
+SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFB
+AgEBA0IABNqADwD9F0W+vtUrKplecdAcprFP03jstLRd6tNMzkuwMNdvNRAomVUc
+7SXsAoK/ZslW5bZRqxQALc/n9tpIYFI=
+-----END PUBLIC KEY-----
+```
 
 ## Patient keys
 

@@ -66,12 +66,24 @@ size_t Size() const {
 	return blocks.Size();
 }
 
-unsigned LookupRequestCount() const {
+int LookupRequestCount() const {
 	return pmap.LookupRequestCount();
 }
 
-unsigned LookupRequestCount(bool authorized) const {
+int LookupRequestCount(bool authorized) const {
 	return pmap.LookupRequestCount(authorized);
+}
+
+int ExternalLookupCount() const {
+	return pmap.ExternalLookupCount();
+}
+
+int StatusDelegationCount() const {
+	return pmap.StatusDelegationCount();
+}
+
+int PatientCount() const {
+	return pmap.PatientCount();
 }
 
 KeyLookup PrivateKeyTXSpec() const { // FIXME deprecated, rid ourselves of this
@@ -101,7 +113,8 @@ nlohmann::json PatientStatus(const TXSpec& patspec, unsigned stype) const;
 
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
-void AddConsortiumMember(const unsigned char* pkey, size_t plen, const nlohmann::json& payload);
+void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
+				size_t plen, const nlohmann::json& payload);
 void AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
@@ -110,7 +123,7 @@ void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
 		const SymmetricKey& symkey, const nlohmann::json& payload);
 void AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload);
 void AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patspec,
-				const nlohmann::json& payload);
+				int stype, const nlohmann::json& payload);
 
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.

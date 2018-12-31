@@ -41,6 +41,20 @@ int ReadlineUI::Show(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::Summary(const Iterator start, const Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+	std::cout << "chain bytes: " << chain.Size() << "\n";
+	std::cout << "lookup requests: " << chain.LookupRequestCount() << "\n";
+	std::cout << "patients: " << chain.PatientCount() << "\n";
+	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
+	std::cout << std::flush;
+	return 0;
+}
+
+template <typename Iterator>
 int ReadlineUI::Inspect(const Iterator start, const Iterator end){
 	int b1, b2;
 	if(start + 2 < end){
@@ -130,17 +144,18 @@ int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewMember(const Iterator start, const Iterator end){
-	if(end - start != 2){
-		std::cerr << "2 arguments required: public key file, JSON payload" << std::endl;
+	if(end - start != 3){
+		std::cerr << "3 arguments required: signing key TXSpec, public key file, JSON payload" << std::endl;
 		return -1;
 	}
-	const auto& keyfile = start[0];
-	const auto& json = start[1];
+	const auto& keyfile = start[1];
+	const auto& json = start[2];
 	try{
+		const auto& txspec = Catena::Transaction::StrToTXSpec(start[0]);
 		auto payload = nlohmann::json::parse(json);
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
-		chain.AddConsortiumMember(pkey.get(), plen, payload);
+		chain.AddConsortiumMember(txspec, pkey.get(), plen, payload);
 		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read a public key from " << keyfile << std::endl;
@@ -148,6 +163,8 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 	}catch(nlohmann::detail::parse_error& e){
 		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "couldn't extract hashspec (" << e.what() << ")" << std::endl;
 	}
 	return -1;
 }
@@ -248,6 +265,8 @@ int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
 		auto payload = nlohmann::json::parse(json);
 		chain.AddPatientStatus(psdspec, payload);
 		return 0;
+	}catch(Catena::InvalidTXSpecException& e){
+		std::cerr << "bad PatientStatusDelegation (" << e.what() << ")" << std::endl;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
 	}catch(Catena::SigningException& e){
@@ -270,6 +289,8 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 		auto json = chain.PatientStatus(patspec, stype);
 		std::cout << json.dump() << "\n";
 		return 0;
+	}catch(Catena::PatientStatusException& e){
+		std::cerr << "couldn't get status (" << e.what() << ")" << std::endl;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
 	}
@@ -278,18 +299,24 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator end){
-	if(start + 3 != end){
-		std::cerr << "3 arguments required: Patient spec, ConsortiumMember spec, status type" << std::endl;
+	if(start + 4 != end){
+		std::cerr << "4 arguments required: Patient spec, ConsortiumMember spec, status type, JSON payload" << std::endl;
 		return -1;
 	}
+	const auto& json = start[3];
 	try{
 		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
 		auto cmspec = Catena::Transaction::StrToTXSpec(start[1]);
 		auto stype = Catena::StrToLong(start[2], 0, LONG_MAX);
-		chain.AddPatientStatusDelegation(cmspec, patspec, stype);
+		auto payload = nlohmann::json::parse(json);
+		chain.AddPatientStatusDelegation(cmspec, patspec, stype, payload);
 		return 0;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 	}
 	return -1;
 }
@@ -334,6 +361,7 @@ void ReadlineUI::InputLoop(){
 	} cmdtable[] = {
 		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
+		{ .cmd = "summary", .fxn = &ReadlineUI::Summary, .help = "summarize the ledger", },
 		{ .cmd = "inspect", .fxn = &ReadlineUI::Inspect, .help = "detailed view of a range of blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },

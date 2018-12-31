@@ -14,7 +14,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 
-External projects included in this project include:
+External projects (see the `ext/` directory) include:
 
 * nlohmann\_json (https://github.com/nlohmann/json) version 3.4.0 (released 2018-10-30, MIT)
 
@@ -50,6 +50,7 @@ command):
 
 * `help`: summarize available commands.
 * `quit`: exit catena.
+* `summary`: summarize the chain in a human-readable format.
 * `show`: print the chain in a human-readable format.
 * `tstore`: print the trust store (known keys) in a human-readable format.
 * `inspect`: print detailed information about a range of the chain.
@@ -58,8 +59,8 @@ command):
 * `flush`: flush (drop) outstanding transactions.
 * `noop`: generate a NoOp transaction.
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
-filename containing the new member's public key, and an arbitrary JSON-encoded
-payload.
+TXSpec for the signing key, a filename containing the new member's public key,
+and an arbitrary JSON-encoded payload.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
 an integer specifying the lookup type, a filename containing the new
 association's public key, and an external identifier valid for the specified
@@ -92,7 +93,8 @@ The following endpoints are provided. JSON schema are available in
 doc/json-schema.md. HTML pages are subject to change, and ought not be scraped
 nor parsed for semantic content in clients.
 
-* GET `/`: HTML status page for human consumption (do not scrape/parse)
+* GET `/`: HTML status page for human consumption (do not scrape/parse). Much
+of the same information as is available from the `summary` command.
 * GET `/show`: HTML equivalent of the `show` command
 * GET `/tstore`: HTML equivalent of the `tstore` command
 * GET `/inspect`: JSON equivalent of the `inspect` command

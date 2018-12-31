@@ -2,6 +2,7 @@
 #include "libcatena/externallookuptx.h"
 #include "libcatena/lookupauthreqtx.h"
 #include "libcatena/patienttx.h"
+#include "libcatena/pstatus.h"
 #include "libcatena/builtin.h"
 #include "libcatena/utility.h"
 #include "libcatena/chain.h"
@@ -75,8 +76,8 @@ void Chain::AddNoOp(){
 	outstanding.AddTransaction(std::make_unique<NoOpTX>());
 }
 
-void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen,
-				const nlohmann::json& payload){
+void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
+				size_t plen, const nlohmann::json& payload){
 	// FIXME verify that pkey is a valid public key
 	auto serialjson = payload.dump();
 	size_t len = plen + 2 + serialjson.length();
@@ -86,17 +87,13 @@ void Chain::AddConsortiumMember(const unsigned char* pkey, size_t plen,
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	KeyLookup signer;
-	auto sig = tstore.Sign(buf, len, &signer);
-	if(sig.second == 0){
-		throw SigningException("couldn't sign payload");
-	}
-	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
+	auto sig = tstore.Sign(buf, len, keyspec);
+	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2);
-	memcpy(targ, signer.first.data(), signer.first.size());
-	targ += signer.first.size();
-	targ = ulong_to_nbo(signer.second, targ, 4);
+	memcpy(targ, keyspec.first.data(), keyspec.first.size());
+	targ += keyspec.first.size();
+	targ = ulong_to_nbo(keyspec.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
 	memcpy(targ, buf, len);
@@ -123,12 +120,8 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	targ += elspec.first.size();
 	targ = ulong_to_nbo(elspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	KeyLookup signer; // FIXME enforce cmspec-ified key
-	auto sig = tstore.Sign(buf, len, &signer);
-	if(sig.second == 0){
-		throw SigningException("couldn't sign payload");
-	}
-	size_t totlen = len + sig.second + 4 + signer.first.size() + 2;
+	auto sig = tstore.Sign(buf, len, cmspec);
+	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(sig.second, txbuf, 2);
 	memcpy(targ, cmspec.first.data(), cmspec.first.size());
@@ -241,22 +234,66 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& patspec, const Sy
 }
 
 void Chain::AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload){
-	(void)psdspec;
-	(void)payload; // FIXME
+	const auto& psd = pmap.LookupDelegation(psdspec);
+	TXSpec cmspec = psd.CMSpec();
+	auto serialjson = payload.dump();
+	// Signed payload is PatientStatusDelegation TXSpec + JSON
+	size_t len = psdspec.first.size() + 4 + serialjson.length();
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	memcpy(targ, psdspec.first.data(), psdspec.first.size());
+	targ += psdspec.first.size();
+	targ = ulong_to_nbo(psdspec.second, targ, 4);
+	memcpy(targ, serialjson.c_str(), serialjson.length());
+	auto sig = tstore.Sign(buf, len, cmspec);
+	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(sig.second, txbuf, 2);
+	memcpy(targ, cmspec.first.data(), cmspec.first.size());
+	targ += cmspec.first.size();
+	targ = ulong_to_nbo(cmspec.second, targ, 4);
+	memcpy(targ, sig.first.get(), sig.second);
+	targ += sig.second;
+	memcpy(targ, buf, len);
+	auto tx = std::unique_ptr<PatientStatusTX>(new PatientStatusTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
-void Chain::AddPatientStatusDelegation(const TXSpec& cmspec,
-		const TXSpec& patspec, const nlohmann::json& payload){
-	(void)cmspec;
-	(void)patspec;
-	(void)payload; // FIXME
+void Chain::AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patspec,
+				int stype, const nlohmann::json& payload){
+	auto serialjson = payload.dump();
+	// FIXME verify that patspec and cmspec are appropriate
+	size_t len = serialjson.length() + 4 + 4 + cmspec.first.size();
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	memcpy(targ, cmspec.first.data(), cmspec.first.size());
+	targ += cmspec.first.size();
+	targ = ulong_to_nbo(cmspec.second, targ, 4);
+	targ = ulong_to_nbo(stype, targ, 4);
+	memcpy(targ, serialjson.c_str(), serialjson.length());
+	auto sig = tstore.Sign(buf, len, patspec);
+	size_t totlen = len + sig.second + 4 + patspec.first.size() + 2;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(sig.second, txbuf, 2);
+	memcpy(targ, patspec.first.data(), patspec.first.size());
+	targ += patspec.first.size();
+	targ = ulong_to_nbo(patspec.second, targ, 4);
+	memcpy(targ, sig.first.get(), sig.second);
+	targ += sig.second;
+	memcpy(targ, buf, len);
+	auto tx = std::unique_ptr<PatientStatusDelegationTX>(new PatientStatusDelegationTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
 nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const {
-	nlohmann::json ret;
-	(void)patspec; // FIXME find patient using patspec
-	(void)stype; // FIXME check patient for status using stype
-	return ret;
+	const auto& pat = pmap.LookupPatient(patspec);
+	return pat.Status(stype);
 }
 
 }

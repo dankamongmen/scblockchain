@@ -4,6 +4,7 @@
 #include "libcatena/externallookuptx.h"
 #include "libcatena/lookupauthreqtx.h"
 #include "libcatena/patienttx.h"
+#include "libcatena/pstatus.h"
 #include "libcatena/utility.h"
 #include "libcatena/hash.h"
 #include "libcatena/sig.h"
@@ -176,11 +177,17 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 	case TXTypes::Patient:
 		tx = new PatientTX(blkhash, txidx);
 		break;
+	case TXTypes::PatientStatus:
+		tx = new PatientStatusTX(blkhash, txidx);
+		break;
 	case TXTypes::LookupAuthReq:
 		tx = new LookupAuthReqTX(blkhash, txidx);
 		break;
 	case TXTypes::LookupAuth:
 		tx = new LookupAuthTX(blkhash, txidx);
+		break;
+	case TXTypes::PatientStatusDelegation:
+		tx = new PatientStatusDelegationTX(blkhash, txidx);
 		break;
 	default:
 		std::cerr << "unknown transaction type " << txtype << std::endl;
