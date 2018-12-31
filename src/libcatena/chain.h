@@ -86,10 +86,6 @@ int PatientCount() const {
 	return pmap.PatientCount();
 }
 
-KeyLookup PrivateKeyTXSpec() const { // FIXME deprecated, rid ourselves of this
-	return tstore.PrivateKey();
-}
-
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 
@@ -115,8 +111,8 @@ nlohmann::json PatientStatus(const TXSpec& patspec, unsigned stype) const;
 void AddNoOp();
 void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 				size_t plen, const nlohmann::json& payload);
-void AddExternalLookup(const unsigned char* pkey, size_t plen,
-			const std::string& extid, unsigned lookuptype);
+void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
+		size_t plen, const std::string& extid, unsigned lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
 void AddLookupAuth(const TXSpec& elspec, const TXSpec& patspec, const SymmetricKey& symkey);
 void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,

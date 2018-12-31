@@ -49,11 +49,6 @@ TEST(CatenaTrustStore, BuiltinKeys){
 	}
 }
 
-TEST(CatenaTrustStore, PrivateKeyException){
-	Catena::TrustStore tstore;
-	EXPECT_THROW(tstore.PrivateKey(), Catena::SigningException);
-}
-
 TEST(CatenaTrustStore, CopyConstructorEmpty){
 	Catena::TrustStore tstore, tstore1;
 	tstore1 = tstore;
@@ -72,7 +67,7 @@ TEST(CatenaTrustStore, SignNoKeys){
 	Catena::TrustStore tstore;
 	unsigned char buf[] = {0};
 	Catena::KeyLookup kl;
-	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), &kl), Catena::SigningException);
+	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), kl), Catena::SigningException);
 }
 
 TEST(CatenaTrustStore, SignOnlyBuiltinKeys){
@@ -81,7 +76,7 @@ TEST(CatenaTrustStore, SignOnlyBuiltinKeys){
 	bkeys.AddToTrustStore(tstore);
 	unsigned char buf[] = {0};
 	Catena::KeyLookup kl;
-	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), &kl), Catena::SigningException);
+	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), kl), Catena::SigningException);
 }
 
 TEST(CatenaTrustStore, SymmetricFail){

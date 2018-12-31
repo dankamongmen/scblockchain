@@ -62,9 +62,9 @@ command):
 TXSpec for the signing key, a filename containing the new member's public key,
 and an arbitrary JSON-encoded payload.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
-an integer specifying the lookup type, a filename containing the new
-association's public key, and an external identifier valid for the specified
-lookup type.
+a TXSpec for the signing key, an integer specifying the lookup type, a filename
+containing the new association's public key, and an external identifier valid
+for the specified lookup type.
 * `lauthreq`: generate a LookupAuthReq transaction. takes as its arguments
 a TXSpec for the requesting ConsortiumMember, a TXSpec for the referenced
 ExternalLookup, and a JSON payload.

@@ -43,9 +43,9 @@ struct keylookup_hash {
 
 class TrustStore {
 public:
-TrustStore() : signingkey(nullptr) {}
+TrustStore() = default;
+TrustStore(const TrustStore& ts) : keys(ts.keys) {}
 virtual ~TrustStore() = default;
-TrustStore(const TrustStore& ts);
 TrustStore& operator=(const TrustStore& ts);
 
 // Add the keypair (usually just public key), using the specified hash and
@@ -67,10 +67,6 @@ int PubkeyCount() const {
 	return keys.size();
 }
 
-// FIXME get rid of this; always require specification of signing key
-std::pair<std::unique_ptr<unsigned char[]>, size_t>
-Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const;
-
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer) const;
 
@@ -87,13 +83,6 @@ Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
 // At least one KeyLookup must map to a Keypair with a private key, and both
 // KeyLookups must map to valid
 SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const;
-
-KeyLookup PrivateKey() const {
-	if(signingkey == nullptr){
-		throw SigningException("no private key");
-	}
-	return *signingkey.get();
-}
 
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 

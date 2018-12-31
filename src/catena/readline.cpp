@@ -323,28 +323,31 @@ int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator 
 
 template <typename Iterator>
 int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
-	if(end - start != 3){
-		std::cerr << "3 arguments required: lookup type, public key file, external ID" << std::endl;
+	if(end - start != 4){
+		std::cerr << "4 arguments required: signing key spec, lookup type, public key file, external ID" << std::endl;
 		return -1;
 	}
 	long ltype;
 	try{
-		ltype = Catena::StrToLong(start[0], 0, 65535);
+		ltype = Catena::StrToLong(start[1], 0, 65535);
 	}catch(Catena::ConvertInputException& e){
-		std::cerr << "couldn't parse lookup type from " << start[0] << " (" << e.what() << ")" << std::endl;
+		std::cerr << "couldn't parse lookup type from " << start[1] << " (" << e.what() << ")" << std::endl;
 		return -1;
 	}
-	const auto& keyfile = start[1];
-	const auto& extid = start[2];
+	const auto& keyfile = start[2];
+	const auto& extid = start[3];
 	try{
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
-		chain.AddExternalLookup(pkey.get(), plen, extid, ltype);
+		const auto& signspec = Catena::Transaction::StrToTXSpec(start[0]);
+		chain.AddExternalLookup(signspec, pkey.get(), plen, extid, ltype);
 		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read a public key from " << keyfile << std::endl;
 	}catch(Catena::SigningException& e){
 		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "argument error (" << e.what() << ")" << std::endl;
 	}
 	return -1;
 }

@@ -52,13 +52,6 @@ std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 
 std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<h3>chain</h3><table>";
-	ss << "<tr><td>private key</td><td>";
-	try{
-		auto kl = chain.PrivateKeyTXSpec();
-		ss << Catena::hashOString(kl.first) << "." << kl.second << "</td></tr>";
-	}catch(Catena::SigningException& e){
-		ss << "n/a</td></tr>";
-	}
 	ss << "<tr><td>chain bytes</td><td>" << chain.Size() << "</td></tr>";
 	ss << "<tr><td>blocks</td><td>" << chain.GetBlockCount() << "</td></tr>";
 	ss << "<tr><td>transactions</td><td>" << chain.TXCount() << "</td></tr>";
@@ -237,7 +230,9 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 		auto pubkey = json.find("pubkey");
 		auto lookuptype = json.find("lookuptype");
 		auto payload = json.find("payload");
-		if(pubkey == json.end() || lookuptype == json.end() || payload == json.end()){
+		auto regspec = json.find("regspec");
+		if(pubkey == json.end() || lookuptype == json.end() ||
+				payload == json.end() || regspec == json.end()){
 			std::cerr << "missing necessary elements from ExternalLookupTXRequest" << std::endl;
 			return MHD_NO;
 		}
@@ -253,12 +248,22 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 			std::cerr << "payload was not a string" << std::endl;
 			return MHD_NO;
 		}
+		if(!(*regspec).is_string()){
+			std::cerr << "regspec was not a string" << std::endl;
+			return MHD_NO;
+		}
 		auto kstr = (*pubkey).get<std::string>();
 		auto pstr = (*payload).get<std::string>();
+		auto rspecstr = (*regspec).get<std::string>();
 		auto ltype = (*lookuptype).get<int>();
 		try{
-			chain.AddExternalLookup(reinterpret_cast<const unsigned char*>(kstr.c_str()),
+			auto regkl = Catena::Transaction::StrToTXSpec(rspecstr);
+			chain.AddExternalLookup(regkl,
+					reinterpret_cast<const unsigned char*>(kstr.c_str()),
 					kstr.size(), pstr, ltype);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
 		}catch(Catena::SigningException& e){
 			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
