@@ -2,6 +2,7 @@
 #include "libcatena/externallookuptx.h"
 #include "libcatena/lookupauthreqtx.h"
 #include "libcatena/patienttx.h"
+#include "libcatena/pstatus.h"
 #include "libcatena/builtin.h"
 #include "libcatena/utility.h"
 #include "libcatena/chain.h"
@@ -233,8 +234,32 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& patspec, const Sy
 }
 
 void Chain::AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload){
-	(void)psdspec;
-	(void)payload; // FIXME
+	const auto& psd = pmap.LookupDelegation(psdspec);
+	TXSpec cmspec = psd.CMSpec();
+	auto serialjson = payload.dump();
+	// Signed payload is PatientStatusDelegation TXSpec + JSON
+	size_t len = psdspec.first.size() + 4 + serialjson.length();
+	unsigned char buf[len];
+	unsigned char *targ = buf;
+	memcpy(targ, psdspec.first.data(), psdspec.first.size());
+	targ += psdspec.first.size();
+	targ = ulong_to_nbo(psdspec.second, targ, 4);
+	memcpy(targ, serialjson.c_str(), serialjson.length());
+	auto sig = tstore.Sign(buf, len, cmspec);
+	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
+	unsigned char txbuf[totlen];
+	targ = ulong_to_nbo(sig.second, txbuf, 2);
+	memcpy(targ, cmspec.first.data(), cmspec.first.size());
+	targ += cmspec.first.size();
+	targ = ulong_to_nbo(cmspec.second, targ, 4);
+	memcpy(targ, sig.first.get(), sig.second);
+	targ += sig.second;
+	memcpy(targ, buf, len);
+	auto tx = std::unique_ptr<PatientStatusTX>(new PatientStatusTX());
+	if(tx.get()->Extract(txbuf, totlen)){
+		throw BlockValidationException("couldn't unpack transaction");
+	}
+	outstanding.AddTransaction(std::move(tx));
 }
 
 void Chain::AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patspec,

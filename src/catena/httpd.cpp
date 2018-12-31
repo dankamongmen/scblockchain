@@ -73,6 +73,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	}
 	ss << "<tr><td>last block time</td><td>" << timebuf << "</td></tr>";
 	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
+	ss << "<tr><td>status delegations</td><td>" << chain.StatusDelegationCount() << "</td></tr>";
 	ss << "</table>";
 	return ss;
 }

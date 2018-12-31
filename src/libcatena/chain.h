@@ -78,6 +78,10 @@ int ExternalLookupCount() const {
 	return pmap.ExternalLookupCount();
 }
 
+int StatusDelegationCount() const {
+	return pmap.StatusDelegationCount();
+}
+
 KeyLookup PrivateKeyTXSpec() const { // FIXME deprecated, rid ourselves of this
 	return tstore.PrivateKey();
 }

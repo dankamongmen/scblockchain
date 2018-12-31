@@ -132,11 +132,16 @@ bool PatientStatusDelegationTX::Extract(const unsigned char* data, unsigned len)
 }
 
 bool PatientStatusDelegationTX::Validate(TrustStore& tstore, PatientMap& pmap) {
-	if(tstore.Verify({signerhash, signeridx}, payload.get(),
-				payloadlen, signature, siglen)){
+	TXSpec patspec;
+	memcpy(patspec.first.data(), signerhash.data(), signerhash.size());
+	patspec.second = signeridx;
+	if(tstore.Verify(patspec, payload.get(), payloadlen, signature, siglen)){
 		return true;
 	}
-	(void)pmap; // FIXME store PatientStatusDelegation metadata?
+	TXSpec cmspec;
+	memcpy(cmspec.first.data(), payload.get(), cmspec.first.size());
+	cmspec.second = cmidx;
+	pmap.AddDelegation({blockhash, txidx}, cmspec, patspec);
 	return false;
 }
 
@@ -182,4 +187,5 @@ nlohmann::json PatientStatusDelegationTX::JSONify() const {
 	ret["payload"] = nlohmann::json::parse(pload);
 	return ret;
 }
+
 }

@@ -10,7 +10,7 @@ namespace Catena {
 
 using TXSpec = std::pair<CatenaHash, unsigned>;
 
-class InvalidTXSpecException : std::runtime_error {
+class InvalidTXSpecException : public std::runtime_error {
 public:
 InvalidTXSpecException() : std::runtime_error("bad transaction spec"){}
 InvalidTXSpecException(const std::string& s) : std::runtime_error(s){}
@@ -48,6 +48,34 @@ TXSpec elspec; // ExternalLookupTX
 TXSpec cmspec; // ConsortiumMemberTX
 };
 
+class StatusDelegation {
+public:
+StatusDelegation() :
+ statustype(0) {}
+
+StatusDelegation(const TXSpec& cmspec, const TXSpec& patspec) :
+	statustype(0),
+	cmspec(cmspec),
+	patspec(patspec) {}
+
+int StatusType() const {
+	return statustype;
+}
+
+TXSpec PatSpec(void) const {
+	return patspec;
+}
+
+TXSpec CMSpec(void) const {
+	return cmspec;
+}
+
+private:
+int statustype;
+TXSpec cmspec; // ConsortiumMemberTX
+TXSpec patspec; // PatientTX
+};
+
 class PatientMap {
 public:
 
@@ -74,6 +102,10 @@ int ExternalLookupCount() const {
 	return extlookups.size();
 }
 
+int StatusDelegationCount() const {
+	return delegations.size();
+}
+
 LookupRequest& LookupReq(const TXSpec& lar) {
 	const auto& it = lookupreqs.find(lar);
 	if(it == lookupreqs.end()){
@@ -90,8 +122,21 @@ void AddExtLookup(const TXSpec& elspec) {
 	extlookups.insert(elspec);
 }
 
+StatusDelegation& LookupDelegation(const TXSpec& psd) {
+	const auto& it = delegations.find(psd);
+	if(it == delegations.end()){
+		throw InvalidTXSpecException("unknown status delegation");
+	}
+	return it->second;
+}
+
+void AddDelegation(const TXSpec& psdspec, const TXSpec& cmspec, const TXSpec& patspec) {
+	delegations.emplace(psdspec, StatusDelegation{cmspec, patspec});
+}
+
 private:
 std::map<TXSpec, LookupRequest> lookupreqs;
+std::map<TXSpec, StatusDelegation> delegations;
 std::set<TXSpec> extlookups;
 };
 
