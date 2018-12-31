@@ -60,7 +60,6 @@ std::ostream& PatientTX::TXOStream(std::ostream& s) const {
 	s << "Patient (" << siglen << "b signature, " << payloadlen
 		<< "b payload, " << keylen << "b key)\n";
 	s << " registrar: " << signerhash << "." << signeridx << "\n";
-	// FIXME payload is encrypted! decrypt if possible
 	s << " payload is encrypted";
 	return s;
 }
@@ -87,7 +86,6 @@ nlohmann::json PatientTX::JSONify() const {
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;
 	ret["signerspec"] = ss.str();
-	// FIXME when decrypted, maybe print that out? probably not...?
 	ss.clear();
 	HexOutput(ss, GetPayload(), GetPayloadLength());
 	ret["encpayload"] = ss.str();

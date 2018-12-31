@@ -84,7 +84,7 @@ Keypair::~Keypair(){
 
 size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen) const {
 	if(!privkey){
-		return 0;
+		throw SigningException("no private key loaded");
 	}
 	EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privkey, NULL);
 	if(1 != EVP_PKEY_sign_init(ctx)){
