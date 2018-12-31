@@ -198,7 +198,7 @@ printable characters). Lookup types include:
 |                                                               |
 +                                                               +
 |                                                               |
-+                         register hash                         +
++                    ConsortiumMember hash                      +
 |                                                               |
 +                                                               +
 |                                                               |
@@ -207,7 +207,7 @@ printable characters). Lookup types include:
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                        register index                         |
+|                    ConsortiumMember index                     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |               ...2 bytes for signature length...              |
 |              ...ECDSA signature (70--72 bytes)...             |
@@ -238,7 +238,7 @@ payload together with the IV decrypt to a JSON-encoded payload.
 |                                                               |
 +                                                               +
 |                                                               |
-+                           signer hash                         +
++                    ConsortiumMember hash                      +
 |                                                               |
 +                                                               +
 |                                                               |
@@ -247,7 +247,7 @@ payload together with the IV decrypt to a JSON-encoded payload.
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                          signer index                         |
+|                    ConsortiumMember index                     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |              ...ECDSA signature (70--72 bytes)...             |
 |                ...2 bytes for DSA key length...               |
@@ -269,9 +269,8 @@ payload together with the IV decrypt to a JSON-encoded payload.
 
 Transaction type 0x0005, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the requesting consortium, followed by the
-16-bit signature length, followed by the signature, followed by the 256-bit
-hash and 32-bit index of the referenced ExternalLookup transaction, followed by
-the JSON-encoded payload.
+signature, followed by the 256-bit hash and 32-bit index of the referenced
+ExternalLookup transaction, followed by the JSON-encoded payload.
 
 ```
  0                   1                   2                   3
@@ -286,7 +285,7 @@ the JSON-encoded payload.
 |                                                               |
 +                                                               +
 |                                                               |
-+                           signer hash                         +
++                    ConsortiumMember hash                      +
 |                                                               |
 +                                                               +
 |                                                               |
@@ -295,11 +294,57 @@ the JSON-encoded payload.
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                          signer index                         |
+|                    ConsortiumMember index                     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |              ...ECDSA signature (70--72 bytes)...             |
 |             ...32 bytes for ExternalLookup hash...            |
 |             ...4 bytes for ExternalLookup txidx...            |
 |                  ...json consortium payload...                |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+#### LookupAuth
+
+Transaction type 0x0006, followed by a 16-bit signature length, followed by
+the 256-bit hash and 32-bit index of the ExternalLookup being authorized,
+followed by the signature, followed by the encrypted payload. The encrypted
+payload is decrypted via a symmetric key derived from the ConsortiumMember
+and ExternalLookup transactions referenced by the signing ExternalLookup
+transaction.
+
+The encrypted payload decodes to the 256-bit hash and 32-bit index of the
+Patient transaction being looked up, a 16-bit symmetric key type, and possibly
+a symmetric key (usable to decrypt the Patient transaction's payload). The
+current key types are:
+
+* 0x0000 - No symmetric key provided, Patient TXSpec lookup only
+* 0x0001 - 256-bit (32 byte) AES key
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         type (0x0005)         |            siglength          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                      ExternalLookup hash                      +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     ExternalLookup index                      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|              ...ECDSA signature (70--72 bytes)...             |
+|                    ...encrypted payload...                    |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
