@@ -155,7 +155,7 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 template <typename Iterator>
 int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
 	if(end - start != 4){
-		std::cerr << "4 arguments required: ConsortiumMember spec, public key file, asymmetric key file, JSON payload" << std::endl;
+		std::cerr << "4 arguments required: ConsortiumMember spec, public key file, symmetric key file, JSON payload" << std::endl;
 		return -1;
 	}
 	const auto& json = start[3];
