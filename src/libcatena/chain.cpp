@@ -177,7 +177,7 @@ void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
 }
 
 void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
-			size_t plen, SymmetricKey& symkey,
+			size_t plen, const SymmetricKey& symkey,
 			const nlohmann::json& payload){
 	// FIXME verify that pkey is a valid public key
 	auto serialjson = payload.dump(); // Only the JSON payload is encrypted
@@ -211,6 +211,17 @@ void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
+}
+
+// FIXME can only work with AES256 (keytype 1) currently
+void Chain::AddLookupAuth(const TXSpec& elspec, const SymmetricKey& symkey){
+	(void)symkey;
+	(void)elspec; // FIXME
+}
+
+void Chain::AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload){
+	(void)psdspec;
+	(void)payload; // FIXME
 }
 
 }

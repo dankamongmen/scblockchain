@@ -92,8 +92,10 @@ void AddConsortiumMember(const unsigned char* pkey, size_t plen, const nlohmann:
 void AddExternalLookup(const unsigned char* pkey, size_t plen,
 			const std::string& extid, unsigned lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
+void AddLookupAuth(const TXSpec& elspec, const SymmetricKey& symkey);
 void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
-		SymmetricKey& symkey, const nlohmann::json& payload);
+		const SymmetricKey& symkey, const nlohmann::json& payload);
+void AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload);
 
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.
