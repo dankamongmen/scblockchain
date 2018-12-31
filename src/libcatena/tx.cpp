@@ -32,7 +32,7 @@ TXSpec Transaction::StrToTXSpec(const std::string& s){
 			}else if(nibble >= '0' && nibble <= '9'){
 				return nibble - '0';
 			}
-			throw ConvertInputException("bad hex digit: " + nibble);
+			throw ConvertInputException("bad hex digit: " + std::to_string(nibble));
 		};
 		ret.first[i] = hexasc_to_val(c1) * 16 + hexasc_to_val(c2);
 	}
