@@ -31,6 +31,8 @@ constexpr char htmlhdr[] =
  "tr:nth-child(even) td { background: #f1f1f1; }"
  "tr:nth-child(odd) td { background: #fefefe; }"
  "tr td:hover { background: #00dddd; }"
+ "div { margin: 1em; }"
+ "span { margin: 1em; }"
  "</style>"
  "</head>";
 
@@ -104,6 +106,8 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 	HTMLSysinfo(ss);
 	HTMLChaininfo(ss);
+	ss << "<div><span><a href=\"/show\">Explore ledger</a></span>";
+	ss << "<span><a href=\"/tstore\">View truststore</a></span></div>";
 	ss << "</body>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),
@@ -122,7 +126,7 @@ HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
 	ss << htmlhdr;
 	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
-	ss << "<pre id='output'></pre>";
+	ss << "<pre id='output'/>";
 	ss << "<script type=\"text/javascript\">"
 "fetch('/inspect')"
 ".then(function(response) { return response.json(); })"
