@@ -14,7 +14,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 
-External projects included in this project include:
+External projects (see the `ext/` directory) include:
 
 * nlohmann\_json (https://github.com/nlohmann/json) version 3.4.0 (released 2018-10-30, MIT)
 
