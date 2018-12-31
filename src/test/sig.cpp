@@ -1,6 +1,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 #include "libcatena/truststore.h"
+#include "libcatena/utility.h"
 #include "libcatena/sig.h"
 #include "test/defs.h"
 
@@ -49,7 +50,6 @@ TEST(CatenaSigs, ECSign){
 			.data = NULL,
 		}
 	}, *t;
-
 	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
 	for(t = tests ; t->data ; ++t){
 		unsigned char sig[SIGLEN];
@@ -66,3 +66,26 @@ TEST(CatenaSigs, ECSign){
 }
 
 // FIXME add some external test vectors to ensure interoperability
+
+TEST(CatenaSigs, ECDSADeriveKey){
+	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY);
+	auto key1 = kv.DeriveSymmetricKey(peer);
+	auto key2 = peer.DeriveSymmetricKey(kv);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
+}
+
+TEST(CatenaSigs, ECDSADeriveKeyNoPrivates){
+	Catena::Keypair kv(PUBLICKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY);
+	EXPECT_THROW(kv.DeriveSymmetricKey(peer), Catena::SigningException);
+	EXPECT_THROW(peer.DeriveSymmetricKey(kv), Catena::SigningException);
+}
+
+TEST(CatenaSigs, ECDSADeriveKeyBothPrivates){
+	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
+	Catena::Keypair peer(ELOOK_TEST_PUBKEY, ELOOK_TEST_PRIVKEY);
+	auto key1 = kv.DeriveSymmetricKey(peer);
+	auto key2 = peer.DeriveSymmetricKey(kv);
+	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
+}

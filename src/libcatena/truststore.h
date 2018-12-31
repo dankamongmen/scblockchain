@@ -9,8 +9,6 @@
 
 namespace Catena {
 
-using SymmetricKey = std::array<unsigned char, 32>; // 256-bit AES key
-
 class SigningException : public std::runtime_error {
 public:
 SigningException() : std::runtime_error("error signing"){}

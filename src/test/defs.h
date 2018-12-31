@@ -7,5 +7,7 @@
 #define MOCKLEDGER_TXS 4
 #define PUBLICKEY "test/cm-test1.pub"
 #define ECDSAKEY "test/cm-test1.pem"
+#define ELOOK_TEST_PUBKEY "test/elook-test1.pub"
+#define ELOOK_TEST_PRIVKEY "test/elook-test1.pem"
 
 #endif
