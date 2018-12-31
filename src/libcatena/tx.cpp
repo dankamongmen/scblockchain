@@ -139,8 +139,9 @@ ConsortiumMemberTX::Serialize() const {
 nlohmann::json ConsortiumMemberTX::JSONify() const {
 	nlohmann::json ret({{"type", "ConsortiumMember"}});
 	ret["sigbytes"] = siglen;
-	ret["signerhash"] = hashOString(signerhash);
-	ret["signeridx"] = signeridx;
+	std::stringstream ss;
+	ss << signerhash << "." << signeridx;
+	ret["signerspec"] = ss.str();
 	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
 	ret["payload"] = nlohmann::json::parse(pload);
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);

@@ -23,6 +23,7 @@ CatenaHash signerhash;
 uint32_t signeridx; // must be exactly 32 bits for serialization
 size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;
+uint32_t subjectidx; // subject idx of request (ExternalLookupTX), from payload
 size_t payloadlen; // total length of signed payload
 
 const unsigned char*

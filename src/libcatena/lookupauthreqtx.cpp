@@ -1,5 +1,6 @@
 #include <iostream>
 #include <libcatena/lookupauthreqtx.h>
+#include <libcatena/hash.h>
 
 namespace Catena {
 
@@ -28,7 +29,12 @@ bool LookupAuthReqTX::Extract(const unsigned char* data, unsigned len) {
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
-	// FIXME verify that specs are valid? verify payload is valid JSON?
+	if(len < signerhash.size() + 4){
+		std::cerr << "no room for subjectspec in " << len << std::endl;
+		return true;
+	}
+	subjectidx = nbo_to_ulong(data + signerhash.size(), 4);
+	// FIXME verify that subjectspec is valid? verify payload is valid JSON?
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
 	payloadlen = len;
@@ -47,7 +53,8 @@ bool LookupAuthReqTX::Validate(TrustStore& tstore) {
 std::ostream& LookupAuthReqTX::TXOStream(std::ostream& s) const {
 	s << "LookupAuthReq (" << siglen << "b signature, " << payloadlen << "b payload)\n";
 	s << " requester: " << signerhash << "." << signeridx << "\n";
-	// FIXME s << " elookup: " << signerhash << "." << signeridx << "\n";
+	s << " subject: ";
+	hashOStream(s, payload.get()) << "." << subjectidx << "\n";
 	s << " payload: ";
 	std::copy(GetJSONPayload(), GetJSONPayload() + GetJSONPayloadLength(), std::ostream_iterator<char>(s, ""));
 	return s;
@@ -73,8 +80,13 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> LookupAuthReqTX::Serialize()
 nlohmann::json LookupAuthReqTX::JSONify() const {
 	nlohmann::json ret({{"type", "LookupAuthReq"}});
 	ret["sigbytes"] = siglen;
-	ret["signerhash"] = hashOString(signerhash);
-	ret["signeridx"] = signeridx;
+	std::stringstream ss;
+	ss << signerhash << "." << signeridx;
+	ret["signerspec"] = ss.str();
+	ss.clear();
+	hashOStream(ss, payload.get());
+	ss << "." << subjectidx;
+	ret["subjectspec"] = ss.str();
 	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
 	ret["payload"] = nlohmann::json::parse(pload);
 	// EL TXSpec

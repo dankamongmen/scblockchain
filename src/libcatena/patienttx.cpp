@@ -84,10 +84,11 @@ PatientTX::Serialize() const {
 nlohmann::json PatientTX::JSONify() const {
 	nlohmann::json ret({{"type", "Patient"}});
 	ret["sigbytes"] = siglen;
-	ret["signerhash"] = hashOString(signerhash);
-	ret["signeridx"] = signeridx;
-	// FIXME when decrypted, maybe print that out? probably not...?
 	std::stringstream ss;
+	ss << signerhash << "." << signeridx;
+	ret["signerspec"] = ss.str();
+	// FIXME when decrypted, maybe print that out? probably not...?
+	ss.clear();
 	HexOutput(ss, GetPayload(), GetPayloadLength());
 	ret["encpayload"] = ss.str();
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);

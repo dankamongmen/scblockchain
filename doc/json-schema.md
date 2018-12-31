@@ -23,12 +23,14 @@ a partial range of blocks are being detailed.
 Map of strings to T:
 * `type`: String containing human-readble transaction type
 * optional `sigbytes`: Integer size of the signature in bytes
-* optional `signerhash`: String containing hex encoding of 256-bit signer block
-* optional `signeridx`: Integer corresponding to signer TX index within block
+* optional `signerspec`: String containing TXSpec of signer
 * optional `pubkey`: String containing PEM-encoded public key
-* optional `payload`: payload, dependent on transaction type and subtype
 * optional `subtype`: Integer corresponding to transaction subtype
-    * ExternalLookup: lookup type
+* optional `subjectspec`: String containing TXSpec of subject
+* optional `payload`: payload, dependent on transaction type and subtype
+* optional `envpayload`: String containing hex encoding of encrypted payload
+
+`payload` and `encpayload` are mutually exclusive.
 
 # PatientStatusResult
 

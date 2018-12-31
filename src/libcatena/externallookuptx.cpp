@@ -104,8 +104,9 @@ ExternalLookupTX::Serialize() const {
 nlohmann::json ExternalLookupTX::JSONify() const {
 	nlohmann::json ret({{"type", "ExternalLookup"}});
 	ret["sigbytes"] = siglen;
-	ret["signerhash"] = hashOString(signerhash);
-	ret["signeridx"] = signeridx;
+	std::stringstream ss;
+	ss << signerhash << "." << signeridx;
+	ret["signerspec"] = ss.str();
 	ret["payload"] = std::string(reinterpret_cast<const char*>(GetPayload()), GetPayloadLength());
 	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
 	ret["pubkey"] = pubkey;

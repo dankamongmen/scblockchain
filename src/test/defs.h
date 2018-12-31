@@ -3,6 +3,6 @@
 
 #define GENESISBLOCK_EXTERNAL "genesisblock"
 #define MOCKLEDGER "test/ledger-test"
-#define MOCKLEDGER_BLOCKS 3
+#define MOCKLEDGER_BLOCKS 4
 
 #endif
