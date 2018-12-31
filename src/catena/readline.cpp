@@ -224,6 +224,7 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 		}
 		memcpy(skey.data(), symkey.get(), skey.size());
 		chain.AddLookupAuth(elspec, skey);
+		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read symmetric key (" << e.what() << ")" << std::endl;
 	}catch(Catena::SigningException& e){
@@ -285,8 +286,8 @@ int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator 
 		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
 		auto cmspec = Catena::Transaction::StrToTXSpec(start[1]);
 		auto stype = Catena::StrToLong(start[2], 0, LONG_MAX);
-		(void)cmspec; (void)patspec; (void)stype;
-		std::cerr << "not yet implemented" << std::endl; // FIXME
+		chain.AddPatientStatusDelegation(cmspec, patspec, stype);
+		return 0;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 	}
