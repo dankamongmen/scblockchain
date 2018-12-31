@@ -99,8 +99,8 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 	HTMLSysinfo(ss);
 	HTMLChaininfo(ss);
-	ss << "<div><span><a href=\"/show\">Explore ledger</a></span>";
-	ss << "<span><a href=\"/tstore\">View truststore</a></span></div>";
+	ss << "<div><span><a href=\"/show\">ledger</a></span>";
+	ss << "<span><a href=\"/tstore\">truststore</a></span></div>";
 	ss << "</body>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),
