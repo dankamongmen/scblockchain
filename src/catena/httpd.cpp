@@ -60,7 +60,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>transactions</td><td>" << chain.TXCount() << "</td></tr>";
 	ss << "<tr><td>outstanding TXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
 	ss << "<tr><td>lookup requests</td><td>" << chain.LookupRequestCount() << "</td></tr>";
-	ss << "<tr><td>lookup authorizations</td><td>" << chain.LookupRequestCount(false) << "</td></tr>";
+	ss << "<tr><td>lookup authorizations</td><td>" << chain.LookupRequestCount(true) << "</td></tr>";
 	char timebuf[80];
 	auto lastutc = chain.MostRecentBlock();
 	if(lastutc == -1){

@@ -209,21 +209,22 @@ int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
 template <typename Iterator>
 int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 	// FIXME make symmetric key file optional for anonymous passthrough
-	if(start + 2 != end){
-		std::cerr << "2 arguments required: LookupAuthReq spec, symmetric key file" << std::endl;
+	if(start + 3 != end){
+		std::cerr << "3 arguments required: LookupAuthReq spec, Patient spec, symmetric key file" << std::endl;
 		return -1;
 	}
 	try{
-		auto elspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto larspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto patspec = Catena::Transaction::StrToTXSpec(start[1]);
 		size_t symlen;
-		auto symkey = Catena::ReadBinaryFile(start[1], &symlen);
+		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
 		Catena::SymmetricKey skey;
 		if(symlen != skey.size()){
-			std::cerr << "invalid " << symlen << "b symmetric key at " << start[1] << std::endl;
+			std::cerr << "invalid " << symlen << "b symmetric key at " << start[2] << std::endl;
 			return -1;
 		}
 		memcpy(skey.data(), symkey.get(), skey.size());
-		chain.AddLookupAuth(elspec, skey);
+		chain.AddLookupAuth(larspec, patspec, skey);
 		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read symmetric key (" << e.what() << ")" << std::endl;
