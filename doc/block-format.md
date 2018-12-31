@@ -299,7 +299,7 @@ PatientStatusDelegation transaction, followed by the JSON-encoded payload.
 |              ...ECDSA signature (70--72 bytes)...             |
 |             ...32 bytes for ExternalLookup hash...            |
 |             ...4 bytes for ExternalLookup txidx...            |
-|                  ...json consortium payload...                |
+|                    ...json status payload...                  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
@@ -337,7 +337,7 @@ ExternalLookup transaction, followed by the JSON-encoded payload.
 |              ...ECDSA signature (70--72 bytes)...             |
 |             ...32 bytes for ExternalLookup hash...            |
 |             ...4 bytes for ExternalLookup txidx...            |
-|                  ...json consortium payload...                |
+|                   ...json request payload...                  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
@@ -384,5 +384,45 @@ current key types are:
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |              ...ECDSA signature (70--72 bytes)...             |
 |                    ...encrypted payload...                    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+#### PatientStatusDelegation
+
+Transaction type 0x0007, followed by a 16-bit signature length, followed by
+the 256-bit hash and 32-bit index of the delegating patient, followed by the
+signature, followed by the 256-bit hash and 32-bit index of the authorized
+ConsortiumMember transaction, followed by a 32-bit status type, followed by a
+subtype-dependent JSON-encoded payload.
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         type (0x0007)         |            siglength          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                         Patient hash                          +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Patient index                          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|              ...ECDSA signature (70--72 bytes)...             |
+|            ...32 bytes for ConsortiumMember hash...           |
+|            ...4 bytes for ConsortiumMember txidx...           |
+|                 ...4 bytes for status type...                 |
+|                   ...json request payload...                  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
