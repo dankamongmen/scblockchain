@@ -4,6 +4,7 @@
 #include <libcatena/builtin.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
+#include "test/defs.h"
 
 TEST(CatenaTrustStore, BuiltinKeys){
 	Catena::BuiltinKeys bkeys;
@@ -59,6 +60,14 @@ TEST(CatenaTrustStore, CopyConstructorEmpty){
 	Catena::TrustStore tstore2 = tstore;
 }
 
+TEST(CatenaTrustStore, CopyConstructorBuiltins){
+	Catena::TrustStore tstore, tstore1;
+	Catena::BuiltinKeys bkeys;
+	bkeys.AddToTrustStore(tstore);
+	tstore1 = tstore;
+	Catena::TrustStore tstore2 = tstore;
+}
+
 TEST(CatenaTrustStore, SignNoKeys){
 	Catena::TrustStore tstore;
 	unsigned char buf[] = {0};
@@ -75,10 +84,6 @@ TEST(CatenaTrustStore, SignOnlyBuiltinKeys){
 	EXPECT_THROW(tstore.Sign(buf, sizeof(buf), &kl), Catena::SigningException);
 }
 
-// FIXME add copy constructor test using builtin keys
-
-// FIXME add test using test keys + addKey() for full sign + verify loop
-
 TEST(CatenaTrustStore, SymmetricFail){
 	Catena::TrustStore tstore;
 	Catena::SymmetricKey key;
@@ -94,6 +99,21 @@ static const char* tests[] = {
 	NULL
 
 };
+
+TEST(CatenaTrustStore, SignTestCMKey){
+	Catena::TrustStore tstore;
+	Catena::Keypair kp(PUBLICKEY, ECDSAKEY);
+	Catena::KeyLookup kl;
+	RAND_bytes(kl.first.data(), kl.first.size());
+	kl.second = 5;
+	tstore.addKey(&kp, kl);
+	for(auto t = tests ; *t ; ++t){
+		auto sig = tstore.Sign(reinterpret_cast<const unsigned char*>(*t),
+					strlen(*t), kl);
+		EXPECT_FALSE(tstore.Verify(kl, reinterpret_cast<const unsigned char*>(*t),
+					strlen(*t), sig.first.get(), sig.second));
+	}
+}
 
 TEST(CatenaTrustStore, SymmetricEncryptDecryptString){
 	Catena::TrustStore tstore;

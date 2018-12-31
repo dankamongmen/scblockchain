@@ -1,9 +1,8 @@
 #include <cstring>
 #include <gtest/gtest.h>
+#include "libcatena/truststore.h"
 #include "libcatena/sig.h"
-
-#define PUBLICKEY "test/cm-test1.pub"
-#define ECDSAKEY "test/cm-test1.pem"
+#include "test/defs.h"
 
 TEST(CatenaSigs, LoadPubkeyFile){
 	Catena::Keypair(PUBLICKEY);
@@ -25,6 +24,15 @@ TEST(CatenaSigs, LoadPubkeyFileInvalid){
 TEST(CatenaSigs, LoadECMaterialInvalid){
 	EXPECT_THROW(Catena::Keypair(PUBLICKEY, PUBLICKEY), Catena::KeypairException);
 	EXPECT_THROW(Catena::Keypair(ECDSAKEY, ECDSAKEY), Catena::KeypairException);
+}
+
+TEST(CatenaSigs, ECSignNoPrivateKey){
+	Catena::Keypair kv(PUBLICKEY);
+	unsigned char sig[SIGLEN] = {0};
+	EXPECT_THROW(kv.Sign(reinterpret_cast<const unsigned char*>(""),
+				0, sig, sizeof(sig)), Catena::SigningException);
+	EXPECT_THROW(kv.Sign(reinterpret_cast<const unsigned char*>(""), 0),
+				Catena::SigningException);
 }
 
 TEST(CatenaSigs, ECSign){
