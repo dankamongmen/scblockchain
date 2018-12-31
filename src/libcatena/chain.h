@@ -101,6 +101,8 @@ void AddLookupAuth(const TXSpec& elspec, const SymmetricKey& symkey);
 void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
 		const SymmetricKey& symkey, const nlohmann::json& payload);
 void AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload);
+void AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patspec,
+				const nlohmann::json& payload);
 
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.
