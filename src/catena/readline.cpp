@@ -41,6 +41,20 @@ int ReadlineUI::Show(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::Summary(const Iterator start, const Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+	std::cout << "chain bytes: " << chain.Size() << "\n";
+	std::cout << "lookup requests: " << chain.LookupRequestCount() << "\n";
+	std::cout << "patients: " << chain.PatientCount() << "\n";
+	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
+	std::cout << std::flush;
+	return 0;
+}
+
+template <typename Iterator>
 int ReadlineUI::Inspect(const Iterator start, const Iterator end){
 	int b1, b2;
 	if(start + 2 < end){
@@ -275,6 +289,8 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 		auto json = chain.PatientStatus(patspec, stype);
 		std::cout << json.dump() << "\n";
 		return 0;
+	}catch(Catena::PatientStatusException& e){
+		std::cerr << "couldn't get status (" << e.what() << ")" << std::endl;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
 	}
@@ -345,6 +361,7 @@ void ReadlineUI::InputLoop(){
 	} cmdtable[] = {
 		{ .cmd = "quit", .fxn = &ReadlineUI::Quit, .help = "exit catena", },
 		{ .cmd = "show", .fxn = &ReadlineUI::Show, .help = "show blocks", },
+		{ .cmd = "summary", .fxn = &ReadlineUI::Summary, .help = "summarize the ledger", },
 		{ .cmd = "inspect", .fxn = &ReadlineUI::Inspect, .help = "detailed view of a range of blocks", },
 		{ .cmd = "outstanding", .fxn = &ReadlineUI::Outstanding, .help = "show outstanding transactions", },
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },

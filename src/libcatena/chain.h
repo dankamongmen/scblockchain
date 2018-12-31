@@ -82,6 +82,10 @@ int StatusDelegationCount() const {
 	return pmap.StatusDelegationCount();
 }
 
+int PatientCount() const {
+	return pmap.PatientCount();
+}
+
 KeyLookup PrivateKeyTXSpec() const { // FIXME deprecated, rid ourselves of this
 	return tstore.PrivateKey();
 }

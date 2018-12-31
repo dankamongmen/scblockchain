@@ -44,7 +44,14 @@ bool PatientStatusTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	(void)pmap; // FIXME update patient status!
+	TXSpec psdspec;
+	memcpy(psdspec.first.data(), payload.get(), psdspec.first.size());
+	psdspec.second = psdidx;
+	auto& psd = pmap.LookupDelegation(psdspec);
+	const auto& patspec = psd.PatSpec();
+	auto& pat = pmap.LookupPatient(patspec);
+	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
+	pat.SetStatus(psd.StatusType(), nlohmann::json::parse(pload));
 	return false;
 }
 

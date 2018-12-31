@@ -292,10 +292,8 @@ void Chain::AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patsp
 }
 
 nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const {
-	nlohmann::json ret;
-	(void)patspec; // FIXME find patient using patspec
-	(void)stype; // FIXME check patient for status using stype
-	return ret;
+	const auto& pat = pmap.LookupPatient(patspec);
+	return pat.Status(stype);
 }
 
 }

@@ -50,6 +50,7 @@ command):
 
 * `help`: summarize available commands.
 * `quit`: exit catena.
+* `summary`: summarize the chain in a human-readable format.
 * `show`: print the chain in a human-readable format.
 * `tstore`: print the trust store (known keys) in a human-readable format.
 * `inspect`: print detailed information about a range of the chain.
@@ -92,7 +93,8 @@ The following endpoints are provided. JSON schema are available in
 doc/json-schema.md. HTML pages are subject to change, and ought not be scraped
 nor parsed for semantic content in clients.
 
-* GET `/`: HTML status page for human consumption (do not scrape/parse)
+* GET `/`: HTML status page for human consumption (do not scrape/parse). Much
+of the same information as is available from the `summary` command.
 * GET `/show`: HTML equivalent of the `show` command
 * GET `/tstore`: HTML equivalent of the `tstore` command
 * GET `/inspect`: JSON equivalent of the `inspect` command

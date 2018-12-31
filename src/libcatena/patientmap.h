@@ -16,6 +16,12 @@ InvalidTXSpecException() : std::runtime_error("bad transaction spec"){}
 InvalidTXSpecException(const std::string& s) : std::runtime_error(s){}
 };
 
+class PatientStatusException : public std::runtime_error {
+public:
+PatientStatusException() : std::runtime_error("bad patient status"){}
+PatientStatusException(const std::string& s) : std::runtime_error(s){}
+};
+
 class LookupRequest {
 public:
 LookupRequest() :
@@ -50,11 +56,10 @@ TXSpec cmspec; // ConsortiumMemberTX
 
 class StatusDelegation {
 public:
-StatusDelegation() :
- statustype(0) {}
+StatusDelegation() = delete;
 
-StatusDelegation(const TXSpec& cmspec, const TXSpec& patspec) :
-	statustype(0),
+StatusDelegation(int stype, const TXSpec& cmspec, const TXSpec& patspec) :
+	statustype(stype),
 	cmspec(cmspec),
 	patspec(patspec) {}
 
@@ -74,6 +79,29 @@ private:
 int statustype;
 TXSpec cmspec; // ConsortiumMemberTX
 TXSpec patspec; // PatientTX
+};
+
+class Patient {
+public:
+nlohmann::json Status(int stype) const {
+	const auto& it = statuses.find(stype);
+	if(it == statuses.end()){
+		throw PatientStatusException("patient had no such status");
+	}
+	return it->second;
+}
+
+void SetStatus(int stype, const nlohmann::json& status) {
+	const auto& it = statuses.find(stype);
+	if(it == statuses.end()){
+		statuses.insert({stype, status});
+	}else{
+		it->second = status;
+	}
+}
+
+private:
+std::map<int, nlohmann::json> statuses;
 };
 
 class PatientMap {
@@ -106,6 +134,10 @@ int StatusDelegationCount() const {
 	return delegations.size();
 }
 
+int PatientCount() const {
+	return patients.size();
+}
+
 LookupRequest& LookupReq(const TXSpec& lar) {
 	const auto& it = lookupreqs.find(lar);
 	if(it == lookupreqs.end()){
@@ -130,13 +162,35 @@ StatusDelegation& LookupDelegation(const TXSpec& psd) {
 	return it->second;
 }
 
-void AddDelegation(const TXSpec& psdspec, const TXSpec& cmspec, const TXSpec& patspec) {
-	delegations.emplace(psdspec, StatusDelegation{cmspec, patspec});
+void AddDelegation(const TXSpec& psdspec, const TXSpec& cmspec,
+			const TXSpec& patspec, int stype) {
+	delegations.emplace(psdspec, StatusDelegation{stype, cmspec, patspec});
+}
+
+void AddPatient(const TXSpec& patspec) {
+	patients.emplace(patspec, Patient{});
+}
+
+const Patient& LookupPatient(const TXSpec& pat) const {
+	const auto& it = patients.find(pat);
+	if(it == patients.end()){
+		throw InvalidTXSpecException("unknown patient");
+	}
+	return it->second;
+}
+
+Patient& LookupPatient(const TXSpec& pat) {
+	const auto& it = patients.find(pat);
+	if(it == patients.end()){
+		throw InvalidTXSpecException("unknown patient");
+	}
+	return it->second;
 }
 
 private:
 std::map<TXSpec, LookupRequest> lookupreqs;
 std::map<TXSpec, StatusDelegation> delegations;
+std::map<TXSpec, Patient> patients;
 std::set<TXSpec> extlookups;
 };
 

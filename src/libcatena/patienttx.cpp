@@ -52,7 +52,7 @@ bool PatientTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	}
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
-	(void)pmap; // FIXME store Patient metadata?
+	pmap.AddPatient({blockhash, txidx});
 	return false;
 }
 
@@ -141,7 +141,7 @@ bool PatientStatusDelegationTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	TXSpec cmspec;
 	memcpy(cmspec.first.data(), payload.get(), cmspec.first.size());
 	cmspec.second = cmidx;
-	pmap.AddDelegation({blockhash, txidx}, cmspec, patspec);
+	pmap.AddDelegation({blockhash, txidx}, cmspec, patspec, statustype);
 	return false;
 }
 

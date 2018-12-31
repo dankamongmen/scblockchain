@@ -16,6 +16,7 @@ private:
 bool cancelled;
 Catena::Chain& chain;
 template <typename Iterator> int Quit(const Iterator start, const Iterator end);
+template <typename Iterator> int Summary(const Iterator start, const Iterator end);
 template <typename Iterator> int Show(const Iterator start, const Iterator end);
 template <typename Iterator> int Inspect(const Iterator start, const Iterator end);
 template <typename Iterator> int Outstanding(const Iterator start, const Iterator end);
