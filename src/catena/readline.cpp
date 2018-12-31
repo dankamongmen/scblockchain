@@ -281,18 +281,24 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 
 template <typename Iterator>
 int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator end){
-	if(start + 3 != end){
-		std::cerr << "3 arguments required: Patient spec, ConsortiumMember spec, status type" << std::endl;
+	if(start + 4 != end){
+		std::cerr << "4 arguments required: Patient spec, ConsortiumMember spec, status type, JSON payload" << std::endl;
 		return -1;
 	}
+	const auto& json = start[3];
 	try{
 		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
 		auto cmspec = Catena::Transaction::StrToTXSpec(start[1]);
 		auto stype = Catena::StrToLong(start[2], 0, LONG_MAX);
-		chain.AddPatientStatusDelegation(cmspec, patspec, stype);
+		auto payload = nlohmann::json::parse(json);
+		chain.AddPatientStatusDelegation(cmspec, patspec, stype, payload);
 		return 0;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "couldn't parse JSON from '" << json << "'" << std::endl;
+	}catch(Catena::SigningException& e){
+		std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
 	}
 	return -1;
 }
