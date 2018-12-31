@@ -224,4 +224,11 @@ void Chain::AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payloa
 	(void)payload; // FIXME
 }
 
+nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const {
+	nlohmann::json ret;
+	(void)patspec; // FIXME find patient using patspec
+	(void)stype; // FIXME check patient for status using stype
+	return ret;
+}
+
 }

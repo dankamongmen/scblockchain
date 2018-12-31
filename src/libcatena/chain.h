@@ -86,6 +86,11 @@ void FlushOutstanding();
 
 void AddSigningKey(const Keypair& kp);
 
+// Retrieve the most recent PatientStatus published for this patient of this
+// type. Returns a trivial JSON object if no such statuses have been published.
+// Throws InvalidTXSpec if no such patient exists.
+nlohmann::json PatientStatus(const TXSpec& patspec, unsigned stype) const;
+
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
 void AddConsortiumMember(const unsigned char* pkey, size_t plen, const nlohmann::json& payload);

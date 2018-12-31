@@ -266,8 +266,9 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 	try{
 		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
 		auto stype = Catena::StrToLong(start[1], 0, LONG_MAX);
-		(void)patspec; (void)stype;
-		std::cerr << "not yet implemented" << std::endl; // FIXME
+		auto json = chain.PatientStatus(patspec, stype);
+		std::cout << json.dump() << "\n";
+		return 0;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
 	}
