@@ -29,23 +29,23 @@ TEST(CatenaTransactions, NoOpSerialize){
 }
 
 TEST(CatenaTransactions, StrToTXSpec){
-	auto tx = Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.0");
+	auto tx = Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.0");
 	EXPECT_EQ(0, tx.second);
-	tx = Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.1");
+	tx = Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.1");
 	EXPECT_EQ(1, tx.second);
-	tx = Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.00011");
+	tx = Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.00011");
 	EXPECT_EQ(11, tx.second);
-	tx = Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.4294967295");
+	tx = Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.4294967295");
 	EXPECT_EQ(4294967295, tx.second);
 
 }
 
 TEST(CatenaTransactions, StrToTXSpecBad){
-	EXPECT_THROW(Catena::Transaction::StrToTXSpec("0.1"), Catena::ConvertInputException);
-	EXPECT_THROW(Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), Catena::ConvertInputException);
-	EXPECT_THROW(Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff."), Catena::ConvertInputException);
-	EXPECT_THROW(Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.-1"), Catena::ConvertInputException);
-	EXPECT_THROW(Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.1 "), Catena::ConvertInputException);
-	EXPECT_THROW(Catena::Transaction::StrToTXSpec(" ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.1"), Catena::ConvertInputException);
-	EXPECT_THROW(Catena::Transaction::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.4294967296"), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToTXSpec("0.1"), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff."), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.-1"), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.1 "), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToTXSpec(" ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.1"), Catena::ConvertInputException);
+	EXPECT_THROW(Catena::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.4294967296"), Catena::ConvertInputException);
 }
