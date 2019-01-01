@@ -5,6 +5,7 @@
 #include "libcatena/pstatus.h"
 #include "libcatena/builtin.h"
 #include "libcatena/utility.h"
+#include "libcatena/member.h"
 #include "libcatena/chain.h"
 #include "libcatena/block.h"
 #include "libcatena/tx.h"

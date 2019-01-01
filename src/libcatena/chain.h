@@ -86,6 +86,10 @@ int PatientCount() const {
 	return pmap.PatientCount();
 }
 
+int ConsortiumMemberCount() const {
+	return pmap.ConsortiumMemberCount();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 

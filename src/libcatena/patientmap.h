@@ -1,6 +1,10 @@
 #ifndef CATENA_LIBCATENA_PATIENTMAP
 #define CATENA_LIBCATENA_PATIENTMAP
 
+// FIXME something of a misnomer -- maybe "ledger map"? Metadata for outstanding
+// elements in the ledger. Contains fast lookup for essentially "everything
+// which hasn't been obsoleted by a later transaction."
+
 #include <set>
 #include <map>
 #include <iostream>
@@ -104,6 +108,21 @@ private:
 std::map<int, nlohmann::json> statuses;
 };
 
+class ConsortiumMember {
+public:
+
+int PatientCount() const {
+	return patients.size();
+}
+
+void AddPatient(Patient* p) {
+	patients.push_back(p);
+}
+
+private:
+std::vector<Patient*> patients; // non-owned pointers to patients map values
+};
+
 class PatientMap {
 public:
 
@@ -136,6 +155,10 @@ int StatusDelegationCount() const {
 
 int PatientCount() const {
 	return patients.size();
+}
+
+int ConsortiumMemberCount() const {
+	return cmembers.size();
 }
 
 LookupRequest& LookupReq(const TXSpec& lar) {
@@ -187,10 +210,19 @@ Patient& LookupPatient(const TXSpec& pat) {
 	return it->second;
 }
 
+void AddConsortiumMember(const TXSpec& cmspec) {
+	cmembers.emplace(cmspec, ConsortiumMember{});
+}
+
 private:
+// We're using maps rather than unordered maps, but probably don't need to.
+// We could just hash TXSpecs, as we already do in TrustStore. With that said,
+// I see claims that std::map is usually more memory-efficient than
+// unordered_map. Both guarantee validity of pointers to container data.
 std::map<TXSpec, LookupRequest> lookupreqs;
 std::map<TXSpec, StatusDelegation> delegations;
 std::map<TXSpec, Patient> patients;
+std::map<TXSpec, ConsortiumMember> cmembers;
 std::set<TXSpec> extlookups;
 };
 
