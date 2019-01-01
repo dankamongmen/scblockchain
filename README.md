@@ -61,6 +61,8 @@ command):
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
 TXSpec for the signing key, a filename containing the new member's public key,
 and an arbitrary JSON-encoded payload.
+* `getmember`: list all consortium members, or one specified member with
+patient details.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
 a TXSpec for the signing key, an integer specifying the lookup type, a filename
 containing the new association's public key, and an external identifier valid
