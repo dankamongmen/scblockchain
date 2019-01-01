@@ -11,10 +11,15 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <libcatena/utility.h>
+#include <libcatena/patientmap.h>
 #include <libcatena/truststore.h>
 #include <catena/readline.h>
 
 namespace CatenaAgent {
+
+// FIXME this shouldn't be necessary. I think we need to make the TXSpec and
+//  Keypair <<() overloads in Catena a single template function
+using Catena::operator<<;
 
 ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	cancelled(false),
@@ -47,6 +52,7 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		return -1;
 	}
 	std::cout << "chain bytes: " << chain.Size() << "\n";
+	std::cout << "consortium members: " << chain.ConsortiumMemberCount() << "\n";
 	std::cout << "lookup requests: " << chain.LookupRequestCount() << "\n";
 	std::cout << "patients: " << chain.PatientCount() << "\n";
 	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
@@ -143,6 +149,25 @@ int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
+int ReadlineUI::GetMembers(const Iterator start, const Iterator end) {
+	if(end - 1 > start){
+		std::cerr << "command requires at most one argument: member TXSpec" << std::endl;
+		return -1;
+	}
+	if(end != start){
+		const auto& txspec = Catena::StrToTXSpec(start[0]);
+		(void)txspec; // FIXME implement single member output
+		return -1;
+	}
+	const auto& cmembers = chain.ConsortiumMembers();
+	for(const auto& cm : cmembers){
+		std::cout << cm.cmspec << " (" << cm.patients << " patients) ";
+		std::cout << std::setw(1) << cm.payload << std::endl;
+	}
+	return 0;
+}
+
+template <typename Iterator>
 int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	if(end - start != 3){
 		std::cerr << "3 arguments required: signing key TXSpec, public key file, JSON payload" << std::endl;
@@ -151,7 +176,7 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	const auto& keyfile = start[1];
 	const auto& json = start[2];
 	try{
-		const auto& txspec = Catena::Transaction::StrToTXSpec(start[0]);
+		const auto& txspec = Catena::StrToTXSpec(start[0]);
 		auto payload = nlohmann::json::parse(json);
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
@@ -177,7 +202,7 @@ int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
 	}
 	const auto& json = start[3];
 	try{
-		auto cmspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto cmspec = Catena::StrToTXSpec(start[0]);
 		size_t plen, symlen;
 		auto pkey = Catena::ReadBinaryFile(start[1], &plen);
 		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
@@ -208,8 +233,8 @@ int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
 	}
 	const auto& json = start[2];
 	try{
-		auto cmspec = Catena::Transaction::StrToTXSpec(start[0]);
-		auto elspec = Catena::Transaction::StrToTXSpec(start[1]);
+		auto cmspec = Catena::StrToTXSpec(start[0]);
+		auto elspec = Catena::StrToTXSpec(start[1]);
 		auto payload = nlohmann::json::parse(json);
 		chain.AddLookupAuthReq(cmspec, elspec, payload);
 		return 0;
@@ -231,8 +256,8 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 		return -1;
 	}
 	try{
-		auto larspec = Catena::Transaction::StrToTXSpec(start[0]);
-		auto patspec = Catena::Transaction::StrToTXSpec(start[1]);
+		auto larspec = Catena::StrToTXSpec(start[0]);
+		auto patspec = Catena::StrToTXSpec(start[1]);
 		size_t symlen;
 		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
 		Catena::SymmetricKey skey;
@@ -261,7 +286,7 @@ int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
 	}
 	const auto& json = start[1];
 	try{
-		auto psdspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto psdspec = Catena::StrToTXSpec(start[0]);
 		auto payload = nlohmann::json::parse(json);
 		chain.AddPatientStatus(psdspec, payload);
 		return 0;
@@ -284,7 +309,7 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 		return -1;
 	}
 	try{
-		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
+		auto patspec = Catena::StrToTXSpec(start[0]);
 		auto stype = Catena::StrToLong(start[1], 0, LONG_MAX);
 		auto json = chain.PatientStatus(patspec, stype);
 		std::cout << json.dump() << "\n";
@@ -305,8 +330,8 @@ int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator 
 	}
 	const auto& json = start[3];
 	try{
-		auto patspec = Catena::Transaction::StrToTXSpec(start[0]);
-		auto cmspec = Catena::Transaction::StrToTXSpec(start[1]);
+		auto patspec = Catena::StrToTXSpec(start[0]);
+		auto cmspec = Catena::StrToTXSpec(start[1]);
 		auto stype = Catena::StrToLong(start[2], 0, LONG_MAX);
 		auto payload = nlohmann::json::parse(json);
 		chain.AddPatientStatusDelegation(cmspec, patspec, stype, payload);
@@ -339,7 +364,7 @@ int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
 	try{
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
-		const auto& signspec = Catena::Transaction::StrToTXSpec(start[0]);
+		const auto& signspec = Catena::StrToTXSpec(start[0]);
 		chain.AddExternalLookup(signspec, pkey.get(), plen, extid, ltype);
 		return 0;
 	}catch(std::ifstream::failure& e){
@@ -372,6 +397,7 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
 		{ .cmd = "noop", .fxn = &ReadlineUI::NewNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
+		{ .cmd = "getmembers", .fxn = &ReadlineUI::GetMembers, .help = "list consortium members, or one with detail", },
 		{ .cmd = "exlookup", .fxn = &ReadlineUI::NewExternalLookup, .help = "create new ExternalLookup transaction", },
 		{ .cmd = "lauthreq", .fxn = &ReadlineUI::NewLookupAuthReq, .help = "create new LookupAuthorizationRequest transaction", },
 		{ .cmd = "lauth", .fxn = &ReadlineUI::NewLookupAuth, .help = "create new LookupAuthorization transaction", },
