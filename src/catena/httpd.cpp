@@ -56,6 +56,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>blocks</td><td>" << chain.GetBlockCount() << "</td></tr>";
 	ss << "<tr><td>transactions</td><td>" << chain.TXCount() << "</td></tr>";
 	ss << "<tr><td>outstanding TXs</td><td>" << chain.OutstandingTXCount() << "</td></tr>";
+	ss << "<tr><td>consortium members</td><td>" << chain.ConsortiumMemberCount() << "</td></tr>";
 	ss << "<tr><td>lookup requests</td><td>" << chain.LookupRequestCount() << "</td></tr>";
 	ss << "<tr><td>lookup authorizations</td><td>" << chain.LookupRequestCount(true) << "</td></tr>";
 	ss << "<tr><td>external IDs</td><td>" << chain.ExternalLookupCount() << "</td></tr>";
@@ -191,7 +192,7 @@ HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
 	}
 	MHD_Response* resp = nullptr;
 	try{
-		auto patspec = Catena::Transaction::StrToTXSpec(patspecstr);
+		auto patspec = Catena::StrToTXSpec(patspecstr);
 		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
 		auto json = chain.PatientStatus(patspec, stype).dump();
 		std::stringstream ss;
@@ -228,7 +229,7 @@ HTTPDServer::PstatusJSON(struct MHD_Connection* conn) const {
 	}
 	MHD_Response* resp = nullptr;
 	try{
-		auto patspec = Catena::Transaction::StrToTXSpec(patspecstr);
+		auto patspec = Catena::StrToTXSpec(patspecstr);
 		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
 		auto json = chain.PatientStatus(patspec, stype).dump();
 		resp = MHD_create_response_from_buffer(json.size(), const_cast<char*>(json.c_str()), MHD_RESPMEM_MUST_COPY);
@@ -318,7 +319,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 		auto rspecstr = (*regspec).get<std::string>();
 		auto ltype = (*lookuptype).get<int>();
 		try{
-			auto regkl = Catena::Transaction::StrToTXSpec(rspecstr);
+			auto regkl = Catena::StrToTXSpec(rspecstr);
 			chain.AddExternalLookup(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
 					kstr.size(), pstr, ltype);
