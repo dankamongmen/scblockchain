@@ -155,9 +155,18 @@ int ReadlineUI::GetMembers(const Iterator start, const Iterator end) {
 		return -1;
 	}
 	if(end != start){
-		const auto& txspec = Catena::StrToTXSpec(start[0]);
-		(void)txspec; // FIXME implement single member output
-		return -1;
+		try {
+			const auto& txspec = Catena::StrToTXSpec(start[0]);
+			const auto& patients = chain.ConsortiumPatients(txspec);
+			for(const auto& p : patients){
+				std::cout << p.patspec << "\n";
+			}
+			return 0;
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "couldn't extract txspec (" << e.what() << ")" << std::endl;
+		}catch(Catena::InvalidTXSpecException& e){
+			std::cerr << "bad txpsec (" << e.what() << ")" << std::endl;
+		}
 	}
 	const auto& cmembers = chain.ConsortiumMembers();
 	for(const auto& cm : cmembers){
