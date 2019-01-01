@@ -38,6 +38,22 @@ constexpr char htmlhdr[] =
  "</style>"
  "</head>";
 
+// simple little HTML escaping for '&', '<', and '>'. might want a real one?
+std::stringstream& HTTPDServer::JSONtoHTML(std::stringstream& ss, const nlohmann::json& json) const {
+	std::stringstream inter;
+	inter << std::setw(1) << json;
+	const std::string& s = inter.str();
+	for(size_t pos = 0 ; pos != s.size() ; ++pos) {
+		switch(s[pos]) {
+			case '&': ss << "&amp;"; break;
+			case '<': ss << "&lt;"; break;
+			case '>': ss << "&gt;"; break;
+			default: ss << s[pos]; break;
+		}
+	}
+	return ss;
+}
+
 std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 	ss << "<h3>system</h3><table>";
 	ss << "<tr><td>cxx</td><td>" << Catena::GetCompilerID() << "</td></tr>";
@@ -57,9 +73,9 @@ std::stringstream& HTTPDServer::HTMLMembers(std::stringstream& ss) const {
 	const auto& cmembers = chain.ConsortiumMembers();
 	for(const auto& cm : cmembers){
 		ss << "<a href=\"/showmember?member=" << cm.cmspec
-		   << "\">" << cm.cmspec << "</a> (patients: " << cm.patients << ")";
-		// FIXME need to HTML-escape this
-		ss << "<pre>" << std::setw(1) << cm.payload << "</pre>";
+		   << "\">" << cm.cmspec << "</a> (patients: " << cm.patients
+		   << ")<pre>";
+		JSONtoHTML(ss, cm.payload) << "</pre>";
 	}
 	ss << "</div>";
 	return ss;
@@ -215,10 +231,9 @@ HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
 		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 		const auto& cmember = chain.ConsortiumMember(cmspec);
 		const auto& patients = chain.ConsortiumPatients(cmspec);
-		ss << "<h3>Consortium Member " << cmspecstr << " (patients: " <<
-			patients.size() << ")</h3>";
-		// FIXME need to escape this
-		ss << "<pre>" << std::setw(1) << cmember.payload << "</pre>";
+		ss << "<h3>Consortium member " << cmspecstr << "</h3><pre>";
+		JSONtoHTML(ss, cmember.payload) << "</pre>";
+		ss << "<h3>Enrolled patients: " << patients.size() << "</h3>";
 		for(const auto& p : patients){
 			// FIXME be more general in the future, but for the
 			// 2018-01 demo, just link to status 0

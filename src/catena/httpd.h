@@ -30,6 +30,7 @@ nlohmann::json InspectJSON(int start, int end) const;
 std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
 std::stringstream& HTMLChaininfo(std::stringstream& ss) const;
 std::stringstream& HTMLMembers(std::stringstream& ss) const;
+std::stringstream& JSONtoHTML(std::stringstream& ss, const nlohmann::json& json) const;
 
 // GET handlers
 struct MHD_Response* Summary(struct MHD_Connection*) const;
