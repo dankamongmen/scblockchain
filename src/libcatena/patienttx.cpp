@@ -52,7 +52,7 @@ bool PatientTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	}
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
-	pmap.AddPatient({blockhash, txidx});
+	pmap.AddPatient({blockhash, txidx}, {signerhash, signeridx});
 	return false;
 }
 

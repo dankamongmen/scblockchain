@@ -94,6 +94,15 @@ std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
 	return pmap.ConsortiumMembers();
 }
 
+ConsortiumMemberSummary ConsortiumMember(const TXSpec& tx) const {
+	return pmap.ConsortiumMember(tx);
+}
+
+// FIXME should probably return pair including ConsortiumMemberSummary
+std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
+	return pmap.ConsortiumPatients(cmspec);
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 

@@ -92,6 +92,13 @@ TXSpec cmspec; // ConsortiumMemberTX
 TXSpec patspec; // PatientTX
 };
 
+struct PatientSummary {
+PatientSummary(const TXSpec& txspec) :
+	patspec(txspec) {}
+
+TXSpec patspec;
+};
+
 class Patient {
 public:
 nlohmann::json Status(int stype) const {
@@ -135,8 +142,16 @@ int PatientCount() const {
 	return patients.size();
 }
 
-void AddPatient(Patient* p) {
+void AddPatient(const TXSpec& p) {
 	patients.push_back(p);
+}
+
+std::vector<PatientSummary> Patients() const {
+	std::vector<PatientSummary> ret;
+	for(auto it = std::begin(patients) ; it != std::end(patients); ++it){
+		ret.emplace_back(*it);
+	}
+	return ret;
 }
 
 nlohmann::json Payload() const {
@@ -144,7 +159,7 @@ nlohmann::json Payload() const {
 }
 
 private:
-std::vector<Patient*> patients; // non-owned pointers to patients map values
+std::vector<TXSpec> patients;
 nlohmann::json payload;
 };
 
@@ -215,8 +230,13 @@ void AddDelegation(const TXSpec& psdspec, const TXSpec& cmspec,
 	delegations.emplace(psdspec, StatusDelegation{stype, cmspec, patspec});
 }
 
-void AddPatient(const TXSpec& patspec) {
+void AddPatient(const TXSpec& patspec, const TXSpec& cmspec) {
+	auto it = cmembers.find(cmspec);
+	if(it == cmembers.end()){
+		throw InvalidTXSpecException("unknown consortium member");
+	}
 	patients.emplace(patspec, Patient{});
+	it->second.AddPatient(patspec);
 }
 
 const Patient& LookupPatient(const TXSpec& pat) const {
@@ -236,7 +256,7 @@ Patient& LookupPatient(const TXSpec& pat) {
 }
 
 void AddConsortiumMember(const TXSpec& cmspec, const nlohmann::json& json) {
-	cmembers.emplace(cmspec, ConsortiumMember{json});
+	cmembers.emplace(cmspec, Catena::ConsortiumMember{json});
 }
 
 std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
@@ -248,6 +268,23 @@ std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
 	return ret;
 }
 
+ConsortiumMemberSummary ConsortiumMember(const TXSpec& cmspec) const {
+	auto it = cmembers.find(cmspec);
+	if(it == cmembers.end()){
+		throw InvalidTXSpecException("unknown consortium member");
+	}
+	return ConsortiumMemberSummary(it->first, it->second.PatientCount(),
+					it->second.Payload());
+}
+
+std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
+	auto it = cmembers.find(cmspec);
+	if(it == cmembers.end()){
+		throw InvalidTXSpecException("unknown consortium member");
+	}
+	return it->second.Patients();
+}
+
 private:
 // We're using maps rather than unordered maps, but probably don't need to.
 // We could just hash TXSpecs, as we already do in TrustStore. With that said,
@@ -256,7 +293,7 @@ private:
 std::map<TXSpec, LookupRequest> lookupreqs;
 std::map<TXSpec, StatusDelegation> delegations;
 std::map<TXSpec, Patient> patients;
-std::map<TXSpec, ConsortiumMember> cmembers;
+std::map<TXSpec, Catena::ConsortiumMember> cmembers;
 std::set<TXSpec> extlookups;
 };
 
