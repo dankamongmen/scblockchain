@@ -38,7 +38,7 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 		std::cerr << "no room for key in " << len << std::endl;
 		return true;
 	}
-	// FIXME verify that key is valid? verify payload is valid JSON?
+	// FIXME verify that key is valid?
 	// Key length is part of the signed payload, so don't advance data
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
@@ -51,9 +51,10 @@ bool ConsortiumMemberTX::Validate(TrustStore& tstore, PatientMap& pmap){
 				payloadlen, signature, siglen)){
 		return true;
 	}
+	auto jsonstr = std::string(GetJSONPayload(), GetJSONPayloadLength());
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
-	pmap.AddConsortiumMember({blockhash, txidx});
+	pmap.AddConsortiumMember({blockhash, txidx}, nlohmann::json::parse(jsonstr));
 	return false;
 }
 
@@ -89,9 +90,9 @@ nlohmann::json ConsortiumMemberTX::JSONify() const {
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;
 	ret["signerspec"] = ss.str();
-	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
+	auto pload = std::string(GetJSONPayload(), GetJSONPayloadLength());
 	ret["payload"] = nlohmann::json::parse(pload);
-	auto pubkey = std::string(reinterpret_cast<const char*>(GetPubKey()), keylen);
+	auto pubkey = std::string(reinterpret_cast<const char *>(GetPubKey()), keylen);
 	ret["pubkey"] = pubkey;
 	return ret;
 }

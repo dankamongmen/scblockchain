@@ -90,6 +90,10 @@ int ConsortiumMemberCount() const {
 	return pmap.ConsortiumMemberCount();
 }
 
+std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
+	return pmap.ConsortiumMembers();
+}
+
 // Dump outstanding transactions in a human-readable format
 std::ostream& DumpOutstanding(std::ostream& s) const;
 

@@ -7,12 +7,19 @@
 
 #include <set>
 #include <map>
+#include <utility>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <libcatena/hash.h>
 
 namespace Catena {
 
 using TXSpec = std::pair<CatenaHash, unsigned>;
+
+inline std::ostream& operator<<(std::ostream& s, const TXSpec& t){
+	s << t.first << "." << t.second;
+	return s;
+}
 
 class InvalidTXSpecException : public std::runtime_error {
 public:
@@ -108,8 +115,21 @@ private:
 std::map<int, nlohmann::json> statuses;
 };
 
+struct ConsortiumMemberSummary {
+ConsortiumMemberSummary(const TXSpec& txspec, int pcount, const nlohmann::json& pload) :
+	cmspec(txspec),
+	patients(pcount),
+	payload(pload) {}
+
+TXSpec cmspec;
+int patients;
+nlohmann::json payload;
+};
+
 class ConsortiumMember {
 public:
+
+ConsortiumMember(const nlohmann::json& json) : payload(json) {}
 
 int PatientCount() const {
 	return patients.size();
@@ -119,8 +139,13 @@ void AddPatient(Patient* p) {
 	patients.push_back(p);
 }
 
+nlohmann::json Payload() const {
+	return payload;
+}
+
 private:
 std::vector<Patient*> patients; // non-owned pointers to patients map values
+nlohmann::json payload;
 };
 
 class PatientMap {
@@ -210,8 +235,17 @@ Patient& LookupPatient(const TXSpec& pat) {
 	return it->second;
 }
 
-void AddConsortiumMember(const TXSpec& cmspec) {
-	cmembers.emplace(cmspec, ConsortiumMember{});
+void AddConsortiumMember(const TXSpec& cmspec, const nlohmann::json& json) {
+	cmembers.emplace(cmspec, ConsortiumMember{json});
+}
+
+std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
+	std::vector<ConsortiumMemberSummary> ret;
+	for(auto it = std::begin(cmembers) ; it != std::end(cmembers); ++it){
+		ret.emplace_back(ConsortiumMemberSummary(it->first,
+				it->second.PatientCount(), it->second.Payload()));
+	}
+	return ret;
 }
 
 private:

@@ -32,9 +32,9 @@ GetPubKey() const {
 	return payload.get() + 2;
 }
 
-const unsigned char*
+const char*
 GetJSONPayload() const {
-	return payload.get() + 2 + keylen;
+	return reinterpret_cast<const char*>(payload.get()) + 2 + keylen;
 }
 
 size_t GetJSONPayloadLength() const {
