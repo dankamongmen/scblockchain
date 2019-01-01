@@ -132,6 +132,8 @@ failure, TXRequestResponse
     * Required query argument: `stype`, integer specifying delegated status type
     * Replies with application/json body of type PatientStatusResult or, on
 failure, TXRequestResponse
+* GET `/showmembers`: HTML equivalent of `/getmembers`
+    * Required query argument: `member`, TXSpec of ConsortiumMember
 * GET `/showpstatus`: HTML equivalent of `/pstatus`
     * Accepts same query arguments as `/pstatus`
 

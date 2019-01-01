@@ -11,6 +11,8 @@
 
 namespace CatenaAgent {
 
+using Catena::operator<<; // FIXME shouldn't need this :(
+
 HTTPDServer::~HTTPDServer(){
 	if(mhd){
 		MHD_stop_daemon(mhd);
@@ -50,8 +52,21 @@ std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 	return ss;
 }
 
+std::stringstream& HTTPDServer::HTMLMembers(std::stringstream& ss) const {
+	ss << "<h3>consortium members</h3><div>";
+	const auto& cmembers = chain.ConsortiumMembers();
+	for(const auto& cm : cmembers){
+		ss << "<a href=\"/showmember?member=" << cm.cmspec
+		   << "\">" << cm.cmspec << "</a> (" << cm.patients << " patients)";
+		ss << "<pre>" << std::setw(1) << cm.payload << "</pre>";
+	}
+	ss << "</div>";
+	return ss;
+}
+
 std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
-	ss << "<h3>chain</h3><table>";
+	ss << "<h3>chain</h3>";
+	ss << "<table>";
 	ss << "<tr><td>chain bytes</td><td>" << chain.Size() << "</td></tr>";
 	ss << "<tr><td>blocks</td><td>" << chain.GetBlockCount() << "</td></tr>";
 	ss << "<tr><td>transactions</td><td>" << chain.TXCount() << "</td></tr>";
@@ -100,6 +115,8 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 	HTMLSysinfo(ss);
 	HTMLChaininfo(ss);
+	HTMLMembers(ss);
+	ss << "<h3>other views</h3>";
 	ss << "<div><span><a href=\"/show\">ledger</a></span>";
 	ss << "<span><a href=\"/tstore\">truststore</a></span></div>";
 	ss << "</body>";
@@ -180,6 +197,34 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 	}
 	nlohmann::json ret(jblks);
 	return ret;
+}
+
+struct MHD_Response*
+HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
+	auto cmspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "member");
+	if(cmspecstr == nullptr){
+		std::cerr << "missing required arguments" << std::endl;
+		return nullptr;
+	}
+	MHD_Response* resp = nullptr;
+	try{
+		auto cmspec = Catena::StrToTXSpec(cmspecstr);
+		std::stringstream ss;
+		ss << htmlhdr;
+		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+		ss << "<h3>Consortium Member " << cmspecstr << "</h3>";
+		(void)cmspec; // FIXME get details!
+		ss << "</body>";
+		auto s = ss.str();
+		resp = MHD_create_response_from_buffer(s.size(), const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);
+	}catch(Catena::InvalidTXSpecException& e){
+		std::cerr << "bad txspec (" << e.what() << ")" << std::endl;
+		return nullptr; // FIXME return error
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+		return nullptr;
+	}
+	return resp;
 }
 
 struct MHD_Response*
@@ -464,6 +509,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		{ "/inspect", &HTTPDServer::Inspect, },
 		{ "/pstatus", &HTTPDServer::PstatusJSON, },
 		{ "/showpstatus", &HTTPDServer::PstatusHTML, },
+		{ "/showmember", &HTTPDServer::ShowMemberHTML, },
 		{ nullptr, nullptr },
 	},* cmd;
 	struct MHD_Response* resp = nullptr;
