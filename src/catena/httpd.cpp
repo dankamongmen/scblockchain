@@ -57,7 +57,8 @@ std::stringstream& HTTPDServer::HTMLMembers(std::stringstream& ss) const {
 	const auto& cmembers = chain.ConsortiumMembers();
 	for(const auto& cm : cmembers){
 		ss << "<a href=\"/showmember?member=" << cm.cmspec
-		   << "\">" << cm.cmspec << "</a> (" << cm.patients << " patients)";
+		   << "\">" << cm.cmspec << "</a> (patients: " << cm.patients << ")";
+		// FIXME need to HTML-escape this
 		ss << "<pre>" << std::setw(1) << cm.payload << "</pre>";
 	}
 	ss << "</div>";
@@ -212,8 +213,18 @@ HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
 		std::stringstream ss;
 		ss << htmlhdr;
 		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
-		ss << "<h3>Consortium Member " << cmspecstr << "</h3>";
-		(void)cmspec; // FIXME get details!
+		const auto& cmember = chain.ConsortiumMember(cmspec);
+		const auto& patients = chain.ConsortiumPatients(cmspec);
+		ss << "<h3>Consortium Member " << cmspecstr << " (patients: " <<
+			patients.size() << ")</h3>";
+		// FIXME need to escape this
+		ss << "<pre>" << std::setw(1) << cmember.payload << "</pre>";
+		for(const auto& p : patients){
+			// FIXME be more general in the future, but for the
+			// 2018-01 demo, just link to status 0
+			ss << "<a href=\"/showpstatus?stype=0&patient=" << p.patspec << "\">" << p.patspec <<
+				"</a><br/>";
+		}
 		ss << "</body>";
 		auto s = ss.str();
 		resp = MHD_create_response_from_buffer(s.size(), const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);
