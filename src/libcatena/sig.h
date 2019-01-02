@@ -21,7 +21,7 @@ KeypairException(const std::string& s) : std::runtime_error(s){}
 class Keypair {
 public:
 Keypair() = delete;
-Keypair(const char* pubfile, const char* privfile = 0);
+Keypair(const std::string& privfile);
 // Instantiate a verification-only keypair from memory
 Keypair(const unsigned char* pubblob, size_t len);
 
@@ -50,6 +50,10 @@ Sign(const unsigned char* in, size_t inlen) const;
 
 bool Verify(const unsigned char* in, size_t inlen, const unsigned char* sig, size_t siglen);
 
+// Require that both have the pubkey set, and that it is equal. Only if both
+// have a privkey must it be equal (i.e., two Keypairs with matching public
+// key, where only one has a private key defined, are considered equal).
+/*
 inline bool operator==(const Keypair& rhs) const {
 	if(EVP_PKEY_cmp(pubkey, rhs.pubkey) != 1){
 		return 0;
@@ -59,9 +63,26 @@ inline bool operator==(const Keypair& rhs) const {
 	}
 	return 1;
 }
+*/
 
 bool HasPrivateKey() const {
 	return privkey != nullptr;
+}
+
+void Merge(const Keypair& pair) {
+	if(pair.pubkey && pubkey){
+		if(EVP_PKEY_cmp(pair.pubkey, pubkey) != 1){
+			throw KeypairException("can't merge different pubkeys");
+		}
+	}else if(pair.pubkey){
+		pubkey = pair.pubkey;
+		EVP_PKEY_up_ref(pubkey);
+	}
+	if(pair.privkey && privkey){
+	}else if(pair.privkey){
+		privkey = pair.privkey;
+		EVP_PKEY_up_ref(privkey);
+	}
 }
 
 // Derive a symmetric key from this keypair together with peer. At least one

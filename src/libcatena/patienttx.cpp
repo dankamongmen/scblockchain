@@ -51,7 +51,7 @@ bool PatientTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 		return true;
 	}
 	Keypair kp(payload.get() + 2, keylen);
-	tstore.addKey(&kp, {blockhash, txidx});
+	tstore.AddKey(&kp, {blockhash, txidx});
 	lmap.AddPatient({blockhash, txidx}, {signerhash, signeridx});
 	return false;
 }

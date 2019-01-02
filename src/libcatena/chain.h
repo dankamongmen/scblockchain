@@ -117,7 +117,9 @@ void CommitOutstanding();
 // Flush (drop) any outstanding transactions.
 void FlushOutstanding();
 
-void AddSigningKey(const Keypair& kp);
+void AddPrivateKey(const KeyLookup& kl, const Keypair& kp) {
+	tstore.AddKey(&kp, kl);
+}
 
 // Retrieve the most recent PatientStatus published for this patient of this
 // type. Returns a trivial JSON object if no such statuses have been published.

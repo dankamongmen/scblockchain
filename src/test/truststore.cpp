@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <openssl/rand.h>
 #include <libcatena/truststore.h>
+#include <libcatena/utility.h>
 #include <libcatena/builtin.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
@@ -99,11 +100,11 @@ static const char* tests[] = {
 
 TEST(CatenaTrustStore, SignTestCMKey){
 	Catena::TrustStore tstore;
-	Catena::Keypair kp(PUBLICKEY, ECDSAKEY);
+	Catena::Keypair kp(ECDSAKEY);
 	Catena::KeyLookup kl;
 	RAND_bytes(kl.first.data(), kl.first.size());
 	kl.second = 5;
-	tstore.addKey(&kp, kl);
+	tstore.AddKey(&kp, kl);
 	for(auto t = tests ; *t ; ++t){
 		auto sig = tstore.Sign(reinterpret_cast<const unsigned char*>(*t),
 					strlen(*t), kl);
@@ -144,14 +145,14 @@ TEST(CatenaTrustStore, SymmetricEncryptDecryptUnterminated){
 
 TEST(CatenaTrustStore, KeyDerivation){
 	Catena::TrustStore tstore;
-	Catena::Keypair kv(PUBLICKEY, ECDSAKEY);
-	Catena::Keypair peer(ELOOK_TEST_PUBKEY);
+	Catena::Keypair kv(ECDSAKEY);
+	Catena::Keypair peer(reinterpret_cast<const unsigned char*>(ELOOK_TEST_PUBKEY), strlen(ELOOK_TEST_PUBKEY));
 	Catena::KeyLookup kl1, kl2;
 	RAND_bytes(kl1.first.data(), kl1.first.size());
 	RAND_bytes(kl2.first.data(), kl2.first.size());
 	kl1.second = kl2.second = 0;
-	tstore.addKey(&kv, kl1);
-	tstore.addKey(&peer, kl2);
+	tstore.AddKey(&kv, kl1);
+	tstore.AddKey(&peer, kl2);
 	auto key1 = tstore.DeriveSymmetricKey(kl1, kl2);
 	auto key2 = tstore.DeriveSymmetricKey(kl2, kl1);
 	EXPECT_EQ(key1, key2); // Both sides ought derive the same key

@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <iostream>
 #include <iterator>
+#include <openssl/bn.h>
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include "libcatena/truststore.h"
@@ -8,53 +9,50 @@
 
 namespace Catena {
 
-Keypair::Keypair(const char* pubfile, const char* privfile){
-	std::string pubstr = pubfile;
-	FILE* fp = fopen(pubfile, "r");
+Keypair::Keypair(const std::string& privfile){
+	std::string privstr = privfile;
+	FILE* fp = fopen(privfile.c_str(), "r");
 	if(!fp){
-		throw KeypairException("error opening pubkey file " + pubstr);
+		throw KeypairException("error opening ec file " + privstr);
 	}
-	EC_KEY* ec = PEM_read_EC_PUBKEY(fp, NULL, NULL, NULL);
-	if(!ec){
+	EC_KEY* ec;
+	if(!(ec = PEM_read_ECPrivateKey(fp, NULL, NULL, NULL))){
 		fclose(fp);
-		throw KeypairException("error loading PEM pubkey " + pubstr);
+		throw KeypairException("error loading PEM privkey " + privstr);
 	}
 	fclose(fp);
 	if(1 != EC_KEY_check_key(ec)){
-		throw KeypairException("error verifying PEM pubkey " + pubstr);
+		fclose(fp);
+		throw KeypairException("error verifying PEM privkey " + privstr);
+	}
+	privkey = EVP_PKEY_new();
+	if(1 != EVP_PKEY_assign_EC_KEY(privkey, ec)){
+		EVP_PKEY_free(privkey);
+		throw KeypairException("error binding EC privkey " + privstr);
+	}
+	auto group = EC_KEY_get0_group(ec);
+	auto pub = EC_POINT_new(group);
+	auto bn = EC_KEY_get0_private_key(ec);
+	if(1 != EC_POINT_mul(group, pub, bn, NULL, NULL, NULL)){
+		EC_POINT_free(pub);
+		EVP_PKEY_free(privkey);
+		throw KeypairException("error getting pubkey from " + privstr);
+	}
+	EC_KEY* ec2 = EC_KEY_new_by_curve_name(NID_secp256k1);
+	EC_KEY_set_public_key(ec2, pub);
+	if(1 != EC_KEY_check_key(ec2)){
+		EC_POINT_free(pub);
+		EVP_PKEY_free(privkey);
+		throw KeypairException("error verifying PEM pubkey from " + privstr);
 	}
 	pubkey = EVP_PKEY_new();
-	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec)){
+	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec2)){
+		EC_POINT_free(pub);
 		EVP_PKEY_free(pubkey);
-		throw KeypairException("error binding EC pubkey " + pubstr);
+		EVP_PKEY_free(privkey);
+		throw KeypairException("error binding EC pubkey");
 	}
-	if(privfile){
-		std::string privstr = privfile;
-		fp = fopen(privfile, "r");
-		if(!fp){
-			EVP_PKEY_free(pubkey);
-			throw KeypairException("error opening ec file " + privstr);
-		}
-		if(!(ec = PEM_read_ECPrivateKey(fp, NULL, NULL, NULL))){
-			fclose(fp);
-			EVP_PKEY_free(pubkey);
-			throw KeypairException("error loading PEM privkey " + privstr);
-		}
-		fclose(fp);
-		if(1 != EC_KEY_check_key(ec)){
-			fclose(fp);
-			EVP_PKEY_free(pubkey);
-			throw KeypairException("error verifying PEM privkey " + privstr);
-		}
-		privkey = EVP_PKEY_new();
-		if(1 != EVP_PKEY_assign_EC_KEY(privkey, ec)){
-			EVP_PKEY_free(privkey);
-			EVP_PKEY_free(pubkey);
-			throw KeypairException("error binding EC privkey " + privstr);
-		}
-	}else{
-		privkey = 0;
-	}
+	EC_POINT_free(pub);
 }
 
 Keypair::Keypair(const unsigned char* pubblob, size_t len){

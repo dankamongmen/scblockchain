@@ -53,7 +53,7 @@ bool ConsortiumMemberTX::Validate(TrustStore& tstore, LedgerMap& lmap){
 	}
 	auto jsonstr = std::string(GetJSONPayload(), GetJSONPayloadLength());
 	Keypair kp(payload.get() + 2, keylen);
-	tstore.addKey(&kp, {blockhash, txidx});
+	tstore.AddKey(&kp, {blockhash, txidx});
 	lmap.AddConsortiumMember({blockhash, txidx}, nlohmann::json::parse(jsonstr));
 	return false;
 }

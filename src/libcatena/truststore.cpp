@@ -21,19 +21,10 @@ std::ostream& operator<<(std::ostream& s, const TrustStore& ts){
 	return s;
 }
 
-const KeyLookup& TrustStore::GetLookup(const Keypair& kp){
-	for(const auto& k : keys){
-		if(k.second == kp){
-			return k.first;
-		}
-	}
-	throw std::out_of_range("no such public key");
-}
-
-void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
+void TrustStore::AddKey(const Keypair* kp, const KeyLookup& kidx){
 	auto it = keys.find(kidx);
 	if(it != keys.end()){
-		it->second = *kp;
+		it->second.Merge(*kp);
 	}else{
 		keys.insert({kidx, *kp});
 	}

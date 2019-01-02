@@ -68,11 +68,6 @@ void Chain::FlushOutstanding(){
 	outstanding.Flush();
 }
 
-void Chain::AddSigningKey(const Keypair& kp){
-	const KeyLookup& kl = tstore.GetLookup(kp);
-	tstore.addKey(&kp, kl);
-}
-
 void Chain::AddNoOp(){
 	outstanding.AddTransaction(std::make_unique<NoOpTX>());
 }

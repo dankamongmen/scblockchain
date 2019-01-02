@@ -66,7 +66,7 @@ bool ExternalLookupTX::Validate(TrustStore& tstore,
 	}
 	const unsigned char* data = payload.get() + 2;
 	Keypair kp(data, keylen);
-	tstore.addKey(&kp, {blockhash, txidx});
+	tstore.AddKey(&kp, {blockhash, txidx});
 	lookups.AddExtLookup({signerhash, signeridx});
 	return false;
 }
