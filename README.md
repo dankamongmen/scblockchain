@@ -25,10 +25,9 @@ will be validated and imported on startup, and updated during runtime. If the
 ledger cannot be validated, `catena` will refuse to start. An empty file can be
 provided, resulting in complete download of the ledger from a peer.
 
-`catena` should be started with the `-u pubkey` and `-v privkey` options when
-it will be signing transactions. See the "Key operations" section for material
-regarding creation of local ("Consortium") keys. The provided public key must
-match either a built-in or an on-ledger key.
+`catena` should be started with the `-u pubkey,txspec` option when it will be
+signing transactions. See the "Key operations" section for material regarding
+creation of keys suitable for use with Catena.
 
 When started without the `-d` option, the catena agent will remain in the
 foreground, providing a readline-driven text UI. This can be used to examine
@@ -86,8 +85,7 @@ TXSpec for the referenced PatientStatusDelegation, and a JSON payload.
 and patient status delegation type.
 
 Use of commands that generate signed or encrypted transactions requires an
-appropriate private key having been loaded with the `-u` option (along with
-the corresponding public key with the `-v` option).
+appropriate private key having been loaded with the `-u` option.
 
 ### HTTP services of cantena
 
