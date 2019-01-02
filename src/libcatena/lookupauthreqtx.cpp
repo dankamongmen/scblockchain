@@ -42,7 +42,7 @@ bool LookupAuthReqTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool LookupAuthReqTX::Validate(TrustStore& tstore, PatientMap& pmap) {
+bool LookupAuthReqTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
@@ -51,7 +51,7 @@ bool LookupAuthReqTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	memcpy(elspec.first.data(), payload.get(), elspec.first.size());
 	elspec.second = subjectidx;
 	auto cmspec = TXSpec(signerhash, signeridx);
-	pmap.AddLookupReq({blockhash, txidx}, elspec, cmspec);
+	lmap.AddLookupReq({blockhash, txidx}, elspec, cmspec);
 	return false;
 }
 
@@ -169,10 +169,10 @@ std::ostream& LookupAuthTX::TXOStream(std::ostream& s) const {
 
 }
 
-bool LookupAuthTX::Validate(TrustStore& tstore, PatientMap& pmap) {
+bool LookupAuthTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	// Bears a TXSpec for a LookupAuthReq TX; need to check it to get the
 	// ExternalLookup with the actual signing key.
-	auto& lar = pmap.LookupReq({signerhash, signeridx});
+	auto& lar = lmap.LookupReq({signerhash, signeridx});
 	TXSpec elspec = lar.ELSpec();
 	if(tstore.Verify(elspec, payload.get(), payloadlen, signature, siglen)){
 		return true;

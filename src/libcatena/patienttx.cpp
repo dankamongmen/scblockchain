@@ -45,14 +45,14 @@ bool PatientTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool PatientTX::Validate(TrustStore& tstore, PatientMap& pmap) {
+bool PatientTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.addKey(&kp, {blockhash, txidx});
-	pmap.AddPatient({blockhash, txidx}, {signerhash, signeridx});
+	lmap.AddPatient({blockhash, txidx}, {signerhash, signeridx});
 	return false;
 }
 
@@ -131,7 +131,7 @@ bool PatientStatusDelegationTX::Extract(const unsigned char* data, unsigned len)
 	return false;
 }
 
-bool PatientStatusDelegationTX::Validate(TrustStore& tstore, PatientMap& pmap) {
+bool PatientStatusDelegationTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	TXSpec patspec;
 	memcpy(patspec.first.data(), signerhash.data(), signerhash.size());
 	patspec.second = signeridx;
@@ -141,7 +141,7 @@ bool PatientStatusDelegationTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	TXSpec cmspec;
 	memcpy(cmspec.first.data(), payload.get(), cmspec.first.size());
 	cmspec.second = cmidx;
-	pmap.AddDelegation({blockhash, txidx}, cmspec, patspec, statustype);
+	lmap.AddDelegation({blockhash, txidx}, cmspec, patspec, statustype);
 	return false;
 }
 

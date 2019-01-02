@@ -1,9 +1,8 @@
-#ifndef CATENA_LIBCATENA_PATIENTMAP
-#define CATENA_LIBCATENA_PATIENTMAP
+#ifndef CATENA_LIBCATENA_LEDGERMAP
+#define CATENA_LIBCATENA_LEDGERMAP
 
-// FIXME something of a misnomer -- maybe "ledger map"? Metadata for outstanding
-// elements in the ledger. Contains fast lookup for essentially "everything
-// which hasn't been obsoleted by a later transaction."
+// Metadata for outstanding elements in the ledger. Contains fast lookup for
+// essentially "everything which hasn't been obsoleted by a later transaction."
 
 #include <set>
 #include <map>
@@ -163,7 +162,7 @@ std::vector<TXSpec> patients;
 nlohmann::json payload;
 };
 
-class PatientMap {
+class LedgerMap {
 public:
 
 // Total number of LookupAuthReq transactions in the ledger

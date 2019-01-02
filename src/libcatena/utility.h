@@ -10,7 +10,7 @@
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
 #include <gnu/libc-version.h>
 #endif
-#include <libcatena/patientmap.h>
+#include <libcatena/ledgermap.h>
 
 namespace Catena {
 

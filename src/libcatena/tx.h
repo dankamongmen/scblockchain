@@ -5,7 +5,7 @@
 #include <cstring>
 #include <nlohmann/json.hpp>
 #include <libcatena/truststore.h>
-#include <libcatena/patientmap.h>
+#include <libcatena/ledgermap.h>
 #include <libcatena/utility.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
@@ -37,7 +37,7 @@ Transaction(const CatenaHash& hash, unsigned idx) :
 
 virtual ~Transaction() = default;
 virtual bool Extract(const unsigned char* data, unsigned len) = 0;
-virtual bool Validate(TrustStore& tstore, PatientMap& pmap) = 0;
+virtual bool Validate(TrustStore& tstore, LedgerMap& lmap) = 0;
 virtual nlohmann::json JSONify() const = 0;
 
 // Send oneself to an ostream
@@ -67,7 +67,7 @@ NoOpTX() = default;
 NoOpTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore __attribute__ ((unused)),
-		PatientMap& map __attribute__ ((unused))) override {
+		LedgerMap& map __attribute__ ((unused))) override {
 	return false;
 }
 nlohmann::json JSONify() const override;

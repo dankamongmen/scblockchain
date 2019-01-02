@@ -44,13 +44,13 @@ virtual ~Blocks() = default;
 // FIXME why aren't these two just constructors? they should only be called once.
 // Load blocks from the specified chunk of memory. Returns true on parsing
 // error. Any present blocks are discarded.
-bool LoadData(const void* data, unsigned len, PatientMap& pmap, TrustStore& tstore);
+bool LoadData(const void* data, unsigned len, LedgerMap& lmap, TrustStore& tstore);
 // Load blocks from the specified file. Propagates I/O exceptions. Any present
 // blocks are discarded. Return value is the same as loadData.
-bool LoadFile(const std::string& s, PatientMap& pmap, TrustStore& tstore);
+bool LoadFile(const std::string& s, LedgerMap& lmap, TrustStore& tstore);
 
 // Parse, validate, and finally add the block to the ledger.
-bool AppendBlock(const unsigned char* block, size_t blen, PatientMap& pmap, TrustStore& tstore);
+bool AppendBlock(const unsigned char* block, size_t blen, LedgerMap& lmap, TrustStore& tstore);
 
 unsigned GetBlockCount() const {
 	return offsets.size();
@@ -89,7 +89,7 @@ private:
 std::vector<unsigned> offsets;
 std::vector<BlockHeader> headers;
 int VerifyData(const unsigned char* data, unsigned len,
-		PatientMap& pmap, TrustStore& tstore);
+		LedgerMap& lmap, TrustStore& tstore);
 std::string filename; // for in-memory chains, "", otherwise name from LoadFile
 };
 
@@ -114,7 +114,7 @@ std::vector<std::unique_ptr<Transaction>>
 
 // Pass nullptr as tstore to not validate transactions / update metadata
 bool ExtractBody(const BlockHeader* chdr, const unsigned char* data,
-    unsigned len, PatientMap* pmap, TrustStore* tstore);
+    unsigned len, LedgerMap* lmap, TrustStore* tstore);
 
 int TransactionCount() const {
 	return transactions.size();

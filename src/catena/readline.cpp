@@ -11,7 +11,6 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <libcatena/utility.h>
-#include <libcatena/patientmap.h>
 #include <libcatena/truststore.h>
 #include <catena/readline.h>
 

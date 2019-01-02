@@ -12,7 +12,7 @@ const int Block::BLOCKVERSION;
 const int Block::BLOCKHEADERLEN;
 
 bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
-			unsigned len, PatientMap* pmap, TrustStore* tstore){
+			unsigned len, LedgerMap* lmap, TrustStore* tstore){
 	if(len / 4 < chdr->txcount){
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
@@ -41,7 +41,7 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 			return true;
 		}
 		if(tstore){
-			if(tx->Validate(*tstore, *pmap)){
+			if(tx->Validate(*tstore, *lmap)){
 				return true;
 			}
 		}
@@ -109,7 +109,7 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 // Verify new blocks relative to the loaded blocks (i.e., do not replay already-
 // verified blocks). If any block fails verification, the Blocks structure is
 // unchanged, and -1 is returned.
-int Blocks::VerifyData(const unsigned char *data, unsigned len, PatientMap& pmap,
+int Blocks::VerifyData(const unsigned char *data, unsigned len, LedgerMap& lmap,
 			TrustStore& tstore){
 	unsigned offset = 0;
 	uint64_t prevutc = 0;
@@ -124,7 +124,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, PatientMap& pmap
 	CatenaHash prevhash;
 	GetLastHash(prevhash);
 	TrustStore new_tstore = tstore; // FIXME expensive copies here :(
-	auto new_pmap = pmap;
+	auto new_lmap = lmap;
 	while(len){
 		Block block;
 		BlockHeader chdr;
@@ -136,7 +136,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, PatientMap& pmap
 		prevhash = chdr.hash;
 		prevutc = chdr.utc;
 		if(block.ExtractBody(&chdr, data, chdr.totlen - Block::BLOCKHEADERLEN,
-					&new_pmap, &new_tstore)){
+					&new_lmap, &new_tstore)){
 			return -1;
 		}
 		data += chdr.totlen - Block::BLOCKHEADERLEN;
@@ -149,22 +149,22 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, PatientMap& pmap
 	headers.insert(headers.end(), new_headers.begin(), new_headers.end());
 	offsets.insert(offsets.end(), new_offsets.begin(), new_offsets.end());
 	tstore = new_tstore; // FIXME another set of expensive copies (swap? move?)
-	pmap = new_pmap;
+	lmap = new_lmap;
 	return blocknum - origblockcount;
 }
 
-bool Blocks::LoadData(const void* data, unsigned len, PatientMap& pmap, TrustStore& tstore){
+bool Blocks::LoadData(const void* data, unsigned len, LedgerMap& lmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	auto blocknum = VerifyData(static_cast<const unsigned char*>(data),
-					len, pmap, tstore);
+					len, lmap, tstore);
 	if(blocknum < 0){
 		return true;
 	}
 	return false;
 }
 
-bool Blocks::LoadFile(const std::string& fname, PatientMap& pmap, TrustStore& tstore){
+bool Blocks::LoadFile(const std::string& fname, LedgerMap& lmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
 	filename = "";
@@ -172,15 +172,15 @@ bool Blocks::LoadFile(const std::string& fname, PatientMap& pmap, TrustStore& ts
 	// Returns nullptr on zero-byte file, but LoadData handles that fine
 	const auto& memblock = ReadBinaryFile(fname, &size);
 	bool ret;
-	if(!(ret = LoadData(memblock.get(), size, pmap, tstore))){
+	if(!(ret = LoadData(memblock.get(), size, lmap, tstore))){
 		filename = fname;
 	}
 	return ret;
 }
 
-bool Blocks::AppendBlock(const unsigned char* block, size_t blen, PatientMap& pmap, TrustStore& tstore){
+bool Blocks::AppendBlock(const unsigned char* block, size_t blen, LedgerMap& lmap, TrustStore& tstore){
 	std::cout << "Validating " << blen << " byte block\n";
-	if(VerifyData(block, blen, pmap, tstore) <= 0){
+	if(VerifyData(block, blen, lmap, tstore) <= 0){
 		return true;
 	}
 	if(filename != ""){
