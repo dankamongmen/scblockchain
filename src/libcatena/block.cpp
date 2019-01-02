@@ -303,13 +303,13 @@ void Block::Flush(){
 
 template <typename Iterator> std::ostream&
 DumpTransactions(std::ostream& s, const Iterator begin, const Iterator end){
-	// FIXME reset stream after using setfill/setw
+	char prevfill = s.fill('0');
 	int i = 0;
 	while(begin + i != end){
-		s << std::setfill('0') << std::setw(5) << i <<
-			" " << begin[i].get() << "\n";
+		s << std::setw(5) << i << " " << begin[i].get() << "\n";
 		++i;
 	}
+	s.fill(prevfill);
 	return s;
 }
 
@@ -318,8 +318,10 @@ std::ostream& operator<<(std::ostream& stream, const Block& b){
 }
 
 std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
-	stream << std::setfill('0') << std::setw(8) << bh.txidx <<  " v" << bh.version << " transactions: " << bh.txcount <<
+	char prevfill = stream.fill('0');
+	stream << std::setw(8) << bh.txidx <<  " v" << bh.version << " transactions: " << bh.txcount <<
 		" bytes: " << bh.totlen << " ";
+	stream.fill(prevfill);
 	char buf[80];
 	time_t btime = bh.utc;
 	if(ctime_r(&btime, buf)){
