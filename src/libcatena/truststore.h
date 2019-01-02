@@ -4,6 +4,7 @@
 #include <memory>
 #include <cstring>
 #include <unordered_map>
+#include <libcatena/ledgermap.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
 
@@ -27,19 +28,7 @@ DecryptException() : std::runtime_error("error decrypting"){}
 DecryptException(const std::string& s) : std::runtime_error(s){}
 };
 
-// This is just a TXSpec...FIXME?
-using KeyLookup = std::pair<CatenaHash, unsigned>;
-
-struct keylookup_hash {
-	template <class T1, class T2>
-	size_t operator()(const std::pair<T1, T2>& k) const {
-		size_t sha;
-		// FIXME assert sizeof(sha) < KEYLEN
-		// FIXME use back part of sha, since leading bits might be 0s
-		memcpy(&sha, k.first.data(), sizeof(sha));
-		return sha;
-	}
-};
+using KeyLookup = TXSpec;
 
 class TrustStore {
 public:
@@ -87,7 +76,7 @@ SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const;
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 
 private:
-std::unordered_map<KeyLookup, Keypair, keylookup_hash> keys;
+std::unordered_map<KeyLookup, Keypair> keys;
 std::unique_ptr<KeyLookup> signingkey;
 };
 
