@@ -13,7 +13,12 @@
 
 namespace Catena {
 
-using TXSpec = std::pair<CatenaHash, unsigned>;
+// Do a class rather than alias so ADL finds the operator<<() overload
+struct TXSpec : std::pair<CatenaHash, unsigned>{
+using std::pair<CatenaHash, unsigned>::pair; // inherit default std::pair constructor
+TXSpec(const CatenaHash& hash, unsigned idx) :
+	std::pair<CatenaHash, unsigned>(hash, idx) {}
+};
 
 inline std::ostream& operator<<(std::ostream& s, const TXSpec& t){
 	s << t.first << "." << t.second;
@@ -34,8 +39,7 @@ PatientStatusException(const std::string& s) : std::runtime_error(s){}
 
 class LookupRequest {
 public:
-LookupRequest() :
- authorized(false) {}
+LookupRequest() = delete;
 
 LookupRequest(const TXSpec& elspec, const TXSpec& cmspec) :
 	authorized(false),

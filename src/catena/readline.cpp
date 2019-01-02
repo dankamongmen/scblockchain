@@ -19,10 +19,6 @@
 
 namespace CatenaAgent {
 
-// FIXME this shouldn't be necessary. I think we need to make the TXSpec and
-//  Keypair <<() overloads in Catena a single template function
-using Catena::operator<<;
-
 ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	cancelled(false),
 	chain(chain) { }

@@ -11,8 +11,6 @@
 
 namespace CatenaAgent {
 
-using Catena::operator<<; // FIXME shouldn't need this :(
-
 HTTPDServer::~HTTPDServer(){
 	if(mhd){
 		MHD_stop_daemon(mhd);
