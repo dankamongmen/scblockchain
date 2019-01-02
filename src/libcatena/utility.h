@@ -101,6 +101,8 @@ TXSpec StrToTXSpec(const std::string& s);
 // ConvertInputException on any error.
 long StrToLong(const std::string& s, long min, long max);
 
+void IgnoreSignal(int signum);
+
 inline std::string GetCompilerID(){
 #if defined(__GNUC__) && !defined(__clang__)
 	return std::string("GNU C++ ") + __VERSION__;

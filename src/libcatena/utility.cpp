@@ -1,6 +1,7 @@
 #include <climits>
 #include <fcntl.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <libcatena/utility.h>
@@ -158,6 +159,15 @@ TXSpec StrToTXSpec(const std::string& s){
 	}
 	ret.second = StrToLong(s.substr(2 * ret.first.size() + 1), 0, 0xffffffff);
 	return ret;
+}
+
+void IgnoreSignal(int signum) {
+	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	if(sigaction(signum, &sa, NULL)){
+		throw std::runtime_error("couldn't ignore signal");
+	}
 }
 
 }
