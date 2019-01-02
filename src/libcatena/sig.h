@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <openssl/evp.h>
+#include <openssl/rand.h>
 
 namespace Catena {
 
@@ -96,6 +97,14 @@ static std::ostream& PrintPublicKey(std::ostream& s, const EVP_PKEY* evp);
 
 friend std::ostream& operator<<(std::ostream& s, const Keypair& kp){
 	return Keypair::PrintPublicKey(s, kp.pubkey);
+}
+
+static SymmetricKey CreateSymmetricKey() {
+	SymmetricKey ret;
+	if(1 != RAND_bytes(ret.data(), ret.size())){
+		throw KeypairException("couldn't generate random AES key");
+	}
+	return ret;
 }
 
 private:
