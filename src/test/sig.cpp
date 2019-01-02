@@ -110,3 +110,10 @@ TEST(CatenaSigs, MergeKeys){
 	EXPECT_TRUE(kv2.HasPrivateKey());
 	EXPECT_FALSE(kv3.HasPrivateKey());
 }
+
+TEST(CatenaSigs, MergeKeysInvalid){
+	Catena::Keypair kv(ECDSAKEY);
+	Catena::Keypair peer(reinterpret_cast<const unsigned char*>(ELOOK_TEST_PUBKEY), strlen(ELOOK_TEST_PUBKEY));
+	EXPECT_THROW(kv.Merge(peer), Catena::KeypairException);
+	EXPECT_THROW(peer.Merge(kv), Catena::KeypairException);
+}
