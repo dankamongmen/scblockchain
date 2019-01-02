@@ -454,10 +454,54 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 }
 
 int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)ps;
-	(void)upload;
 	(void)uplen;
-	return MHD_NO;
+	nlohmann::json json;
+	try{
+		json = nlohmann::json::parse(upload);
+		auto pubkey = json.find("pubkey");
+		auto payload = json.find("payload");
+		auto regspec = json.find("regspec");
+		if(pubkey == json.end() || payload == json.end() || regspec == json.end()){
+			std::cerr << "missing necessary elements" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*pubkey).is_string()){
+			std::cerr << "pubkey was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*payload).is_string()){
+			std::cerr << "payload was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*regspec).is_string()){
+			std::cerr << "regspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto kstr = (*pubkey).get<std::string>();
+		auto pstr = (*payload).get<std::string>();
+		auto rspecstr = (*regspec).get<std::string>();
+		auto symkey = Catena::Keypair::CreateSymmetricKey();
+		try{
+			auto regkl = Catena::StrToTXSpec(rspecstr);
+			chain.AddPatient(regkl,
+					reinterpret_cast<const unsigned char*>(kstr.c_str()),
+					kstr.size(), symkey, pstr);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
+	}catch(Catena::KeypairException& e){
+		std::cerr << e.what() << std::endl;
+		return MHD_NO;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	ps->response = "{}";
+	return MHD_YES;
 }
 
 int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const {

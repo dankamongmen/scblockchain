@@ -90,8 +90,7 @@ have its private key loaded in the catena agent.
 ## NewPatientTXResponse
 
 Map of strings to T:
-* `symkey`: String containing base64-encoded AES key used to encrypt Patient
-payload.
+* `symkey`: String containing hex-encoded AES key used to encrypt Patient payload.
 
 # NewPatientDelegationTX
 
