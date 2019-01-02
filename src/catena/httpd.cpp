@@ -513,8 +513,47 @@ int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload) co
 }
 
 int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const {
-	(void)ps;
-	(void)upload;
+	try{
+		auto json = nlohmann::json::parse(upload);
+		auto refspec = json.find("refspec");
+		auto patspec = json.find("patspec");
+		auto symspec = json.find("symkey");
+		if(refspec == json.end() || patspec == json.end()){
+			std::cerr << "missing necessary elements" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*refspec).is_string()){
+			std::cerr << "refspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*patspec).is_string()){
+			std::cerr << "patspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*symspec).is_string()){
+			std::cerr << "symkey was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto patspecstr = (*patspec).get<std::string>();
+		auto refspecstr = (*refspec).get<std::string>();
+		try{
+			Catena::SymmetricKey symkey;
+			Catena::StrToBlob((*symspec).get<std::string>(), symkey);
+			auto patkl = Catena::StrToTXSpec(patspecstr);
+			auto refkl = Catena::StrToTXSpec(refspecstr);
+			chain.AddLookupAuth(refkl, patkl, symkey);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	ps->response = "{}";
 	return MHD_NO;
 }
 
@@ -525,9 +564,8 @@ int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload
 }
 
 int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload) const {
-	nlohmann::json json;
 	try{
-		json = nlohmann::json::parse(upload);
+		auto json = nlohmann::json::parse(upload);
 		auto payload = json.find("payload");
 		auto psdspec = json.find("psdspec");
 		if(payload == json.end() || psdspec == json.end()){
