@@ -271,6 +271,9 @@ HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
 	}catch(Catena::InvalidTXSpecException& e){
 		std::cerr << "bad txspec (" << e.what() << ")" << std::endl;
 		return nullptr; // FIXME return error
+	}catch(Catena::PatientStatusException& e){
+		std::cerr << "invalid lookup (" << e.what() << ")" << std::endl;
+		return nullptr;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 		return nullptr;
