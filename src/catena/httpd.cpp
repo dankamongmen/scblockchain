@@ -154,13 +154,9 @@ HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
 	ss << htmlhdr;
 	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
-	ss << "<pre id='output'/>";
-	ss << "<script type=\"text/javascript\">"
-"fetch('/inspect')"
-".then(function(response) { return response.json(); })"
-".then(function(data) { document.getElementById('output').innerHTML = JSON.stringify(data, null, 2); })"
-".catch(function(err) { document.getElementById('output').innerHTML = 'a world of shite' });"
-"</script>";
+	auto j = InspectJSON(0, -1);
+	ss << "<pre>";
+	JSONtoHTML(ss, InspectJSON(0, -1)) << "</pre>";
 	ss << "</body>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),
