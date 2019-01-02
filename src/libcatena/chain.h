@@ -86,8 +86,21 @@ int PatientCount() const {
 	return pmap.PatientCount();
 }
 
-KeyLookup PrivateKeyTXSpec() const { // FIXME deprecated, rid ourselves of this
-	return tstore.PrivateKey();
+int ConsortiumMemberCount() const {
+	return pmap.ConsortiumMemberCount();
+}
+
+std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
+	return pmap.ConsortiumMembers();
+}
+
+ConsortiumMemberSummary ConsortiumMember(const TXSpec& tx) const {
+	return pmap.ConsortiumMember(tx);
+}
+
+// FIXME should probably return pair including ConsortiumMemberSummary
+std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
+	return pmap.ConsortiumPatients(cmspec);
 }
 
 // Dump outstanding transactions in a human-readable format
@@ -115,8 +128,8 @@ nlohmann::json PatientStatus(const TXSpec& patspec, unsigned stype) const;
 void AddNoOp();
 void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 				size_t plen, const nlohmann::json& payload);
-void AddExternalLookup(const unsigned char* pkey, size_t plen,
-			const std::string& extid, unsigned lookuptype);
+void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
+		size_t plen, const std::string& extid, unsigned lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
 void AddLookupAuth(const TXSpec& elspec, const TXSpec& patspec, const SymmetricKey& symkey);
 void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,

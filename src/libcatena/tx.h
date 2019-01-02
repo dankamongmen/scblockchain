@@ -46,18 +46,13 @@ virtual std::ostream& TXOStream(std::ostream& s) const = 0;
 // Serialize oneself
 virtual std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const = 0;
 
-friend std::ostream& operator<<(std::ostream& s, Transaction* t){
+friend std::ostream& operator<<(std::ostream& s, const Transaction* t){
 	return t->TXOStream(s);
 }
 
 static std::unique_ptr<Transaction>
 lexTX(const unsigned char* data, unsigned len,
 	const CatenaHash& blkhash, unsigned txidx);
-
-// Canonical format is hex representation of block hash, followed by period,
-// followed by transaction index with optional leading zeroes. No other content
-// is allowed. Throws ConvertInputException on any lexing error.
-static TXSpec StrToTXSpec(const std::string& s);
 
 protected:
 // FIXME shouldn't need to keep these, but don't want to explicitly pass them
@@ -78,43 +73,6 @@ bool Validate(TrustStore& tstore __attribute__ ((unused)),
 nlohmann::json JSONify() const override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
-};
-
-class ConsortiumMemberTX : public Transaction {
-public:
-ConsortiumMemberTX() = default;
-ConsortiumMemberTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
-bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore, PatientMap& pmap) override;
-std::ostream& TXOStream(std::ostream& s) const override;
-std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
-nlohmann::json JSONify() const override;
-
-private:
-unsigned char signature[SIGLEN];
-
-// specifier of who signed this tx
-CatenaHash signerhash;
-uint32_t signeridx; // must be exactly 32 bits for serialization
-size_t siglen; // length of signature, up to SIGLEN
-std::unique_ptr<unsigned char[]> payload;
-size_t keylen; // length of public key
-size_t payloadlen; // total length of signed payload
-
-const unsigned char*
-GetPubKey() const {
-	return payload.get() + 2;
-}
-
-const unsigned char*
-GetJSONPayload() const {
-	return payload.get() + 2 + keylen;
-}
-
-size_t GetJSONPayloadLength() const {
-	return payloadlen - keylen - 2;
-}
-
 };
 
 }

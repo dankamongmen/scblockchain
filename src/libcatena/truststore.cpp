@@ -8,14 +8,6 @@ namespace Catena {
 // AES-256 and AES-128 both use a 128-bit (16 byte) IV
 static constexpr size_t IVSIZE = 16;
 
-TrustStore::TrustStore(const TrustStore& ts) :
-  keys(ts.keys),
-  signingkey(nullptr) {
-	  if(ts.signingkey.get() != nullptr){
-		  signingkey = std::make_unique<KeyLookup>(*ts.signingkey);
-	  }
-}
-
 TrustStore& TrustStore::operator=(const TrustStore& ts){
 	if(ts.signingkey.get() != nullptr){
 		signingkey.reset(new KeyLookup(*ts.signingkey));
@@ -58,19 +50,6 @@ void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
 	}else{
 		keys.insert({kidx, *kp});
 	}
-}
-
-std::pair<std::unique_ptr<unsigned char[]>, size_t>
-TrustStore::Sign(const unsigned char* in, size_t inlen, KeyLookup* signer) const {
-	if(signingkey == nullptr){
-		throw SigningException("no signing key");
-	}
-	const auto& it = keys.find(*signingkey.get());
-	if(it == keys.end()){
-		throw SigningException("couldn't find signing key");
-	}
-	*signer = it->first;
-	return it->second.Sign(in, inlen);
 }
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>

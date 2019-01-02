@@ -92,7 +92,7 @@ nlohmann::json LookupAuthReqTX::JSONify() const {
 	hashOStream(ss, payload.get());
 	ss << "." << subjectidx;
 	ret["subjectspec"] = ss.str();
-	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
+	auto pload = std::string(GetJSONPayload(), GetJSONPayloadLength());
 	ret["payload"] = nlohmann::json::parse(pload);
 	return ret;
 }

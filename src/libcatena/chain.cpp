@@ -5,6 +5,7 @@
 #include "libcatena/pstatus.h"
 #include "libcatena/builtin.h"
 #include "libcatena/utility.h"
+#include "libcatena/member.h"
 #include "libcatena/chain.h"
 #include "libcatena/block.h"
 #include "libcatena/tx.h"
@@ -137,8 +138,8 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	outstanding.AddTransaction(std::move(tx));
 }
 
-void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
-			const std::string& extid, unsigned lookuptype){
+void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
+		size_t plen, const std::string& extid, unsigned lookuptype){
 	// FIXME verify that pkey is a valid public key
 	size_t len = plen + 2 + extid.size();
 	unsigned char buf[len];
@@ -147,17 +148,13 @@ void Chain::AddExternalLookup(const unsigned char* pkey, size_t plen,
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, extid.c_str(), extid.size());
-	KeyLookup signer;
-	auto sig = tstore.Sign(buf, len, &signer);
-	if(sig.second == 0){
-		throw SigningException("couldn't sign payload");
-	}
-	size_t totlen = len + sig.second + 4 + signer.first.size() + 4;
+	auto sig = tstore.Sign(buf, len, keyspec);
+	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 4;
 	unsigned char txbuf[totlen];
 	targ = ulong_to_nbo(lookuptype, txbuf, 2);
-	memcpy(targ, signer.first.data(), signer.first.size());
-	targ += signer.first.size();
-	targ = ulong_to_nbo(signer.second, targ, 4);
+	memcpy(targ, keyspec.first.data(), keyspec.first.size());
+	targ += keyspec.first.size();
+	targ = ulong_to_nbo(keyspec.second, targ, 4);
 	targ = ulong_to_nbo(sig.second, targ, 2);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;

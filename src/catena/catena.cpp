@@ -1,8 +1,10 @@
 #include <cstdlib>
+#include <signal.h>
 #include <unistd.h>
 #include <iostream>
 #include <libcatena/sig.h>
 #include <libcatena/chain.h>
+#include <libcatena/utility.h>
 #include "catena/httpd.h"
 #include "catena/readline.h"
 
@@ -58,6 +60,7 @@ int main(int argc, char **argv){
 			return EXIT_FAILURE;
 		}
 	}
+	Catena::IgnoreSignal(SIGPIPE);
 	if(chain_file == nullptr){
 		std::cerr << "ledger must be specified with -l" << std::endl;
 		usage(std::cerr, argv[0]);

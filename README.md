@@ -61,10 +61,12 @@ command):
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
 TXSpec for the signing key, a filename containing the new member's public key,
 and an arbitrary JSON-encoded payload.
+* `getmember`: list all consortium members, or one specified member with
+patient details.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
-an integer specifying the lookup type, a filename containing the new
-association's public key, and an external identifier valid for the specified
-lookup type.
+a TXSpec for the signing key, an integer specifying the lookup type, a filename
+containing the new association's public key, and an external identifier valid
+for the specified lookup type.
 * `lauthreq`: generate a LookupAuthReq transaction. takes as its arguments
 a TXSpec for the requesting ConsortiumMember, a TXSpec for the referenced
 ExternalLookup, and a JSON payload.
@@ -126,11 +128,14 @@ failure, TXRequestResponse
     * Requires an application/json body of type NewPatientStatusTX
     * Replies with application/json body of type TXRequestResponse
 * GET `/pstatus`: JSON equivalent of the `getpstatus` command
-    * Required query argument: `hash`, base64-encoded hash of patient block
-    * Required query argument: `txidx`, integer specifying patient transaction
+    * Required query argument: `patient`, TXSpec of Patient
     * Required query argument: `stype`, integer specifying delegated status type
     * Replies with application/json body of type PatientStatusResult or, on
 failure, TXRequestResponse
+* GET `/showpstatus`: HTML equivalent of `/pstatus`
+    * Accepts same query arguments as `/pstatus`
+* GET `/showmembers`: HTML equivalent of `/getmembers`
+    * Required query argument: `member`, TXSpec of ConsortiumMember
 
 ## Key operations
 

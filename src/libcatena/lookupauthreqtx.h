@@ -26,9 +26,9 @@ std::unique_ptr<unsigned char[]> payload;
 uint32_t subjectidx; // subject idx of request (ExternalLookupTX), from payload
 size_t payloadlen; // total length of signed payload
 
-const unsigned char*
+const char*
 GetJSONPayload() const {
-	return payload.get() + 32 + 4;
+	return reinterpret_cast<const char*>(payload.get()) + 32 + 4;
 }
 
 size_t GetJSONPayloadLength() const {

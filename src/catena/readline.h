@@ -24,6 +24,7 @@ template <typename Iterator> int FlushOutstanding(const Iterator start, const It
 template <typename Iterator> int CommitOutstanding(const Iterator start, const Iterator end);
 template <typename Iterator> int TStore(const Iterator start, const Iterator end);
 template <typename Iterator> int NewMember(const Iterator start, const Iterator end);
+template <typename Iterator> int GetMembers(const Iterator start, const Iterator end);
 template <typename Iterator> int NewPatient(const Iterator start, const Iterator end);
 template <typename Iterator> int NewExternalLookup(const Iterator start, const Iterator end);
 template <typename Iterator> int NewLookupAuth(const Iterator start, const Iterator end);
@@ -32,6 +33,8 @@ template <typename Iterator> int NewNoOp(const Iterator start, const Iterator en
 template <typename Iterator> int NewPatientStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int GetPatientStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int NewPatientStatusDelegation(const Iterator start, const Iterator end);
+
+std::ostream& MemberSummary(std::ostream& s, const Catena::ConsortiumMemberSummary& cm) const;
 };
 
 }

@@ -10,6 +10,7 @@
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
 #include <gnu/libc-version.h>
 #endif
+#include <libcatena/patientmap.h>
 
 namespace Catena {
 
@@ -89,11 +90,18 @@ public:
 ConvertInputException(const std::string& s) : std::runtime_error(s){}
 };
 
+// Canonical format is hex representation of block hash, followed by period,
+// followed by transaction index with optional leading zeroes. No other content
+// is allowed. Throws ConvertInputException on any lexing error.
+TXSpec StrToTXSpec(const std::string& s);
+
 // Extract a long int from s, ensuring that it is the entirety of s (save any
 // leading whitespace and sign; see strtol(3)), that it is greater than or
 // equal to min, and that it is less than or equal to max. Throws
 // ConvertInputException on any error.
 long StrToLong(const std::string& s, long min, long max);
+
+void IgnoreSignal(int signum);
 
 inline std::string GetCompilerID(){
 #if defined(__GNUC__) && !defined(__clang__)

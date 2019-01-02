@@ -150,3 +150,8 @@ TEST(CatenaUtility, GetCompilerID){
 TEST(CatenaUtility, GetLibcID){
 	EXPECT_NE("", Catena::GetLibcID());
 }
+
+TEST(CatenaUtility, IgnoreSignal){
+	Catena::IgnoreSignal(SIGPIPE);
+	EXPECT_EQ(0, raise(SIGPIPE)); // ought not die
+}
