@@ -35,7 +35,6 @@ public:
 TrustStore() = default;
 TrustStore(const TrustStore& ts) : keys(ts.keys) {}
 virtual ~TrustStore() = default;
-TrustStore& operator=(const TrustStore& ts);
 
 // Add the keypair (usually just public key), using the specified hash and
 // index as its source (this is how it will be referenced in the ledger).
@@ -77,7 +76,6 @@ friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 
 private:
 std::unordered_map<KeyLookup, Keypair> keys;
-std::unique_ptr<KeyLookup> signingkey;
 };
 
 }

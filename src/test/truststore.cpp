@@ -53,6 +53,7 @@ TEST(CatenaTrustStore, CopyConstructorEmpty){
 	Catena::TrustStore tstore, tstore1;
 	tstore1 = tstore;
 	Catena::TrustStore tstore2 = tstore;
+	EXPECT_EQ(tstore.PubkeyCount(), tstore2.PubkeyCount());
 }
 
 TEST(CatenaTrustStore, CopyConstructorBuiltins){
@@ -61,6 +62,7 @@ TEST(CatenaTrustStore, CopyConstructorBuiltins){
 	bkeys.AddToTrustStore(tstore);
 	tstore1 = tstore;
 	Catena::TrustStore tstore2 = tstore;
+	EXPECT_EQ(tstore.PubkeyCount(), tstore2.PubkeyCount());
 }
 
 TEST(CatenaTrustStore, SignNoKeys){
