@@ -101,6 +101,29 @@ TXSpec StrToTXSpec(const std::string& s);
 // ConvertInputException on any error.
 long StrToLong(const std::string& s, long min, long max);
 
+inline int ASCHexToVal(char nibble) {
+	if(nibble >= 'a' && nibble <= 'f'){
+		return nibble - 'a' + 10;
+	}else if(nibble >= 'A' && nibble <= 'F'){
+		return nibble - 'A' + 10;
+	}else if(nibble >= '0' && nibble <= '9'){
+		return nibble - '0';
+	}
+	throw ConvertInputException("bad hex digit: " + std::to_string(nibble));
+}
+
+// Extract a SIZE-byte binary blob from s, which ought be SIZE*2 ASCII hex
+// chars decoding to SIZE raw bytes.
+template<size_t SIZE>
+void StrToBlob(const std::string& s, std::array<unsigned char, SIZE>& out) {
+	if(s.length() < SIZE * 2){
+		throw ConvertInputException("too short for input: " + s);
+	}
+	for(size_t i = 0 ; i < SIZE ; ++i){
+		out[i] = ASCHexToVal(s[i * 2]) * 16 + ASCHexToVal(s[i * 2 + 1]);
+	}
+}
+
 void IgnoreSignal(int signum);
 
 inline std::string GetCompilerID(){
