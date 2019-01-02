@@ -3,9 +3,9 @@
 
 #define GENESISBLOCK_EXTERNAL "genesisblock"
 #define MOCKLEDGER "test/ledger-test"
-#define MOCKLEDGER_BLOCKS 11
-#define MOCKLEDGER_TXS 12
-#define MOCKLEDGER_PUBKEYS 5
+#define MOCKLEDGER_BLOCKS 15
+#define MOCKLEDGER_TXS 17
+#define MOCKLEDGER_PUBKEYS 8
 #define PUBLICKEY \
 "-----BEGIN PUBLIC KEY-----\n"\
 "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEmklGZ8BMpE5snXpbpqLvxDcGqSxuAtI2\n"\
