@@ -33,6 +33,8 @@ template <typename Iterator> int NewNoOp(const Iterator start, const Iterator en
 template <typename Iterator> int NewPatientStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int GetPatientStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int NewPatientStatusDelegation(const Iterator start, const Iterator end);
+
+std::ostream& MemberSummary(std::ostream& s, const Catena::ConsortiumMemberSummary& cm) const;
 };
 
 }

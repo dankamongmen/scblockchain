@@ -15,6 +15,9 @@
 #include <libcatena/truststore.h>
 #include <catena/readline.h>
 
+#define ANSI_WHITE "\033[1;37m"
+#define ANSI_GREY "\033[0;37m"
+
 namespace CatenaAgent {
 
 // FIXME this shouldn't be necessary. I think we need to make the TXSpec and
@@ -148,6 +151,12 @@ int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
 	return 0;
 }
 
+std::ostream& ReadlineUI::MemberSummary(std::ostream& s, const Catena::ConsortiumMemberSummary& cm) const {
+	s << cm.cmspec << " (" << cm.patients << " patients) ";
+	s << ANSI_GREY << std::setw(1) << cm.payload << ANSI_WHITE << std::endl;
+	return s;
+}
+
 template <typename Iterator>
 int ReadlineUI::GetMembers(const Iterator start, const Iterator end) {
 	if(end - 1 > start){
@@ -157,7 +166,10 @@ int ReadlineUI::GetMembers(const Iterator start, const Iterator end) {
 	if(end != start){
 		try {
 			const auto& txspec = Catena::StrToTXSpec(start[0]);
+			const auto& cm = chain.ConsortiumMember(txspec);
+			MemberSummary(std::cout, cm);
 			const auto& patients = chain.ConsortiumPatients(txspec);
+			std::cout << ANSI_GREY;
 			for(const auto& p : patients){
 				std::cout << p.patspec << "\n";
 			}
@@ -170,8 +182,7 @@ int ReadlineUI::GetMembers(const Iterator start, const Iterator end) {
 	}
 	const auto& cmembers = chain.ConsortiumMembers();
 	for(const auto& cm : cmembers){
-		std::cout << cm.cmspec << " (" << cm.patients << " patients) ";
-		std::cout << std::setw(1) << cm.payload << std::endl;
+		MemberSummary(std::cout, cm);
 	}
 	return 0;
 }
@@ -421,7 +432,7 @@ void ReadlineUI::InputLoop(){
 		line = readline(RL_START "\033[0;35m" RL_END
 				"[" RL_START "\033[0;36m" RL_END
 				"catena" RL_START "\033[0;35m" RL_END
-				"] " RL_START "\033[1;37m" RL_END);
+				"] " RL_START ANSI_WHITE RL_END);
 		if(line == nullptr){
 			break;
 		}
@@ -447,9 +458,9 @@ void ReadlineUI::InputLoop(){
 			std::cerr << "unknown command: " << tokens[0] << std::endl;
 		}else if(c->fxn == nullptr){ // display help
 			for(c = cmdtable ; c->fxn ; ++c){
-				std::cout << c->cmd << "\033[0;37m: " << c->help << "\033[1;37m\n";
+				std::cout << c->cmd << ANSI_GREY " " << c->help << ANSI_WHITE "\n";
 			}
-			std::cout << "help\033[0;37m: list commands\033[1;37m" << std::endl;
+			std::cout << "help" ANSI_GREY ": list commands" ANSI_WHITE << std::endl;
 		}
 		free(line);
 	}
