@@ -46,15 +46,15 @@ bool ConsortiumMemberTX::Extract(const unsigned char* data, unsigned len){
 	return false;
 }
 
-bool ConsortiumMemberTX::Validate(TrustStore& tstore, PatientMap& pmap){
+bool ConsortiumMemberTX::Validate(TrustStore& tstore, LedgerMap& lmap){
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
 	auto jsonstr = std::string(GetJSONPayload(), GetJSONPayloadLength());
 	Keypair kp(payload.get() + 2, keylen);
-	tstore.addKey(&kp, {blockhash, txidx});
-	pmap.AddConsortiumMember({blockhash, txidx}, nlohmann::json::parse(jsonstr));
+	tstore.AddKey(&kp, {blockhash, txidx});
+	lmap.AddConsortiumMember({blockhash, txidx}, nlohmann::json::parse(jsonstr));
 	return false;
 }
 

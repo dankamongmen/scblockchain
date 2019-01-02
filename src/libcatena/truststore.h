@@ -4,6 +4,7 @@
 #include <memory>
 #include <cstring>
 #include <unordered_map>
+#include <libcatena/ledgermap.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
 
@@ -27,30 +28,17 @@ DecryptException() : std::runtime_error("error decrypting"){}
 DecryptException(const std::string& s) : std::runtime_error(s){}
 };
 
-// This is just a TXSpec...FIXME?
-using KeyLookup = std::pair<CatenaHash, unsigned>;
-
-struct keylookup_hash {
-	template <class T1, class T2>
-	size_t operator()(const std::pair<T1, T2>& k) const {
-		size_t sha;
-		// FIXME assert sizeof(sha) < KEYLEN
-		// FIXME use back part of sha, since leading bits might be 0s
-		memcpy(&sha, k.first.data(), sizeof(sha));
-		return sha;
-	}
-};
+using KeyLookup = TXSpec;
 
 class TrustStore {
 public:
 TrustStore() = default;
 TrustStore(const TrustStore& ts) : keys(ts.keys) {}
 virtual ~TrustStore() = default;
-TrustStore& operator=(const TrustStore& ts);
 
 // Add the keypair (usually just public key), using the specified hash and
 // index as its source (this is how it will be referenced in the ledger).
-void addKey(const Keypair* kp, const KeyLookup& kidx);
+void AddKey(const Keypair* kp, const KeyLookup& kidx);
 
 bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 		const unsigned char* sig, size_t siglen){
@@ -60,8 +48,6 @@ bool Verify(const KeyLookup& kidx, const unsigned char* in, size_t inlen,
 		return true;
 	}
 }
-
-const KeyLookup& GetLookup(const Keypair& kp);
 
 int PubkeyCount() const {
 	return keys.size();
@@ -87,8 +73,7 @@ SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const;
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 
 private:
-std::unordered_map<KeyLookup, Keypair, keylookup_hash> keys;
-std::unique_ptr<KeyLookup> signingkey;
+std::unordered_map<KeyLookup, Keypair> keys;
 };
 
 }

@@ -11,8 +11,6 @@
 
 namespace CatenaAgent {
 
-using Catena::operator<<; // FIXME shouldn't need this :(
-
 HTTPDServer::~HTTPDServer(){
 	if(mhd){
 		MHD_stop_daemon(mhd);
@@ -273,6 +271,9 @@ HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
 	}catch(Catena::InvalidTXSpecException& e){
 		std::cerr << "bad txspec (" << e.what() << ")" << std::endl;
 		return nullptr; // FIXME return error
+	}catch(Catena::PatientStatusException& e){
+		std::cerr << "invalid lookup (" << e.what() << ")" << std::endl;
+		return nullptr;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 		return nullptr;
@@ -351,8 +352,52 @@ struct PostState {
 	std::string response;
 };
 
-int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)uplen;
+int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
+	nlohmann::json json;
+	try{
+		json = nlohmann::json::parse(upload);
+		auto pubkey = json.find("pubkey");
+		auto payload = json.find("payload");
+		auto regspec = json.find("regspec");
+		if(pubkey == json.end() || payload == json.end() || regspec == json.end()){
+			std::cerr << "missing necessary elements" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*pubkey).is_string()){
+			std::cerr << "pubkey was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*payload).is_object()){
+			std::cerr << "payload was invalid JSON" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*regspec).is_string()){
+			std::cerr << "regspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto kstr = (*pubkey).get<std::string>();
+		auto rspecstr = (*regspec).get<std::string>();
+		try{
+			auto regkl = Catena::StrToTXSpec(rspecstr);
+			chain.AddConsortiumMember(regkl,
+					reinterpret_cast<const unsigned char*>(kstr.c_str()),
+					kstr.size(), *payload);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	ps->response = "{}";
+	return MHD_YES;
+}
+
+int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) const {
 	nlohmann::json json;
 	try{
 		json = nlohmann::json::parse(upload);
@@ -405,45 +450,150 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 	return MHD_YES;
 }
 
-int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload) const {
+	nlohmann::json json;
+	Catena::SymmetricKey symkey;
+	try{
+		json = nlohmann::json::parse(upload);
+		auto pubkey = json.find("pubkey");
+		auto payload = json.find("payload");
+		auto regspec = json.find("regspec");
+		if(pubkey == json.end() || payload == json.end() || regspec == json.end()){
+			std::cerr << "missing necessary elements" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*pubkey).is_string()){
+			std::cerr << "pubkey was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*payload).is_object()){
+			std::cerr << "payload was invalid JSON" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*regspec).is_string()){
+			std::cerr << "regspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto kstr = (*pubkey).get<std::string>();
+		auto rspecstr = (*regspec).get<std::string>();
+		symkey = Catena::Keypair::CreateSymmetricKey();
+		try{
+			auto regkl = Catena::StrToTXSpec(rspecstr);
+			chain.AddPatient(regkl,
+					reinterpret_cast<const unsigned char*>(kstr.c_str()),
+					kstr.size(), symkey, *payload);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
+	}catch(Catena::KeypairException& e){
+		std::cerr << e.what() << std::endl;
+		return MHD_NO;
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	nlohmann::json j;
+	std::stringstream symstr;
+	Catena::HexOutput(symstr, symkey.data(), symkey.size());
+	j["symkey"] = symstr.str();
+	ps->response = j.dump();
+	return MHD_YES;
+}
+
+int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload) const {
 	(void)ps;
 	(void)upload;
-	(void)uplen;
 	return MHD_NO;
 }
 
-int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)ps;
-	(void)upload;
-	(void)uplen;
+int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const {
+	try{
+		auto json = nlohmann::json::parse(upload);
+		auto refspec = json.find("refspec");
+		auto patspec = json.find("patspec");
+		auto symspec = json.find("symkey");
+		if(refspec == json.end() || patspec == json.end()){
+			std::cerr << "missing necessary elements" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*refspec).is_string()){
+			std::cerr << "refspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*patspec).is_string()){
+			std::cerr << "patspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*symspec).is_string()){
+			std::cerr << "symkey was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto patspecstr = (*patspec).get<std::string>();
+		auto refspecstr = (*refspec).get<std::string>();
+		try{
+			Catena::SymmetricKey symkey;
+			Catena::StrToBlob((*symspec).get<std::string>(), symkey);
+			auto patkl = Catena::StrToTXSpec(patspecstr);
+			auto refkl = Catena::StrToTXSpec(refspecstr);
+			chain.AddLookupAuth(refkl, patkl, symkey);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	ps->response = "{}";
 	return MHD_NO;
 }
 
-int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload) const {
 	(void)ps;
 	(void)upload;
-	(void)uplen;
 	return MHD_NO;
 }
 
-int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)ps;
-	(void)upload;
-	(void)uplen;
-	return MHD_NO;
-}
-
-int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)ps;
-	(void)upload;
-	(void)uplen;
-	return MHD_NO;
-}
-
-int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)ps;
-	(void)upload;
-	(void)uplen;
+int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload) const {
+	try{
+		auto json = nlohmann::json::parse(upload);
+		auto payload = json.find("payload");
+		auto psdspec = json.find("psdspec");
+		if(payload == json.end() || psdspec == json.end()){
+			std::cerr << "missing necessary elements from NewPatientStatusTX" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*payload).is_object()){
+			std::cerr << "payload was invalid JSON" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*psdspec).is_string()){
+			std::cerr << "psdspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto psdspecstr = (*psdspec).get<std::string>();
+		try{
+			auto psdkl = Catena::StrToTXSpec(psdspecstr);
+			chain.AddPatientStatus(psdkl, *payload);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	ps->response = "{}";
 	return MHD_NO;
 }
 
@@ -452,7 +602,7 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 				void** conn_cls){
 	const struct {
 		const char *uri;
-		int (HTTPDServer::*fxn)(struct PostState*, const char*, size_t) const;
+		int (HTTPDServer::*fxn)(struct PostState*, const char*) const;
 	} cmds[] = {
 		{ "/member", &HTTPDServer::MemberTXReq, },
 		{ "/exlookup", &HTTPDServer::ExternalLookupTXReq, },
@@ -485,7 +635,7 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		return MHD_YES;
 	}
 	if(upload_len && *upload_len){
-		auto ret = (this->*(cmd->fxn))(mpp, upload_data, *upload_len);
+		auto ret = (this->*(cmd->fxn))(mpp, upload_data);
 		if(ret == MHD_NO){
 			std::cerr << "error handling " << url << std::endl;
 		}

@@ -20,7 +20,7 @@ void Chain::LoadBuiltinKeys(){
 
 Chain::Chain(const std::string& fname){
 	LoadBuiltinKeys();
-	if(blocks.LoadFile(fname, pmap, tstore)){
+	if(blocks.LoadFile(fname, lmap, tstore)){
 		throw BlockValidationException();
 	}
 }
@@ -28,7 +28,7 @@ Chain::Chain(const std::string& fname){
 // A Chain instantiated from memory will not write out new blocks.
 Chain::Chain(const void* data, unsigned len){
 	LoadBuiltinKeys();
-	if(blocks.LoadData(data, len, pmap, tstore)){
+	if(blocks.LoadData(data, len, lmap, tstore)){
 		throw BlockValidationException();
 	}
 }
@@ -58,7 +58,7 @@ Chain::SerializeOutstanding() const {
 // merge them back on failure.
 void Chain::CommitOutstanding(){
 	auto p = SerializeOutstanding();
-	if(blocks.AppendBlock(p.first.get(), p.second, pmap, tstore)){
+	if(blocks.AppendBlock(p.first.get(), p.second, lmap, tstore)){
 		throw BlockValidationException();
 	}
 	FlushOutstanding();
@@ -66,11 +66,6 @@ void Chain::CommitOutstanding(){
 
 void Chain::FlushOutstanding(){
 	outstanding.Flush();
-}
-
-void Chain::AddSigningKey(const Keypair& kp){
-	const KeyLookup& kl = tstore.GetLookup(kp);
-	tstore.addKey(&kp, kl);
 }
 
 void Chain::AddNoOp(){
@@ -200,7 +195,7 @@ void Chain::AddPatient(const TXSpec& cmspec, const unsigned char* pkey,
 
 // FIXME can only work with AES256 (keytype 1) currently
 void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& patspec, const SymmetricKey& symkey){
-	const auto& lar = pmap.LookupReq(larspec);
+	const auto& lar = lmap.LookupReq(larspec);
 	TXSpec elspec = lar.ELSpec();
 	TXSpec cmspec = lar.CMSpec();
 	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(elspec, cmspec);
@@ -231,7 +226,7 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& patspec, const Sy
 }
 
 void Chain::AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload){
-	const auto& psd = pmap.LookupDelegation(psdspec);
+	const auto& psd = lmap.LookupDelegation(psdspec);
 	TXSpec cmspec = psd.CMSpec();
 	auto serialjson = payload.dump();
 	// Signed payload is PatientStatusDelegation TXSpec + JSON
@@ -289,7 +284,7 @@ void Chain::AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patsp
 }
 
 nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const {
-	const auto& pat = pmap.LookupPatient(patspec);
+	const auto& pat = lmap.LookupPatient(patspec);
 	return pat.Status(stype);
 }
 

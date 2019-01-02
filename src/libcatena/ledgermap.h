@@ -1,9 +1,8 @@
-#ifndef CATENA_LIBCATENA_PATIENTMAP
-#define CATENA_LIBCATENA_PATIENTMAP
+#ifndef CATENA_LIBCATENA_LEDGERMAP
+#define CATENA_LIBCATENA_LEDGERMAP
 
-// FIXME something of a misnomer -- maybe "ledger map"? Metadata for outstanding
-// elements in the ledger. Contains fast lookup for essentially "everything
-// which hasn't been obsoleted by a later transaction."
+// Metadata for outstanding elements in the ledger. Contains fast lookup for
+// essentially "everything which hasn't been obsoleted by a later transaction."
 
 #include <set>
 #include <map>
@@ -14,12 +13,21 @@
 
 namespace Catena {
 
-using TXSpec = std::pair<CatenaHash, unsigned>;
+// Do a class rather than alias so ADL finds the operator<<() overload when
+// trying to print a TXSpec from outside the Catena namespace.
+struct TXSpec : std::pair<CatenaHash, unsigned>{
 
-inline std::ostream& operator<<(std::ostream& s, const TXSpec& t){
+using std::pair<CatenaHash, unsigned>::pair; // inherit default std::pair constructor
+
+TXSpec(const CatenaHash& hash, unsigned idx) :
+	std::pair<CatenaHash, unsigned>(hash, idx) {}
+
+inline friend std::ostream& operator<<(std::ostream& s, const TXSpec& t){
 	s << t.first << "." << t.second;
 	return s;
 }
+
+};
 
 class InvalidTXSpecException : public std::runtime_error {
 public:
@@ -35,8 +43,7 @@ PatientStatusException(const std::string& s) : std::runtime_error(s){}
 
 class LookupRequest {
 public:
-LookupRequest() :
- authorized(false) {}
+LookupRequest() = delete;
 
 LookupRequest(const TXSpec& elspec, const TXSpec& cmspec) :
 	authorized(false),
@@ -163,7 +170,7 @@ std::vector<TXSpec> patients;
 nlohmann::json payload;
 };
 
-class PatientMap {
+class LedgerMap {
 public:
 
 // Total number of LookupAuthReq transactions in the ledger
@@ -297,6 +304,24 @@ std::map<TXSpec, Catena::ConsortiumMember> cmembers;
 std::set<TXSpec> extlookups;
 };
 
+}
+
+namespace std {
+// Implement std::hash<TXSpec> so it can be used as key in e.g. unordered_maps.
+// Since TX hashes are already "random", use them as base (using the least
+// significant bytes, since some mining schemes require leading digits),
+// adding the (highly non-random, weighted towards low numbers) TX idx so that
+// one block's transactions all map to different buckers.
+template <>
+struct hash<Catena::TXSpec>{
+template <class T1, class T2>
+size_t operator()(const std::pair<T1, T2>& k) const {
+	// FIXME verify sizeof(sha) < KEYLEN (at compile time) (bit it will)
+	size_t sha;
+	memcpy(&sha, k.first.data() + k.first.size() - sizeof(sha), sizeof(sha));
+	return sha + k.second;
+}
+};
 }
 
 #endif

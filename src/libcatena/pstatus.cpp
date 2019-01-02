@@ -39,7 +39,7 @@ bool PatientStatusTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool PatientStatusTX::Validate(TrustStore& tstore, PatientMap& pmap) {
+bool PatientStatusTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
@@ -47,9 +47,9 @@ bool PatientStatusTX::Validate(TrustStore& tstore, PatientMap& pmap) {
 	TXSpec psdspec;
 	memcpy(psdspec.first.data(), payload.get(), psdspec.first.size());
 	psdspec.second = psdidx;
-	auto& psd = pmap.LookupDelegation(psdspec);
+	auto& psd = lmap.LookupDelegation(psdspec);
 	const auto& patspec = psd.PatSpec();
-	auto& pat = pmap.LookupPatient(patspec);
+	auto& pat = lmap.LookupPatient(patspec);
 	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
 	pat.SetStatus(psd.StatusType(), nlohmann::json::parse(pload));
 	return false;

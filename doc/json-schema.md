@@ -72,6 +72,7 @@ which must have its private key loaded in the catena agent.
 Map of strings to T:
 * `refspec`: String containing TXSpec of subject LookupAuthReq
 * `patspec`: String containing TXSpec of unveiled Patient
+* `symkey`: String containing hex-encoded AES key used to encrypt Patient payload.
 
 This will be signed using the patient lookup key referenced by `refspec`,
 which must have its private key loaded in the catena agent.
@@ -90,8 +91,7 @@ have its private key loaded in the catena agent.
 ## NewPatientTXResponse
 
 Map of strings to T:
-* `symkey`: String containing base64-encoded AES key used to encrypt Patient
-payload.
+* `symkey`: String containing hex-encoded AES key used to encrypt Patient payload.
 
 # NewPatientDelegationTX
 

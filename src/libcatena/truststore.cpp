@@ -8,16 +8,6 @@ namespace Catena {
 // AES-256 and AES-128 both use a 128-bit (16 byte) IV
 static constexpr size_t IVSIZE = 16;
 
-TrustStore& TrustStore::operator=(const TrustStore& ts){
-	if(ts.signingkey.get() != nullptr){
-		signingkey.reset(new KeyLookup(*ts.signingkey));
-	}else{
-		signingkey = nullptr;
-	}
-	keys = ts.keys;
-	return *this;
-}
-
 std::ostream& operator<<(std::ostream& s, const TrustStore& ts){
 	for(const auto& k : ts.keys){
 		const KeyLookup& kl = k.first;
@@ -31,22 +21,10 @@ std::ostream& operator<<(std::ostream& s, const TrustStore& ts){
 	return s;
 }
 
-const KeyLookup& TrustStore::GetLookup(const Keypair& kp){
-	for(const auto& k : keys){
-		if(k.second == kp){
-			return k.first;
-		}
-	}
-	throw std::out_of_range("no such public key");
-}
-
-void TrustStore::addKey(const Keypair* kp, const KeyLookup& kidx){
+void TrustStore::AddKey(const Keypair* kp, const KeyLookup& kidx){
 	auto it = keys.find(kidx);
 	if(it != keys.end()){
-		if(kp->HasPrivateKey() && !signingkey){
-			signingkey = std::make_unique<KeyLookup>(kidx);
-		}
-		it->second = *kp;
+		it->second.Merge(*kp);
 	}else{
 		keys.insert({kidx, *kp});
 	}

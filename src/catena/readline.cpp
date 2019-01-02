@@ -11,7 +11,6 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <libcatena/utility.h>
-#include <libcatena/patientmap.h>
 #include <libcatena/truststore.h>
 #include <catena/readline.h>
 
@@ -19,10 +18,6 @@
 #define ANSI_GREY "\033[0;37m"
 
 namespace CatenaAgent {
-
-// FIXME this shouldn't be necessary. I think we need to make the TXSpec and
-//  Keypair <<() overloads in Catena a single template function
-using Catena::operator<<;
 
 ReadlineUI::ReadlineUI(Catena::Chain& chain) :
 	cancelled(false),

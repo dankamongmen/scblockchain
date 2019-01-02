@@ -30,7 +30,7 @@ void AddToTrustStore(TrustStore& tstore){
 	std::array<unsigned char, HASHLEN> hash;
 	hash.fill(0xffu);
 	for(size_t i = 0 ; i < keys.size() ; ++i){
-		tstore.addKey(&keys[i], {hash, i});
+		tstore.AddKey(&keys[i], {hash, i});
 	}
 }
 

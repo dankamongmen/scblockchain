@@ -71,6 +71,15 @@ AgEBA0IABNqADwD9F0W+vtUrKplecdAcprFP03jstLRd6tNMzkuwMNdvNRAomVUc
 -----END PUBLIC KEY-----
 ```
 
+### Test consortium member key 3 (174 bytes)
+The corresponding private key is in `test/cm-test3.pem`.
+```
+-----BEGIN PUBLIC KEY-----
+MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEaun/OP9t/4kgwQvRxVOJLXNkF2UBOzne
+1boJZuY3eIEkhtpNPB68fyJ5unBwiXZiYWTATk5JzOSZ/sBuqFKMVA==
+-----END PUBLIC KEY-----
+```
+
 ## Patient keys
 
 Each patient has two keypairs (the Delegation Authorization keypair, and the
@@ -81,7 +90,7 @@ encrypted and written into LookupAuth transactions.
 
 The test patient symmetric key is in `test/symmetric-test1.aes`.
 
-### Test patient Delegation Authorization key (475 bytes)
+### Test patient Delegation Authorization key 1 (475 bytes)
 The corresponding private key is in `test/pauth-test1.pem`.
 ```
 -----BEGIN PUBLIC KEY-----
@@ -95,7 +104,7 @@ MEpgSYdUrSgG3xkdQEnpZc9k0Tht2QA=
 -----END PUBLIC KEY-----
 ```
 
-### Test patient Lookup Authorization key (475 bytes)
+### Test patient Lookup Authorization key 1 (475 bytes)
 The corresponding private key is in `test/elook-test1.pem`.
 ```
 -----BEGIN PUBLIC KEY-----
@@ -106,5 +115,23 @@ fvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0
 SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFB
 AgEBA0IABBXZN8y7o3wiR9QAsGAs/aIJ3sxqWfG3zB4Q4/Us9fzGwBSKowvHiEN+
 5ea/Xj3eFkNUaNlShsucr9+h/+7oBqU=
+-----END PUBLIC KEY-----
+```
+
+### Test patient Delegation Authorization key 2 (174 bytes)
+The corresponding private key is in `test/pauth-test2.pem`.
+```
+-----BEGIN PUBLIC KEY-----
+MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEfN0YJY8tcBkmh8PeZDA0rOaMVlcj40Cd
+x7J5fzK75fo+GDGAEfKPa6po7x0TuswtctMUiPp7simVBxK1ULy/AQ==
+-----END PUBLIC KEY-----
+```
+
+### Test patient Lookup Authorization key 2 (174 bytes)
+The corresponding private key is in `test/elook-test2.pem`.
+```
+-----BEGIN PUBLIC KEY-----
+MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEfN0YJY8tcBkmh8PeZDA0rOaMVlcj40Cd
+x7J5fzK75fo+GDGAEfKPa6po7x0TuswtctMUiPp7simVBxK1ULy/AQ==
 -----END PUBLIC KEY-----
 ```

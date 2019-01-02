@@ -67,40 +67,40 @@ size_t Size() const {
 }
 
 int LookupRequestCount() const {
-	return pmap.LookupRequestCount();
+	return lmap.LookupRequestCount();
 }
 
 int LookupRequestCount(bool authorized) const {
-	return pmap.LookupRequestCount(authorized);
+	return lmap.LookupRequestCount(authorized);
 }
 
 int ExternalLookupCount() const {
-	return pmap.ExternalLookupCount();
+	return lmap.ExternalLookupCount();
 }
 
 int StatusDelegationCount() const {
-	return pmap.StatusDelegationCount();
+	return lmap.StatusDelegationCount();
 }
 
 int PatientCount() const {
-	return pmap.PatientCount();
+	return lmap.PatientCount();
 }
 
 int ConsortiumMemberCount() const {
-	return pmap.ConsortiumMemberCount();
+	return lmap.ConsortiumMemberCount();
 }
 
 std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
-	return pmap.ConsortiumMembers();
+	return lmap.ConsortiumMembers();
 }
 
 ConsortiumMemberSummary ConsortiumMember(const TXSpec& tx) const {
-	return pmap.ConsortiumMember(tx);
+	return lmap.ConsortiumMember(tx);
 }
 
 // FIXME should probably return pair including ConsortiumMemberSummary
 std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
-	return pmap.ConsortiumPatients(cmspec);
+	return lmap.ConsortiumPatients(cmspec);
 }
 
 // Dump outstanding transactions in a human-readable format
@@ -117,7 +117,9 @@ void CommitOutstanding();
 // Flush (drop) any outstanding transactions.
 void FlushOutstanding();
 
-void AddSigningKey(const Keypair& kp);
+void AddPrivateKey(const KeyLookup& kl, const Keypair& kp) {
+	tstore.AddKey(&kp, kl);
+}
 
 // Retrieve the most recent PatientStatus published for this patient of this
 // type. Returns a trivial JSON object if no such statuses have been published.
@@ -150,7 +152,7 @@ friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
 TrustStore tstore;
-PatientMap pmap;
+LedgerMap lmap;
 Blocks blocks;
 Block outstanding;
 

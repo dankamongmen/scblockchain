@@ -6,65 +6,65 @@
 #include "test/defs.h"
 
 TEST(CatenaBlocks, BlocksGenesisBlock){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::BuiltinKeys bkeys;
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
-	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCK_EXTERNAL, pmap, tstore));
+	ASSERT_FALSE(cbs.LoadFile(GENESISBLOCK_EXTERNAL, lmap, tstore));
 	EXPECT_EQ(1, cbs.GetBlockCount());
 	EXPECT_EQ(1, cbs.TXCount());
 }
 
 TEST(CatenaBlocks, BlocksMockLedger){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::BuiltinKeys bkeys;
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
-	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, pmap, tstore));
+	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, lmap, tstore));
 	EXPECT_EQ(MOCKLEDGER_BLOCKS, cbs.GetBlockCount());
 	EXPECT_EQ(MOCKLEDGER_TXS, cbs.TXCount());
 }
 
 TEST(CatenaBlocks, BlocksInvalidFile){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::Blocks cbs;
-	EXPECT_THROW(cbs.LoadFile("", pmap, tstore), std::ifstream::failure);
+	EXPECT_THROW(cbs.LoadFile("", lmap, tstore), std::ifstream::failure);
 }
 
 TEST(CatenaBlocks, EmptyBlock){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::Blocks cbs;
 	// Should pass on 0 bytes
-	EXPECT_FALSE(cbs.LoadData("", 0, pmap, tstore));
+	EXPECT_FALSE(cbs.LoadData("", 0, lmap, tstore));
 }
 
 // Chunks too small to be a valid block
 TEST(CatenaBlocks, BlocksInvalidShort){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::Blocks cbs;
 	char block[Catena::Block::BLOCKHEADERLEN];
 	// Should fail on fewer bytes than the minimum
-	EXPECT_TRUE(cbs.LoadData(block, sizeof(block) - 1, pmap, tstore));
+	EXPECT_TRUE(cbs.LoadData(block, sizeof(block) - 1, lmap, tstore));
 }
 
 // A chunk large enough to be a valid block, but containing all 0s
 TEST(CatenaBlocks, BlocksInvalidZeroes){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::Blocks cbs;
 	char block[Catena::Block::BLOCKHEADERLEN];
 	memset(block, 0, sizeof(block));
-	EXPECT_TRUE(cbs.LoadData(block, sizeof(block), pmap, tstore));
+	EXPECT_TRUE(cbs.LoadData(block, sizeof(block), lmap, tstore));
 }
 
 // Generate a simple block, and read it back
 TEST(CatenaBlocks, BlockGenerated){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::CatenaHash prevhash;
 	memset(prevhash.data(), 0xff, prevhash.size());
@@ -75,12 +75,12 @@ TEST(CatenaBlocks, BlockGenerated){
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
-	EXPECT_FALSE(cbs.LoadData(block.get(), size, pmap, tstore));
+	EXPECT_FALSE(cbs.LoadData(block.get(), size, lmap, tstore));
 }
 
 // Generate a block with some NoOps, and read it back
 TEST(CatenaBlocks, BlockGeneratedNoOps){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	for(auto i = 0 ; i < 4096 ; i += 16){
 		Catena::CatenaHash prevhash;
@@ -96,13 +96,13 @@ TEST(CatenaBlocks, BlockGeneratedNoOps){
 		ASSERT_NE(nullptr, block);
 		ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 		Catena::Blocks cbs;
-		EXPECT_FALSE(cbs.LoadData(block.get(), size, pmap, tstore));
+		EXPECT_FALSE(cbs.LoadData(block.get(), size, lmap, tstore));
 	}
 }
 
 // Generate a simple block with invalid prev, and read it back
 TEST(CatenaBlocks, BlockGeneratedBadprev){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::CatenaHash prevhash({1});
 	std::unique_ptr<const unsigned char[]> block;
@@ -112,12 +112,12 @@ TEST(CatenaBlocks, BlockGeneratedBadprev){
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
-	EXPECT_TRUE(cbs.LoadData(block.get(), size, pmap, tstore));
+	EXPECT_TRUE(cbs.LoadData(block.get(), size, lmap, tstore));
 }
 
 // Generate two simple blocks, concatenate them, and read them back
 TEST(CatenaBlocks, ChainGenerated){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::CatenaHash prevhash;
 	memset(prevhash.data(), 0xff, prevhash.size());
@@ -134,13 +134,13 @@ TEST(CatenaBlocks, ChainGenerated){
 	memcpy(block, b1.get(), s1);
 	memcpy(block + s1, b2.get(), s2);
 	Catena::Blocks cbs;
-	EXPECT_FALSE(cbs.LoadData(block, s1 + s2, pmap, tstore));
+	EXPECT_FALSE(cbs.LoadData(block, s1 + s2, lmap, tstore));
 	EXPECT_EQ(2, cbs.GetBlockCount());
 }
 
 // Generate two simple blocks, and append the second using AppendData
 TEST(CatenaBlocks, BlockAppendBlock){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::CatenaHash prevhash;
 	memset(prevhash.data(), 0xff, prevhash.size());
@@ -150,24 +150,24 @@ TEST(CatenaBlocks, BlockAppendBlock){
 	std::tie(b1, s1) = blk1.SerializeBlock(prevhash);
 	ASSERT_NE(nullptr, b1);
 	Catena::Blocks cbs;
-	EXPECT_FALSE(cbs.LoadData(b1.get(), s1, pmap, tstore));
+	EXPECT_FALSE(cbs.LoadData(b1.get(), s1, lmap, tstore));
 	EXPECT_EQ(1, cbs.GetBlockCount());
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s1);
 	std::tie(b2, s2) = blk2.SerializeBlock(prevhash);
 	ASSERT_NE(nullptr, b2);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s2);
-	EXPECT_FALSE(cbs.AppendBlock(b2.get(), s2, pmap, tstore));
+	EXPECT_FALSE(cbs.AppendBlock(b2.get(), s2, lmap, tstore));
 	EXPECT_EQ(2, cbs.GetBlockCount());
 	EXPECT_EQ(0, cbs.TXCount());
 }
 
 TEST(CatenaBlocks, BlockInspectMockLedger){
-	Catena::PatientMap pmap;
+	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	Catena::BuiltinKeys bkeys;
         bkeys.AddToTrustStore(tstore);
 	Catena::Blocks cbs;
-	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, pmap, tstore));
+	ASSERT_FALSE(cbs.LoadFile(MOCKLEDGER, lmap, tstore));
 	EXPECT_EQ(MOCKLEDGER_BLOCKS, cbs.GetBlockCount());
 	auto i = cbs.Inspect(0, cbs.GetBlockCount());
 	ASSERT_EQ(cbs.GetBlockCount(), i.size());

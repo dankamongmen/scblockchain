@@ -145,17 +145,7 @@ TXSpec StrToTXSpec(const std::string& s){
 	for(size_t i = 0 ; i < ret.first.size() ; ++i){
 		char c1 = s[i * 2];
 		char c2 = s[i * 2 + 1];
-		auto hexasc_to_val = [](char nibble){
-			if(nibble >= 'a' && nibble <= 'f'){
-				return nibble - 'a' + 10;
-			}else if(nibble >= 'A' && nibble <= 'F'){
-				return nibble - 'A' + 10;
-			}else if(nibble >= '0' && nibble <= '9'){
-				return nibble - '0';
-			}
-			throw ConvertInputException("bad hex digit: " + std::to_string(nibble));
-		};
-		ret.first[i] = hexasc_to_val(c1) * 16 + hexasc_to_val(c2);
+		ret.first[i] = ASCHexToVal(c1) * 16 + ASCHexToVal(c2);
 	}
 	ret.second = StrToLong(s.substr(2 * ret.first.size() + 1), 0, 0xffffffff);
 	return ret;
