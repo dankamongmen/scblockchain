@@ -25,9 +25,10 @@ will be validated and imported on startup, and updated during runtime. If the
 ledger cannot be validated, `catena` will refuse to start. An empty file can be
 provided, resulting in complete download of the ledger from a peer.
 
-`catena` should be started with the `-u pubkey,txspec` option when it will be
+`catena` should be started with the `-v pubkey,txspec` option when it will be
 signing transactions. See the "Key operations" section for material regarding
-creation of keys suitable for use with Catena.
+creation of keys suitable for use with Catena. `-v` can be supplied multiple
+times to load multiple private keys.
 
 When started without the `-d` option, the catena agent will remain in the
 foreground, providing a readline-driven text UI. This can be used to examine
