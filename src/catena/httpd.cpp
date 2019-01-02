@@ -456,6 +456,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
 	(void)uplen;
 	nlohmann::json json;
+	Catena::SymmetricKey symkey;
 	try{
 		json = nlohmann::json::parse(upload);
 		auto pubkey = json.find("pubkey");
@@ -480,7 +481,7 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t u
 		auto kstr = (*pubkey).get<std::string>();
 		auto pstr = (*payload).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
-		auto symkey = Catena::Keypair::CreateSymmetricKey();
+		symkey = Catena::Keypair::CreateSymmetricKey();
 		try{
 			auto regkl = Catena::StrToTXSpec(rspecstr);
 			chain.AddPatient(regkl,
@@ -500,7 +501,11 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t u
 		std::cerr << "error extracting JSON from " << upload << std::endl;
 		return MHD_NO;
 	}
-	ps->response = "{}";
+	nlohmann::json j;
+	std::stringstream symstr;
+	Catena::HexOutput(symstr, symkey.data(), symkey.size());
+	j["symkey"] = symstr.str();
+	ps->response = j.dump();
 	return MHD_YES;
 }
 

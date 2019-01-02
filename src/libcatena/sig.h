@@ -51,21 +51,6 @@ Sign(const unsigned char* in, size_t inlen) const;
 
 bool Verify(const unsigned char* in, size_t inlen, const unsigned char* sig, size_t siglen);
 
-// Require that both have the pubkey set, and that it is equal. Only if both
-// have a privkey must it be equal (i.e., two Keypairs with matching public
-// key, where only one has a private key defined, are considered equal).
-/*
-inline bool operator==(const Keypair& rhs) const {
-	if(EVP_PKEY_cmp(pubkey, rhs.pubkey) != 1){
-		return 0;
-	}
-	if(privkey && rhs.privkey){
-		return EVP_PKEY_cmp(privkey, rhs.privkey);
-	}
-	return 1;
-}
-*/
-
 bool HasPrivateKey() const {
 	return privkey != nullptr;
 }
