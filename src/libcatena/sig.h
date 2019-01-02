@@ -79,6 +79,9 @@ void Merge(const Keypair& pair) {
 		EVP_PKEY_up_ref(pubkey);
 	}
 	if(pair.privkey && privkey){
+		if(EVP_PKEY_cmp(pair.privkey, privkey) != 1){
+			throw KeypairException("can't merge different privkeys");
+		}
 	}else if(pair.privkey){
 		privkey = pair.privkey;
 		EVP_PKEY_up_ref(privkey);

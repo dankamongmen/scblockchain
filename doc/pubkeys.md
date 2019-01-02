@@ -71,6 +71,15 @@ AgEBA0IABNqADwD9F0W+vtUrKplecdAcprFP03jstLRd6tNMzkuwMNdvNRAomVUc
 -----END PUBLIC KEY-----
 ```
 
+### Test consortium member key 3 (174 bytes)
+The corresponding private key is in `test/cm-test3.pem`.
+```
+-----BEGIN PUBLIC KEY-----
+MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEaun/OP9t/4kgwQvRxVOJLXNkF2UBOzne
+1boJZuY3eIEkhtpNPB68fyJ5unBwiXZiYWTATk5JzOSZ/sBuqFKMVA==
+-----END PUBLIC KEY-----
+```
+
 ## Patient keys
 
 Each patient has two keypairs (the Delegation Authorization keypair, and the
