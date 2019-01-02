@@ -367,8 +367,8 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 			std::cerr << "pubkey was not a string" << std::endl;
 			return MHD_NO;
 		}
-		if(!(*payload).is_string()){
-			std::cerr << "payload was not a string" << std::endl;
+		if(!(*payload).is_object()){
+			std::cerr << "payload was invalid JSON" << std::endl;
 			return MHD_NO;
 		}
 		if(!(*regspec).is_string()){
@@ -376,13 +376,12 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 			return MHD_NO;
 		}
 		auto kstr = (*pubkey).get<std::string>();
-		auto pstr = (*payload).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		try{
 			auto regkl = Catena::StrToTXSpec(rspecstr);
 			chain.AddConsortiumMember(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), pstr);
+					kstr.size(), *payload);
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
@@ -467,8 +466,8 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload) const {
 			std::cerr << "pubkey was not a string" << std::endl;
 			return MHD_NO;
 		}
-		if(!(*payload).is_string()){
-			std::cerr << "payload was not a string" << std::endl;
+		if(!(*payload).is_object()){
+			std::cerr << "payload was invalid JSON" << std::endl;
 			return MHD_NO;
 		}
 		if(!(*regspec).is_string()){
@@ -476,14 +475,13 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload) const {
 			return MHD_NO;
 		}
 		auto kstr = (*pubkey).get<std::string>();
-		auto pstr = (*payload).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		symkey = Catena::Keypair::CreateSymmetricKey();
 		try{
 			auto regkl = Catena::StrToTXSpec(rspecstr);
 			chain.AddPatient(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), symkey, pstr);
+					kstr.size(), symkey, *payload);
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
