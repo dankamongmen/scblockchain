@@ -439,9 +439,40 @@ int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload
 }
 
 int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)ps;
-	(void)upload;
 	(void)uplen;
+	nlohmann::json json;
+	try{
+		json = nlohmann::json::parse(upload);
+		auto payload = json.find("payload");
+		auto psdspec = json.find("psdspec");
+		if(payload == json.end() || psdspec == json.end()){
+			std::cerr << "missing necessary elements from NewPatientStatusTX" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*payload).is_object()){
+			std::cerr << "payload was invalid JSON" << std::endl;
+			return MHD_NO;
+		}
+		if(!(*psdspec).is_string()){
+			std::cerr << "psdspec was not a string" << std::endl;
+			return MHD_NO;
+		}
+		auto psdspecstr = (*psdspec).get<std::string>();
+		try{
+			auto psdkl = Catena::StrToTXSpec(psdspecstr);
+			chain.AddPatientStatus(psdkl, *payload);
+		}catch(Catena::ConvertInputException& e){
+			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}catch(Catena::SigningException& e){
+			std::cerr << "couldn't sign transaction (" << e.what() << ")" << std::endl;
+			return MHD_NO; // FIXME return error response
+		}
+	}catch(nlohmann::detail::parse_error& e){
+		std::cerr << "error extracting JSON from " << upload << std::endl;
+		return MHD_NO;
+	}
+	ps->response = "{}";
 	return MHD_NO;
 }
 
