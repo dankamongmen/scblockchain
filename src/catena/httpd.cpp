@@ -352,8 +352,7 @@ struct PostState {
 	std::string response;
 };
 
-int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)uplen;
+int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 	nlohmann::json json;
 	try{
 		json = nlohmann::json::parse(upload);
@@ -399,8 +398,7 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload, size_t up
 	return MHD_YES;
 }
 
-int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)uplen;
+int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) const {
 	nlohmann::json json;
 	try{
 		json = nlohmann::json::parse(upload);
@@ -453,8 +451,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload, s
 	return MHD_YES;
 }
 
-int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)uplen;
+int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload) const {
 	nlohmann::json json;
 	Catena::SymmetricKey symkey;
 	try{
@@ -509,29 +506,25 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload, size_t u
 	return MHD_YES;
 }
 
-int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload) const {
 	(void)ps;
 	(void)upload;
-	(void)uplen;
 	return MHD_NO;
 }
 
-int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const {
 	(void)ps;
 	(void)upload;
-	(void)uplen;
 	return MHD_NO;
 }
 
-int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
+int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload) const {
 	(void)ps;
 	(void)upload;
-	(void)uplen;
 	return MHD_NO;
 }
 
-int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload, size_t uplen) const {
-	(void)uplen;
+int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload) const {
 	nlohmann::json json;
 	try{
 		json = nlohmann::json::parse(upload);
@@ -573,7 +566,7 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 				void** conn_cls){
 	const struct {
 		const char *uri;
-		int (HTTPDServer::*fxn)(struct PostState*, const char*, size_t) const;
+		int (HTTPDServer::*fxn)(struct PostState*, const char*) const;
 	} cmds[] = {
 		{ "/member", &HTTPDServer::MemberTXReq, },
 		{ "/exlookup", &HTTPDServer::ExternalLookupTXReq, },
@@ -606,7 +599,7 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		return MHD_YES;
 	}
 	if(upload_len && *upload_len){
-		auto ret = (this->*(cmd->fxn))(mpp, upload_data, *upload_len);
+		auto ret = (this->*(cmd->fxn))(mpp, upload_data);
 		if(ret == MHD_NO){
 			std::cerr << "error handling " << url << std::endl;
 		}
