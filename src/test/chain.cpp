@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <libcatena/chain.h>
+#include <libcatena/sig.h>
 #include "test/defs.h"
 
 TEST(CatenaChain, ChainGenesisBlock){
@@ -20,4 +21,13 @@ TEST(CatenaChain, ChainGenesisMock){
 		chain.LookupRequestCount(true) + chain.LookupRequestCount(false));
 	EXPECT_GE(chain.LookupRequestCount(true), 0);
 	EXPECT_GE(chain.LookupRequestCount(false), 0);
+}
+
+TEST(CatenaChain, ChainAddConsortiumMember){
+	Catena::Chain chain(MOCKLEDGER);
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	chain.AddPrivateKey(cm1, kp);
+	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(ELOOK_TEST_PRIVKEY),
+					strlen(ELOOK_TEST_PRIVKEY), "{}");
 }
