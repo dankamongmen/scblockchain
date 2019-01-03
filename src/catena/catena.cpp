@@ -10,6 +10,9 @@
 
 using namespace CatenaAgent;
 
+static constexpr auto DEFAULT_HTTP_PORT = 8080;
+static constexpr auto DEFAULT_RPC_PORT = 40404;
+
 static void usage(std::ostream& os, const char* name, int exitcode)
 	__attribute__ ((noreturn));
 
@@ -18,16 +21,13 @@ static void usage(std::ostream& os, const char* name, int exitcode){
 	os << " -h: print usage information\n";
 	os << " -l ledger: specify ledger file\n";
 	os << " -k keyfile,txspec: provide authentication material (may be used multiple times)\n";
-	os << " -p port: provide HTTP service on port, 0 to disable\n";
-	os << " -r port: provide RPC service on port, 0 to disable\n";
+	os << " -p port: HTTP service port, 0 to disable, default: " << DEFAULT_HTTP_PORT << "\n";
+	os << " -r port: RPC service port, 0 to disable, default: " << DEFAULT_RPC_PORT << "\n";
 	os << " -C certchain: certificate chain for RPC authentication\n";
 	os << " -P peerfile: file containing initial RPC peers\n";
 	os << " -d: daemonize\n";
 	exit(exitcode);
 }
-
-static constexpr auto DEFAULT_HTTP_PORT = 8080;
-static constexpr auto DEFAULT_RPC_PORT = 40404;
 
 int main(int argc, char **argv){
 	std::vector<std::pair<std::string, Catena::TXSpec>> keys;
