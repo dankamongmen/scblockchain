@@ -31,7 +31,7 @@ TEST(CatenaTrustStore, BuiltinKeys){
 		}
 	}, *t;
 	unsigned char sig[SIGLEN];
-	std::array<unsigned char, HASHLEN> hash;
+	Catena::CatenaHash hash;
 	hash.fill(0xffu);
 	for(t = tests ; t->data ; ++t){
 		memcpy(sig, t->sig, sizeof(sig));

@@ -103,8 +103,8 @@ std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
 	return lmap.ConsortiumPatients(cmspec);
 }
 
-// Dump outstanding transactions in a human-readable format
-std::ostream& DumpOutstanding(std::ostream& s) const;
+// Only good until some mutating call is made, beware!
+const Block& OutstandingTXs() const;
 
 // serialize outstanding transactions
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>

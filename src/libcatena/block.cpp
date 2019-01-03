@@ -53,8 +53,7 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 }
 
 bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
-		unsigned len, const std::array<unsigned char, HASHLEN>& prevhash,
-		uint64_t prevutc){
+		unsigned len, const CatenaHash& prevhash, uint64_t prevutc){
 	if(len < Block::BLOCKHEADERLEN){
 		std::cerr << "needed " << Block::BLOCKHEADERLEN <<
 			" bytes, had only " << len << std::endl;
@@ -299,51 +298,6 @@ void Block::AddTransaction(std::unique_ptr<Transaction> tx){
 // Toss any transactions, resetting the block
 void Block::Flush(){
 	transactions.clear();
-}
-
-template <typename Iterator> std::ostream&
-DumpTransactions(std::ostream& s, const Iterator begin, const Iterator end){
-	char prevfill = s.fill('0');
-	int i = 0;
-	while(begin + i != end){
-		s << std::setw(5) << i << " " << begin[i].get() << "\n";
-		++i;
-	}
-	s.fill(prevfill);
-	return s;
-}
-
-std::ostream& operator<<(std::ostream& stream, const Block& b){
-	return DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
-}
-
-std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
-	char prevfill = stream.fill('0');
-	stream << std::setw(8) << bh.txidx <<  " v" << bh.version << " transactions: " << bh.txcount <<
-		" bytes: " << bh.totlen << " ";
-	stream.fill(prevfill);
-	char buf[80];
-	time_t btime = bh.utc;
-	if(ctime_r(&btime, buf)){
-		stream << buf; // has its own newline
-	}else{
-		stream << "\n";
-	}
-	stream << " hash: " << bh.hash << "\n prev: " << bh.prev << "\n";
-	return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const BlockDetail& b){
-	stream << b.bhdr;
-	DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
-	return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
-	for(auto& h : blocks.headers){
-		stream << h;
-	}
-	return stream;
 }
 
 }

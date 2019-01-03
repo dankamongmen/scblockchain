@@ -38,9 +38,22 @@ std::ostream& hashOStream(std::ostream& s, const void* hash){
 	return s;
 }
 
-std::ostream& operator<<(std::ostream& s, const CatenaHash& hash){
-	HexOutput(s, hash.data(), hash.size());
-	return s;
+TXSpec TXSpec::StrToTXSpec(const std::string& s){
+	TXSpec ret;
+	// 2 chars for each hash byte, 1 for period, 1 min for txindex
+	if(s.size() < 2 * ret.first.size() + 2){
+		throw ConvertInputException("too small for txspec: " + s);
+	}
+	if(s[2 * ret.first.size()] != '.'){
+		throw ConvertInputException("expected '.': " + s);
+	}
+	for(size_t i = 0 ; i < ret.first.size() ; ++i){
+		char c1 = s[i * 2];
+		char c2 = s[i * 2 + 1];
+		ret.first[i] = ASCHexToVal(c1) * 16 + ASCHexToVal(c2);
+	}
+	ret.second = StrToLong(s.substr(2 * ret.first.size() + 1), 0, 0xffffffff);
+	return ret;
 }
 
 }

@@ -25,6 +25,7 @@ struct BlockHeader {
 
 struct BlockDetail {
 public:
+// FIXME this doesn't look right...ensure we're properly moving
 BlockDetail(const BlockHeader& bhdr, unsigned offset, std::vector<std::unique_ptr<Transaction>> trans) :
   bhdr(bhdr),
   offset(offset),
@@ -98,6 +99,7 @@ class Block {
 public:
 Block() = default;
 virtual ~Block() = default;
+// FIXME can we not make these constexpr?
 static const int BLOCKHEADERLEN = 96;
 static const int BLOCKVERSION = 0;
 
@@ -129,8 +131,6 @@ friend std::ostream& operator<<(std::ostream& stream, const Block& b);
 private:
 std::vector<std::unique_ptr<Transaction>> transactions;
 };
-
-std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh);
 
 }
 

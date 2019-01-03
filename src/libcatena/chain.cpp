@@ -33,15 +33,8 @@ Chain::Chain(const void* data, unsigned len){
 	}
 }
 
-std::ostream& operator<<(std::ostream& stream, const Chain& chain){
-	stream << chain.blocks;
-	return stream;
-}
-
-std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
-	s << outstanding;
-	auto p = SerializeOutstanding();
-	return HexOutput(s, p.first.get(), p.second) << std::endl;
+const Block& Chain::OutstandingTXs() const {
+	return outstanding;
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>

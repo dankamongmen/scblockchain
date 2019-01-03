@@ -13,22 +13,6 @@
 
 namespace Catena {
 
-// Do a class rather than alias so ADL finds the operator<<() overload when
-// trying to print a TXSpec from outside the Catena namespace.
-struct TXSpec : std::pair<CatenaHash, unsigned>{
-
-using std::pair<CatenaHash, unsigned>::pair; // inherit default std::pair constructor
-
-TXSpec(const CatenaHash& hash, unsigned idx) :
-	std::pair<CatenaHash, unsigned>(hash, idx) {}
-
-inline friend std::ostream& operator<<(std::ostream& s, const TXSpec& t){
-	s << t.first << "." << t.second;
-	return s;
-}
-
-};
-
 class InvalidTXSpecException : public std::runtime_error {
 public:
 InvalidTXSpecException() : std::runtime_error("bad transaction spec"){}

@@ -51,7 +51,7 @@ int main(int argc, char **argv){
 				return EXIT_FAILURE;
 			}
 			try{
-				auto tx = Catena::StrToTXSpec(delim + 1);
+				auto tx = Catena::TXSpec::StrToTXSpec(delim + 1);
 				keys.emplace_back(std::string(optarg, delim - optarg), tx);
 
 			}catch(Catena::ConvertInputException& e){
