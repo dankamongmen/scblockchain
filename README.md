@@ -13,6 +13,7 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 * OpenSSL 1.1+ (libopenssl-dev)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
+* libcurl 7.62.0+ (libcurl-dev)
 
 External projects (see the `ext/` directory) include:
 
