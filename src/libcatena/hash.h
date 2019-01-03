@@ -40,6 +40,11 @@ using std::pair<CatenaHash, unsigned>::pair; // inherit default constructor
 TXSpec(const CatenaHash& hash, unsigned idx) :
 	std::pair<CatenaHash, unsigned>(hash, idx) {}
 
+TXSpec(const std::string& s) {
+	TXSpec tx = StrToTXSpec(s);
+	*this = tx;
+}
+
 inline friend std::ostream& operator<<(std::ostream& s, const TXSpec& t){
 	s << t.first << "." << t.second;
 	return s;
