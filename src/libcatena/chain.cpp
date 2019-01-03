@@ -282,16 +282,10 @@ nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const
 }
 
 bool Chain::EnableRPC(int port, const std::string& chainfile, const char* peerfile) {
-	if(RPCport){
+	if(rpc){
 		return false;
 	}
-	if(port < 0 || port > 65535){
-		throw NetworkException("invalid port " + std::to_string(port));
-	}
-	// FIXME do crap
-	(void)chainfile;
-	(void)peerfile;
-	RPCport = port;
+	rpc = std::make_unique<RPCService>(RPCService(port, chainfile, peerfile));
 	return true;
 }
 

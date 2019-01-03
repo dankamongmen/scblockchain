@@ -35,6 +35,11 @@ TEST(CatenaChain, ChainAddConsortiumMember){
 	nlohmann::json j = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
 	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
 					pem.length(), j);
+	// FIXME do commit, check result
 }
 
 // FIXME add tests which reject
+
+// FIXME expand to cover other Add*() functionality
+
+// FIXME add rpc test (chain.EnableRPC())

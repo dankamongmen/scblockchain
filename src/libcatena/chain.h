@@ -5,6 +5,7 @@
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
+#include <libcatena/rpc.h>
 
 namespace Catena {
 
@@ -14,20 +15,13 @@ BlockValidationException() : std::runtime_error("error validating block"){}
 BlockValidationException(const std::string& s) : std::runtime_error(s){}
 };
 
-class NetworkException : public std::runtime_error {
-public:
-NetworkException() : std::runtime_error("network error"){}
-NetworkException(const std::string& s) : std::runtime_error(s){}
-};
-
 // The ledger (one or more CatenaBlocks on disk) as indexed in memory. The
 // Chain can have blocks added to it, either produced locally or received over
 // the network. Blocks will be validated before being added. Once added, the
 // block will be written to disk (appended to the existing ledger).
 class Chain {
 public:
-Chain() :
-  RPCport(0) {}
+Chain() = default;
 virtual ~Chain() = default;
 
 // Constructing a Chain requires lexing and validating blocks. On a logic error
@@ -176,7 +170,7 @@ TrustStore tstore;
 LedgerMap lmap;
 Blocks blocks;
 Block outstanding;
-int RPCport; // if 0, RPC service is currently disabled
+std::unique_ptr<RPCService> rpc; // if null, RPC service is currently disabled
 
 void LoadBuiltinKeys();
 };
