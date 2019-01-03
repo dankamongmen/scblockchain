@@ -16,7 +16,7 @@ Peer::Peer(const std::string& addr, int defaultport) {
 	}else{
 		address = std::string(addr, colon);
 		port = StrToLong(addr.substr(colon + 1, addr.length() - colon),
-					0, 65536);
+					0, 65535);
 	}
 }
 
