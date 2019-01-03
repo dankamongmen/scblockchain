@@ -39,9 +39,9 @@ WFLAGS:=-Wall -W -Werror
 # clang doesn't like this
 # WFLAGS+=-Wl,-z,defs
 OFLAGS:=-g -O2
-CPPFLAGS:=-I$(SRC)
+CPPFLAGS:=-I$(SRC) -I$(EXTSRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
-EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) $(CURLCFLAGS) -I$(EXTSRC)
+EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) $(CURLCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
 
 # FIXME detect this, or let it be specified
