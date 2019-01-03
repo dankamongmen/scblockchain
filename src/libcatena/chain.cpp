@@ -281,4 +281,18 @@ nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const
 	return pat.Status(stype);
 }
 
+bool Chain::EnableRPC(int port, const std::string& chainfile, const char* peerfile) {
+	if(RPCport){
+		return false;
+	}
+	if(port < 0 || port > 65535){
+		throw NetworkException("invalid port " + std::to_string(port));
+	}
+	// FIXME do crap
+	(void)chainfile;
+	(void)peerfile;
+	RPCport = port;
+	return true;
+}
+
 }

@@ -1,5 +1,6 @@
 #include <memory>
 #include <cstring>
+#include <iostream>
 #include "libcatena/utility.h"
 #include "libcatena/chain.h"
 #include "libcatena/block.h"

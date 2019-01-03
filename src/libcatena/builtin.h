@@ -2,7 +2,6 @@
 #define CATENA_LIBCATENA_BUILTIN
 
 #include <vector>
-#include <iostream>
 #include <libcatena/truststore.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
