@@ -117,3 +117,9 @@ TEST(CatenaSigs, MergeKeysInvalid){
 	EXPECT_THROW(kv.Merge(peer), Catena::KeypairException);
 	EXPECT_THROW(peer.Merge(kv), Catena::KeypairException);
 }
+
+TEST(CatenaSigns, GenerateKeypair){
+	Catena::Keypair kp;
+	kp.Generate();
+	EXPECT_TRUE(kp.HasPrivateKey());
+}

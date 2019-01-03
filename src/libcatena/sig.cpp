@@ -70,14 +70,16 @@ Keypair::Keypair(const unsigned char* pubblob, size_t len){
 		EVP_PKEY_free(pubkey);
 		throw KeypairException("error binding PEM pubkey ");
 	}
-	privkey = 0;
+	privkey = nullptr;
 }
 
 Keypair::~Keypair(){
 	if(privkey){
 		EVP_PKEY_free(privkey);
 	}
-	EVP_PKEY_free(pubkey);
+	if(pubkey){
+		EVP_PKEY_free(pubkey);
+	}
 }
 
 size_t Keypair::Sign(const unsigned char* in, size_t inlen, unsigned char* out, size_t outlen) const {
@@ -214,6 +216,36 @@ SymmetricKey Keypair::DeriveSymmetricKey(const Keypair& peer) const {
 	}
 	EVP_PKEY_CTX_free(ctx);
 	return ret;
+}
+
+// FIXME sloppy on error regarding private members
+void Keypair::Generate() {
+	if(privkey){
+		EVP_PKEY_free(privkey);
+	}
+	if(pubkey){
+		EVP_PKEY_free(pubkey);
+	}
+	EC_KEY* key = EC_KEY_new_by_curve_name(NID_secp256k1);
+	if(nullptr == key){
+		throw KeypairException("couldn't create secp256k1 curve");
+	}
+	if(1 != EC_KEY_generate_key(key)){
+		EC_KEY_free(key);
+		throw KeypairException("couldn't generate secp256k1 key");
+	}
+	pubkey = EVP_PKEY_new();
+	privkey = EVP_PKEY_new();
+	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, key)){
+		EVP_PKEY_free(privkey);
+		EVP_PKEY_free(pubkey);
+		throw KeypairException("error binding EC pubkey");
+	}
+	if(1 != EVP_PKEY_assign_EC_KEY(privkey, EC_KEY_dup(key))){
+		EVP_PKEY_free(privkey);
+		EVP_PKEY_free(pubkey);
+		throw KeypairException("error binding EC privkey");
+	}
 }
 
 }
