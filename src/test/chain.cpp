@@ -28,6 +28,13 @@ TEST(CatenaChain, ChainAddConsortiumMember){
 	Catena::Keypair kp(ECDSAKEY);
 	Catena::TXSpec cm1(CM1_TEST_TX);
 	chain.AddPrivateKey(cm1, kp);
-	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(ELOOK_TEST_PRIVKEY),
-					strlen(ELOOK_TEST_PRIVKEY), "{}");
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	nlohmann::json j = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
+	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), j);
 }
+
+// FIXME add tests which reject
