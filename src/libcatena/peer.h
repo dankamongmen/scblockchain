@@ -12,6 +12,18 @@ public:
 Peer() = delete;
 Peer(const std::string& addr, int defaultport);
 virtual ~Peer() = default;
+
+int Port() const {
+	return port;
+}
+
+std::string Address() const {
+	return address;
+}
+
+private:
+std::string address;
+int port;
 };
 
 }
