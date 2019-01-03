@@ -102,15 +102,7 @@ ConsortiumMemberSummary ConsortiumMember(const TXSpec& tx) const {
 // Enable RPC service on the specified port. Returns false if RPC service is
 // already enabled. Returns true on successful initiation of RPC service,
 // though peer connections have not necessarily been established. Throws
-// exceptions on failure to initiate service. chainfile must specify a valid
-// X.509 certificate chain; peers must present a cert trusted by this chain.
-// The peerfile may be null, in which case no outbound connections will be
-// attempted until peers are discovered. If peerfile is not null, it must
-// contain one peer per line, specified as an IPv4 or IPv6 address and optional
-// ":port" suffix. If a port is not specified for a peer, the RPC service port
-// is assumed. Failure to parse this file, if specified, throws an exception.
-// FIXME probably need to accept our own cert+key files, ugh. might be able to
-//  have our own cert as the last in the cachainfile
+// exceptions on failure to initiate service.
 bool EnableRPC(int port, const std::string& chainfile, const char* peerfile);
 
 // FIXME should probably return pair including ConsortiumMemberSummary

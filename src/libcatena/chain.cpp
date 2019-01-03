@@ -285,7 +285,13 @@ bool Chain::EnableRPC(int port, const std::string& chainfile, const char* peerfi
 	if(rpc){
 		return false;
 	}
-	rpc = std::make_unique<RPCService>(RPCService(port, chainfile, peerfile));
+	// Don't set our class's rpc ptr until we know we've succeeded
+	std::unique_ptr<RPCService> newrpc =
+		std::make_unique<RPCService>(RPCService(port, chainfile));
+	if(peerfile){
+		newrpc.get()->AddPeers(peerfile);
+	}
+	rpc = std::move(newrpc);
 	return true;
 }
 
