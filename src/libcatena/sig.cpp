@@ -248,4 +248,18 @@ void Keypair::Generate() {
 	}
 }
 
+std::string Keypair::PubkeyPEM() const {
+	BIO* mem = BIO_new(BIO_s_mem());
+	PEM_write_bio_PUBKEY(mem, pubkey);
+	char* bptr;
+	auto len = BIO_get_mem_data(mem, &bptr);
+	if(len <= 0){
+		BIO_free(mem);
+		throw KeypairException("couldn't write pubkey PEM");
+	}
+	std::string ret(bptr, len);
+	BIO_free(mem);
+	return ret;
+}
+
 }

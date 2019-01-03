@@ -98,6 +98,9 @@ static SymmetricKey CreateSymmetricKey() {
 // Generate an ECDSA keypair using secp256k1
 void Generate();
 
+// Get the PEM-encoded public key
+std::string PubkeyPEM() const;
+
 private:
 EVP_PKEY* pubkey;
 EVP_PKEY* privkey;
