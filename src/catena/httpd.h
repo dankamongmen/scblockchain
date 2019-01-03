@@ -2,8 +2,8 @@
 #define CATENA_CATENA_HTTPD
 
 #include <microhttpd.h>
-#include <nlohmann/json.hpp>
 #include <libcatena/chain.h>
+#include <nlohmann/json_fwd.hpp>
 
 namespace CatenaAgent {
 
