@@ -7,7 +7,6 @@
 #include <set>
 #include <map>
 #include <utility>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <libcatena/hash.h>
 

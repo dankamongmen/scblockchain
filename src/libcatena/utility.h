@@ -6,7 +6,6 @@
 #include <fstream>
 #include <iomanip>
 #include <ostream>
-#include <iostream>
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
 #include <gnu/libc-version.h>
 #endif

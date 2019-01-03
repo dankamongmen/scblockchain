@@ -1,7 +1,7 @@
 #ifndef CATENA_LIBCATENA_MEMBER
 #define CATENA_LIBCATENA_MEMBER
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <libcatena/tx.h>
 
 namespace Catena {
