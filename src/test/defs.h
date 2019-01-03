@@ -24,7 +24,8 @@
 "5ea/Xj3eFkNUaNlShsucr9+h/+7oBqU=\n"\
 "-----END PUBLIC KEY-----"
 
-
 #define ELOOK_TEST_PRIVKEY "test/elook-test1.pem"
+
+static const char TEST_X509_CHAIN[] = "test/certchain.pem";
 
 #endif

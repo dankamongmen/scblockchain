@@ -31,8 +31,12 @@ virtual ~RPCService() = default;
 // peer set.
 void AddPeers(const std::string& peerfile);
 
+int Port() const {
+	return port;
+}
+
 private:
-unsigned port;
+int port;
 std::vector<Peer> peers;
 };
 

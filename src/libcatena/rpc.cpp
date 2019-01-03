@@ -14,6 +14,7 @@ RPCService::RPCService(int port, const std::string& chainfile) :
 
 void RPCService::AddPeers(const std::string& peerfile) {
 	std::ifstream in(peerfile); // FIXME zee error cheques?
+	in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	std::vector<Peer> ret;
 	std::string line;
 	while(std::getline(in, line)){
