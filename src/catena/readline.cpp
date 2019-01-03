@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
 	}else{
 		stream << "\n";
 	}
-	stream << ANSI_DGREY " hash: " << bh.hash << "\n prev: " << bh.prev << ANSI_WHITE "\n";
+	stream << ANSI_GREY " hash: " << bh.hash << ANSI_DGREY "\n prev: " << bh.prev << ANSI_WHITE "\n";
 	return stream;
 }
 
