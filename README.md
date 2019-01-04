@@ -168,6 +168,8 @@ failure, TXRequestResponse
     * Accepts same query arguments as `/pstatus`
 * GET `/showmembers`: HTML equivalent of `/getmembers`
     * Required query argument: `member`, TXSpec of ConsortiumMember
+* GET `/showblock`: HTML information about a particular block by hash
+    * Required query argument: `hash`, blockhash
 
 ## Key operations
 

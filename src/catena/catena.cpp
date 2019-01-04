@@ -11,7 +11,7 @@
 using namespace CatenaAgent;
 
 static constexpr auto DEFAULT_HTTP_PORT = 8080;
-static constexpr auto DEFAULT_RPC_PORT = 40404;
+static constexpr auto DEFAULT_RPC_PORT = 0;
 
 static void usage(std::ostream& os, const char* name, int exitcode)
 	__attribute__ ((noreturn));
