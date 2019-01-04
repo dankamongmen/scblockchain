@@ -41,7 +41,7 @@ std::ostream& hashOStream(std::ostream& s, const void* hash){
 CatenaHash StrToCatenaHash(const std::string& s) {
 	CatenaHash ret;
 	// 2 chars for each hash byte
-	if(s.size() < 2 * ret.size() + 2){
+	if(s.size() < 2 * ret.size()){
 		throw ConvertInputException("too small for hash: " + s);
 	}
 	for(size_t i = 0 ; i < ret.size() ; ++i){
