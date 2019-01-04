@@ -42,6 +42,7 @@ Peer::Peer(const std::string& addr, int defaultport) {
 	if(getaddrinfo(address.c_str(), NULL, &hints, &res)){
 		throw ConvertInputException("bad address: " + address);
 	}
+	freeaddrinfo(res);
 }
 
 }
