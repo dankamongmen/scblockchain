@@ -119,7 +119,7 @@ TXSpec for the referenced PatientStatusDelegation, and a JSON payload.
 and patient status delegation type.
 
 Use of commands that generate signed or encrypted transactions requires an
-appropriate private key having been loaded with the `-u` option.
+appropriate private key having been loaded with the `-k` option.
 
 ### HTTP services of cantena
 
