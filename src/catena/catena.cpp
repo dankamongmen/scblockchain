@@ -18,14 +18,15 @@ static void usage(std::ostream& os, const char* name, int exitcode)
 
 static void usage(std::ostream& os, const char* name, int exitcode){
 	os << "usage: " << name << " -h | options\n";
-	os << " -h: print usage information\n";
 	os << " -l ledger: specify ledger file\n";
 	os << " -k keyfile,txspec: provide authentication material (may be used multiple times)\n";
 	os << " -p port: HTTP service port, 0 to disable, default: " << DEFAULT_HTTP_PORT << "\n";
 	os << " -r port: RPC service port, 0 to disable, default: " << DEFAULT_RPC_PORT << "\n";
 	os << " -C certchain: certificate chain for RPC authentication\n";
 	os << " -P peerfile: file containing initial RPC peers\n";
+	os << " -h: print usage information\n";
 	os << " -d: daemonize\n";
+	os << std::flush;
 	exit(exitcode);
 }
 
