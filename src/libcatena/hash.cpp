@@ -38,19 +38,25 @@ std::ostream& hashOStream(std::ostream& s, const void* hash){
 	return s;
 }
 
-TXSpec TXSpec::StrToTXSpec(const std::string& s){
-	TXSpec ret;
-	// 2 chars for each hash byte, 1 for period, 1 min for txindex
-	if(s.size() < 2 * ret.first.size() + 2){
-		throw ConvertInputException("too small for txspec: " + s);
+CatenaHash StrToCatenaHash(const std::string& s) {
+	CatenaHash ret;
+	// 2 chars for each hash byte
+	if(s.size() < 2 * ret.size() + 2){
+		throw ConvertInputException("too small for hash: " + s);
 	}
-	if(s[2 * ret.first.size()] != '.'){
-		throw ConvertInputException("expected '.': " + s);
-	}
-	for(size_t i = 0 ; i < ret.first.size() ; ++i){
+	for(size_t i = 0 ; i < ret.size() ; ++i){
 		char c1 = s[i * 2];
 		char c2 = s[i * 2 + 1];
-		ret.first[i] = ASCHexToVal(c1) * 16 + ASCHexToVal(c2);
+		ret[i] = ASCHexToVal(c1) * 16 + ASCHexToVal(c2);
+	}
+	return ret;
+}
+
+TXSpec TXSpec::StrToTXSpec(const std::string& s) {
+	TXSpec ret;
+	ret.first = StrToCatenaHash(s);
+	if(s[2 * ret.first.size()] != '.'){
+		throw ConvertInputException("txspec expected '.': " + s);
 	}
 	ret.second = StrToLong(s.substr(2 * ret.first.size() + 1), 0, 0xffffffff);
 	return ret;

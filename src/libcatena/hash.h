@@ -33,6 +33,10 @@ std::string hashOString(const CatenaHash& hash);
 void catenaHash(const void* in, unsigned len, void* hash);
 std::ostream& hashOStream(std::ostream& s, const void* hash);
 
+// Hex representation of block hash. Throws ConvertInputException on lex error.
+// Encoded bytes may be followed by arbitrary material.
+CatenaHash StrToCatenaHash(const std::string& s);
+
 struct TXSpec : std::pair<CatenaHash, unsigned>{
 
 using std::pair<CatenaHash, unsigned>::pair; // inherit default constructor
