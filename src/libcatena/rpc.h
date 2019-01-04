@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <openssl/ssl.h>
 #include <libcatena/peer.h>
 
 namespace Catena {
@@ -35,9 +36,18 @@ int Port() const {
 	return port;
 }
 
+static constexpr MaxActivePeers = 8;
+
+void PeerCount(int* defined, int* active, int* maxactive) {
+	*defined = peers.size();
+	*active = 0; // FIXME
+	*maxactive = MaxActivePeers;
+}
+
 private:
 int port;
 std::vector<Peer> peers;
+SSL_CTX* sslctx;
 };
 
 }
