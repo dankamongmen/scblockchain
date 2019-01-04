@@ -81,6 +81,22 @@ time_t GetLastUTC() const {
 	return headers.back().utc;
 }
 
+CatenaHash HashByIdx(int idx) const {
+	return headers.at(idx).hash;
+}
+
+// FIXME slow, O(N) on N blocks
+int IdxByHash(const CatenaHash& hash) const {
+	auto ret = std::find_if(headers.begin(), headers.end(),
+			[hash](const BlockHeader& b){
+				return b.hash == hash;
+			});
+	if(ret == headers.end()){
+		throw std::out_of_range("no such block");
+	}
+	return ret - headers.begin();
+}
+
 // Pass -1 for end to leave the end unspecified. Start and end are inclusive.
 std::vector<BlockDetail> Inspect(int start, int end) const;
 
