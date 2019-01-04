@@ -98,6 +98,12 @@ std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 	return blocks.Inspect(start, end);
 }
 
+BlockDetail Chain::Inspect(const CatenaHash& hash) const {
+	auto idx = blocks.IdxByHash(hash);
+	auto details = blocks.Inspect(idx, idx + 1);
+	return std::move(details.at(0));
+}
+
 void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 				const nlohmann::json& payload){
 	auto serialjson = payload.dump();

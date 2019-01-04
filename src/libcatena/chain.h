@@ -58,6 +58,16 @@ time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
 }
 
+CatenaHash MostRecentBlockHash() const {
+	auto count = blocks.GetBlockCount();
+	if(count == 0){
+		CatenaHash ret;
+		ret.fill(0xff);
+		return ret;
+	}
+	return blocks.HashByIdx(count - 1);
+}
+
 int PubkeyCount() const {
 	return tstore.PubkeyCount();
 }
@@ -154,6 +164,9 @@ nlohmann::json InspectJSON(int start, int end) const;
 // Return a copy of the blockchain details for the specified block range.
 // Pass -1 for end to specify only the start of the range.
 std::vector<BlockDetail> Inspect(int start, int end) const;
+
+// Return details for the specified block hash.
+BlockDetail Inspect(const CatenaHash& hash) const;
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
