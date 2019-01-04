@@ -2,8 +2,8 @@
 #define CATENA_CATENA_HTTPD
 
 #include <microhttpd.h>
-#include <nlohmann/json.hpp>
 #include <libcatena/chain.h>
+#include <nlohmann/json_fwd.hpp>
 
 namespace CatenaAgent {
 
@@ -30,6 +30,7 @@ nlohmann::json InspectJSON(int start, int end) const;
 std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
 std::stringstream& HTMLChaininfo(std::stringstream& ss) const;
 std::stringstream& HTMLMembers(std::stringstream& ss) const;
+std::stringstream& BlockHTML(std::stringstream& ss, const Catena::CatenaHash& hash) const;
 std::stringstream& JSONtoHTML(std::stringstream& ss, const nlohmann::json& json) const;
 
 // GET handlers
@@ -41,6 +42,7 @@ struct MHD_Response* Inspect(struct MHD_Connection*) const;
 struct MHD_Response* PstatusHTML(struct MHD_Connection* conn) const;
 struct MHD_Response* PstatusJSON(struct MHD_Connection* conn) const;
 struct MHD_Response* ShowMemberHTML(struct MHD_Connection* conn) const;
+struct MHD_Response* ShowBlockHTML(struct MHD_Connection* conn) const;
 
 static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 	const char* method, const char* version, const char* upload_data,

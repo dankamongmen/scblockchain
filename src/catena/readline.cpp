@@ -15,7 +15,65 @@
 #include <catena/readline.h>
 
 #define ANSI_WHITE "\033[1;37m"
+#define ANSI_DGREY "\033[1;30m"
 #define ANSI_GREY "\033[0;37m"
+#define ANSI_GREEN "\033[1;32m"
+
+namespace Catena {
+
+template <typename Iterator> std::ostream&
+DumpTransactions(std::ostream& s, const Iterator begin, const Iterator end){
+	s << ANSI_GREY;
+	char prevfill = s.fill('0');
+	int i = 0;
+	while(begin + i != end){
+		s << std::setw(5) << i << " " << begin[i].get() << "\n";
+		++i;
+	}
+	s.fill(prevfill);
+	return s;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Block& b){
+	return DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
+}
+
+std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh){
+	stream << ANSI_WHITE;
+	char prevfill = stream.fill('0');
+	stream << std::setw(8) << bh.txidx <<  " v" << bh.version << " transactions: " << bh.txcount <<
+		" bytes: " << bh.totlen << " ";
+	stream.fill(prevfill);
+	char buf[80];
+	time_t btime = bh.utc;
+	if(ctime_r(&btime, buf)){
+		stream << buf; // has its own newline
+	}else{
+		stream << "\n";
+	}
+	stream << ANSI_GREY " hash: " << bh.hash << ANSI_DGREY "\n prev: " << bh.prev << ANSI_WHITE "\n";
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const BlockDetail& b){
+	stream << b.bhdr;
+	DumpTransactions(stream, b.transactions.begin(), b.transactions.end());
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Blocks& blocks){
+	for(auto& h : blocks.headers){
+		stream << h;
+	}
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Chain& chain){
+	stream << chain.blocks;
+	return stream;
+}
+
+}
 
 namespace CatenaAgent {
 
@@ -97,7 +155,9 @@ int ReadlineUI::Outstanding(const Iterator start, const Iterator end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
-	chain.DumpOutstanding(std::cout) << std::flush;
+	std::cout << chain.OutstandingTXs();
+	const auto p = chain.SerializeOutstanding();
+	Catena::HexOutput(std::cout, p.first.get(), p.second) << std::endl;
 	return 0;
 }
 
@@ -160,7 +220,7 @@ int ReadlineUI::GetMembers(const Iterator start, const Iterator end) {
 	}
 	if(end != start){
 		try {
-			const auto& txspec = Catena::StrToTXSpec(start[0]);
+			const auto& txspec = Catena::TXSpec::StrToTXSpec(start[0]);
 			const auto& cm = chain.ConsortiumMember(txspec);
 			MemberSummary(std::cout, cm);
 			const auto& patients = chain.ConsortiumPatients(txspec);
@@ -191,7 +251,7 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 	const auto& keyfile = start[1];
 	const auto& json = start[2];
 	try{
-		const auto& txspec = Catena::StrToTXSpec(start[0]);
+		const auto& txspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		auto payload = nlohmann::json::parse(json);
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
@@ -217,7 +277,7 @@ int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
 	}
 	const auto& json = start[3];
 	try{
-		auto cmspec = Catena::StrToTXSpec(start[0]);
+		auto cmspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		size_t plen, symlen;
 		auto pkey = Catena::ReadBinaryFile(start[1], &plen);
 		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
@@ -248,8 +308,8 @@ int ReadlineUI::NewLookupAuthReq(const Iterator start, const Iterator end){
 	}
 	const auto& json = start[2];
 	try{
-		auto cmspec = Catena::StrToTXSpec(start[0]);
-		auto elspec = Catena::StrToTXSpec(start[1]);
+		auto cmspec = Catena::TXSpec::StrToTXSpec(start[0]);
+		auto elspec = Catena::TXSpec::StrToTXSpec(start[1]);
 		auto payload = nlohmann::json::parse(json);
 		chain.AddLookupAuthReq(cmspec, elspec, payload);
 		return 0;
@@ -271,8 +331,8 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 		return -1;
 	}
 	try{
-		auto larspec = Catena::StrToTXSpec(start[0]);
-		auto patspec = Catena::StrToTXSpec(start[1]);
+		auto larspec = Catena::TXSpec::StrToTXSpec(start[0]);
+		auto patspec = Catena::TXSpec::StrToTXSpec(start[1]);
 		size_t symlen;
 		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
 		Catena::SymmetricKey skey;
@@ -301,7 +361,7 @@ int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
 	}
 	const auto& json = start[1];
 	try{
-		auto psdspec = Catena::StrToTXSpec(start[0]);
+		auto psdspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		auto payload = nlohmann::json::parse(json);
 		chain.AddPatientStatus(psdspec, payload);
 		return 0;
@@ -324,7 +384,7 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 		return -1;
 	}
 	try{
-		auto patspec = Catena::StrToTXSpec(start[0]);
+		auto patspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		auto stype = Catena::StrToLong(start[1], 0, LONG_MAX);
 		auto json = chain.PatientStatus(patspec, stype);
 		std::cout << json.dump() << "\n";
@@ -345,8 +405,8 @@ int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator 
 	}
 	const auto& json = start[3];
 	try{
-		auto patspec = Catena::StrToTXSpec(start[0]);
-		auto cmspec = Catena::StrToTXSpec(start[1]);
+		auto patspec = Catena::TXSpec::StrToTXSpec(start[0]);
+		auto cmspec = Catena::TXSpec::StrToTXSpec(start[1]);
 		auto stype = Catena::StrToLong(start[2], 0, LONG_MAX);
 		auto payload = nlohmann::json::parse(json);
 		chain.AddPatientStatusDelegation(cmspec, patspec, stype, payload);
@@ -379,7 +439,7 @@ int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
 	try{
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
-		const auto& signspec = Catena::StrToTXSpec(start[0]);
+		const auto& signspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		chain.AddExternalLookup(signspec, pkey.get(), plen, extid, ltype);
 		return 0;
 	}catch(std::ifstream::failure& e){

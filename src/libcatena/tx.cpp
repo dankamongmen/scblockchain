@@ -7,8 +7,6 @@
 #include "libcatena/pstatus.h"
 #include "libcatena/utility.h"
 #include "libcatena/member.h"
-#include "libcatena/hash.h"
-#include "libcatena/sig.h"
 #include "libcatena/tx.h"
 
 namespace Catena {

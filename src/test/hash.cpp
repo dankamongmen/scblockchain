@@ -21,7 +21,7 @@ TEST(CatenaHash, SHA256Vectors){
 		}
 	}, *t;
 	for(t = tests ; t->data ; ++t){
-		unsigned char h[HASHLEN];
+		unsigned char h[Catena::HASHLEN];
 		Catena::catenaHash(t->data, strlen(t->data), h);
 		EXPECT_EQ(0, memcmp(h, t->hash, sizeof(h)));
 	}

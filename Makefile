@@ -15,6 +15,8 @@ HTTPDLIBS:=$(shell pkg-config --libs libmicrohttpd)
 HTTPDCFLAGS:=$(shell pkg-config --cflags libmicrohttpd)
 SSLLIBS:=$(shell pkg-config --libs openssl)
 SSLCFLAGS:=$(shell pkg-config --cflags openssl)
+CURLLIBS:=$(shell pkg-config --libs libcurl)
+CURLCFLAGS:=$(shell pkg-config --cflags libcurl)
 READLINELIBS:=-lreadline
 
 CPPSRCDIRS:=$(wildcard $(SRC)/* $(EXTSRC))
@@ -37,9 +39,9 @@ WFLAGS:=-Wall -W -Werror
 # clang doesn't like this
 # WFLAGS+=-Wl,-z,defs
 OFLAGS:=-g -O2
-CPPFLAGS:=-I$(SRC)
+CPPFLAGS:=-I$(SRC) -I$(EXTSRC)
 CXXFLAGS:=-pipe -std=c++14 -pthread
-EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) -I$(EXTSRC)
+EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) $(CURLCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
 
 # FIXME detect this, or let it be specified
@@ -49,11 +51,11 @@ all: $(TAGS) $(BIN) $(TESTBIN)
 
 $(BINOUT)/catena: $(CATENAOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(SSLLIBS) $(HTTPDLIBS) $(READLINELIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SSLLIBS) $(HTTPDLIBS) $(CURLLIBS) $(READLINELIBS)
 
 $(BINOUT)/catenatest: $(CATENATESTOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS) $(CURLLIBS)
 
 $(OUT)/$(SRC)/catena/%.o: $(SRC)/catena/%.cpp $(CATENAINC)
 	@mkdir -p $(@D)

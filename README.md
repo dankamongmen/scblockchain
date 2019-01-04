@@ -7,16 +7,24 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 
 ### Build requirements
 
-* C++ compiler and GNU Make 4.2.1+
+Required version numbers indicate the minimal version tested. Older versions
+might or might not work.
+
+* C++ compiler with C++14 support
     * Tested with clang++ 7.0.1 and g++ 8.2.0
+* GNU Make 4.2.1+
 * Google Test 1.8.1+ (libgtest-dev)
-* OpenSSL 1.1+ (libopenssl-dev)
+* OpenSSL 1.1+ (libopenssl-dev) (older versions *probably will not* work)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
+* JSON for Modern C++ 3.4.0+ (nlohmann-json3-dev)
 
 External projects (see the `ext/` directory) include:
 
-* nlohmann\_json (https://github.com/nlohmann/json) version 3.4.0 (released 2018-10-30, MIT)
+* nlohmann\_json (https://github.com/nlohmann/json) version 3.5.0 (released 2018-12-22, MIT)
+
+Dependencies included do not need to be installed on the host system, but their
+presence should not lead to any problems.
 
 ## Running the catena daemon
 
@@ -25,20 +33,45 @@ will be validated and imported on startup, and updated during runtime. If the
 ledger cannot be validated, `catena` will refuse to start. An empty file can be
 provided, resulting in complete download of the ledger from a peer.
 
-`catena` should be started with the `-v pubkey,txspec` option when it will be
+Catena should be started with the `-k pubkey,txspec` option when it will be
 signing transactions. See the "Key operations" section for material regarding
-creation of keys suitable for use with Catena. `-v` can be supplied multiple
+creation of keys suitable for use with Catena. `-k` can be supplied multiple
 times to load multiple private keys.
 
-When started without the `-d` option, the catena agent will remain in the
-foreground, providing a readline-driven text UI. This can be used to examine
-the loaded ledger and issue API requests directly.
+When started without the `-d` option, Catena will remain in the foreground,
+providing a readline-driven text UI. This can be used to examine the loaded
+ledger and issue API requests directly from the console.
 
-The ledger must never be modified externally while `catena` is running. Doing
+The ledger must never be modified externally while Catena is running. Doing
 so will result in undefined behavior, possibly corrupting the ledger.
 
 HTTP service will be provided on port 80 by default; this can be changed with
-the `-p` parameter. Specifying a port of 0 will disable HTTP service.
+the `-p` parameter. Specifying a port of 0 will disable HTTP service. There
+currently exists no native TLS support, and authentication is not performed.
+It is recommended that HTTP clients use TLS terminated in front of Catena.
+
+RPC service will not be provided by default; this can be changed with the `-r`
+parameter. Specifying a port of 0 will leave RPC service disabled. This service
+runs under TLS (though it is not HTTPS) and requires mutual authentication with
+X.509 certificates signed by a common CA. The certificate chain for this CA
+must be specified via the `-C` argument. If RPC service is requested, but the
+certificate chain is missing or invalid, Catena will refuse to start. It is not
+meaningful to provide `-C` without enabling RPC service via `-r`, but it is
+also not an error.
+
+A file consisting of initial peers to try can be specified via the `-P`
+argument. This file should contain one peer per line, specified as IPv4[:port]
+or IPv6[:port]. If a port is not specified, Catena will assume port 40404.
+Catena will not wait on successful contact of these peers to start operations,
+nor will failure to contact them be considered an exception. If no peers are
+specified, Catena will not attempt to contact peers at startup, but will do so
+following a connection *from* another peer. Likewise, once connected to peers,
+Catena might choose newly-discovered peers, even if specified peers are
+available. It is not meaningful to provide `-P` without enabling RPC service
+via `-r`, but it is also not an error.
+
+The services provided via HTTP and those provided by RPC are mutually exclusive.
+The console client implements a superset of the union of these two services.
 
 ### Interactive use of catena
 
@@ -135,6 +168,8 @@ failure, TXRequestResponse
     * Accepts same query arguments as `/pstatus`
 * GET `/showmembers`: HTML equivalent of `/getmembers`
     * Required query argument: `member`, TXSpec of ConsortiumMember
+* GET `/showblock`: HTML information about a particular block by hash
+    * Required query argument: `hash`, blockhash
 
 ## Key operations
 

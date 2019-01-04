@@ -2,7 +2,6 @@
 #define CATENA_LIBCATENA_BUILTIN
 
 #include <vector>
-#include <iostream>
 #include <libcatena/truststore.h>
 #include <libcatena/hash.h>
 #include <libcatena/sig.h>
@@ -27,10 +26,11 @@ size_t Count(){
 }
 
 void AddToTrustStore(TrustStore& tstore){
-	std::array<unsigned char, HASHLEN> hash;
-	hash.fill(0xffu);
+	TXSpec txs;
+	txs.first.fill(0xffu);
 	for(size_t i = 0 ; i < keys.size() ; ++i){
-		tstore.AddKey(&keys[i], {hash, i});
+		txs.second = i;
+		tstore.AddKey(&keys[i], txs);
 	}
 }
 

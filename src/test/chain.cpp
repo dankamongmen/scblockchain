@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <libcatena/chain.h>
+#include <libcatena/sig.h>
 #include "test/defs.h"
 
 TEST(CatenaChain, ChainGenesisBlock){
@@ -21,3 +22,24 @@ TEST(CatenaChain, ChainGenesisMock){
 	EXPECT_GE(chain.LookupRequestCount(true), 0);
 	EXPECT_GE(chain.LookupRequestCount(false), 0);
 }
+
+TEST(CatenaChain, ChainAddConsortiumMember){
+	Catena::Chain chain(MOCKLEDGER);
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	chain.AddPrivateKey(cm1, kp);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	nlohmann::json j = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
+	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), j);
+	// FIXME do commit, check result
+}
+
+// FIXME add tests which reject
+
+// FIXME expand to cover other Add*() functionality
+
+// FIXME add rpc test (chain.EnableRPC())

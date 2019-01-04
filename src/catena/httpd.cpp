@@ -90,18 +90,12 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>lookup requests</td><td>" << chain.LookupRequestCount() << "</td></tr>";
 	ss << "<tr><td>lookup authorizations</td><td>" << chain.LookupRequestCount(true) << "</td></tr>";
 	ss << "<tr><td>external IDs</td><td>" << chain.ExternalLookupCount() << "</td></tr>";
-	char timebuf[80];
-	auto lastutc = chain.MostRecentBlock();
-	if(lastutc == -1){
-		strcpy(timebuf, "n/a");
-	}else{
-		ctime_r(&lastutc, timebuf);
-	}
-	ss << "<tr><td>last block time</td><td>" << timebuf << "</td></tr>";
 	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
 	ss << "<tr><td>patients</td><td>" << chain.PatientCount() << "</td></tr>";
 	ss << "<tr><td>status delegations</td><td>" << chain.StatusDelegationCount() << "</td></tr>";
 	ss << "</table>";
+	ss << "<h3>most recent block</h3>";
+	BlockHTML(ss, chain.MostRecentBlockHash());
 	return ss;
 }
 
@@ -210,6 +204,51 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 	return ret;
 }
 
+std::stringstream& HTTPDServer::BlockHTML(std::stringstream& ss, const Catena::CatenaHash& hash) const {
+	const auto blk = chain.Inspect(hash);
+	ss << "<div id=\"block\">";
+	ss << "hash: " << blk.bhdr.hash << "<br/>";
+	ss << "prev: <a href=\"/showblock?hash=" << blk.bhdr.prev <<
+		"\">" << blk.bhdr.prev << "</a><br/>";
+	char timebuf[80];
+	time_t utc = blk.bhdr.utc;
+	ctime_r(&utc, timebuf); // FIXME there's c++ for this
+	ss << "version: " << blk.bhdr.version << " bytes: " << blk.bhdr.totlen
+		<< " offset: " << blk.offset << " transactions: " << blk.bhdr.txcount
+		<< "<br/>" << timebuf << "<br/>" << std::endl;
+	ss << "</div>";
+	return ss;
+}
+
+struct MHD_Response*
+HTTPDServer::ShowBlockHTML(struct MHD_Connection* conn) const {
+	auto hashstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "hash");
+	if(hashstr == nullptr){
+		std::cerr << "missing required arguments" << std::endl;
+		return nullptr;
+	}
+	MHD_Response* resp = nullptr;
+	try{
+		// FIXME handle genesis block manually
+		auto hash = Catena::StrToCatenaHash(hashstr);
+		std::stringstream ss;
+		ss << htmlhdr;
+		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+		ss << "<h3>Block " << hash << "</h3>";
+		BlockHTML(ss, hash);
+		ss << "</body>";
+		auto s = ss.str();
+		resp = MHD_create_response_from_buffer(s.size(), const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);
+	}catch(std::out_of_range& e){
+		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+		return nullptr;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
+		return nullptr;
+	}
+	return resp;
+}
+
 struct MHD_Response*
 HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
 	auto cmspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "member");
@@ -219,7 +258,7 @@ HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
 	}
 	MHD_Response* resp = nullptr;
 	try{
-		auto cmspec = Catena::StrToTXSpec(cmspecstr);
+		auto cmspec = Catena::TXSpec::StrToTXSpec(cmspecstr);
 		std::stringstream ss;
 		ss << htmlhdr;
 		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
@@ -257,7 +296,7 @@ HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
 	}
 	MHD_Response* resp = nullptr;
 	try{
-		auto patspec = Catena::StrToTXSpec(patspecstr);
+		auto patspec = Catena::TXSpec::StrToTXSpec(patspecstr);
 		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
 		auto json = chain.PatientStatus(patspec, stype).dump();
 		std::stringstream ss;
@@ -297,7 +336,7 @@ HTTPDServer::PstatusJSON(struct MHD_Connection* conn) const {
 	}
 	MHD_Response* resp = nullptr;
 	try{
-		auto patspec = Catena::StrToTXSpec(patspecstr);
+		auto patspec = Catena::TXSpec::StrToTXSpec(patspecstr);
 		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
 		auto json = chain.PatientStatus(patspec, stype).dump();
 		resp = MHD_create_response_from_buffer(json.size(), const_cast<char*>(json.c_str()), MHD_RESPMEM_MUST_COPY);
@@ -378,7 +417,7 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 		auto kstr = (*pubkey).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		try{
-			auto regkl = Catena::StrToTXSpec(rspecstr);
+			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
 			chain.AddConsortiumMember(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
 					kstr.size(), *payload);
@@ -431,7 +470,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) c
 		auto rspecstr = (*regspec).get<std::string>();
 		auto ltype = (*lookuptype).get<int>();
 		try{
-			auto regkl = Catena::StrToTXSpec(rspecstr);
+			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
 			chain.AddExternalLookup(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
 					kstr.size(), pstr, ltype);
@@ -478,7 +517,7 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload) const {
 		auto rspecstr = (*regspec).get<std::string>();
 		symkey = Catena::Keypair::CreateSymmetricKey();
 		try{
-			auto regkl = Catena::StrToTXSpec(rspecstr);
+			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
 			chain.AddPatient(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
 					kstr.size(), symkey, *payload);
@@ -537,8 +576,8 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 		try{
 			Catena::SymmetricKey symkey;
 			Catena::StrToBlob((*symspec).get<std::string>(), symkey);
-			auto patkl = Catena::StrToTXSpec(patspecstr);
-			auto refkl = Catena::StrToTXSpec(refspecstr);
+			auto patkl = Catena::TXSpec::StrToTXSpec(patspecstr);
+			auto refkl = Catena::TXSpec::StrToTXSpec(refspecstr);
 			chain.AddLookupAuth(refkl, patkl, symkey);
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
@@ -580,7 +619,7 @@ int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload) co
 		}
 		auto psdspecstr = (*psdspec).get<std::string>();
 		try{
-			auto psdkl = Catena::StrToTXSpec(psdspecstr);
+			auto psdkl = Catena::TXSpec::StrToTXSpec(psdspecstr);
 			chain.AddPatientStatus(psdkl, *payload);
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
@@ -682,6 +721,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		{ "/pstatus", &HTTPDServer::PstatusJSON, },
 		{ "/showpstatus", &HTTPDServer::PstatusHTML, },
 		{ "/showmember", &HTTPDServer::ShowMemberHTML, },
+		{ "/showblock", &HTTPDServer::ShowBlockHTML, },
 		{ nullptr, nullptr },
 	},* cmd;
 	struct MHD_Response* resp = nullptr;

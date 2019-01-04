@@ -21,7 +21,10 @@ KeypairException(const std::string& s) : std::runtime_error(s){}
 
 class Keypair {
 public:
-Keypair() = delete;
+Keypair() :
+  pubkey(nullptr),
+  privkey(nullptr) {}
+
 Keypair(const std::string& privfile);
 // Instantiate a verification-only keypair from memory
 Keypair(const unsigned char* pubblob, size_t len);
@@ -92,12 +95,16 @@ static SymmetricKey CreateSymmetricKey() {
 	return ret;
 }
 
+// Generate an ECDSA keypair using secp256k1
+void Generate();
+
+// Get the PEM-encoded public key
+std::string PubkeyPEM() const;
+
 private:
 EVP_PKEY* pubkey;
 EVP_PKEY* privkey;
 };
-
-EVP_PKEY* loadPubkey(const char* fname);
 
 }
 

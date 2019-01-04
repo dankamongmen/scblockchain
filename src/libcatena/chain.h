@@ -1,10 +1,11 @@
 #ifndef CATENA_LIBCATENA_CHAIN
 #define CATENA_LIBCATENA_CHAIN
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
+#include <libcatena/rpc.h>
 
 namespace Catena {
 
@@ -57,6 +58,16 @@ time_t MostRecentBlock() const {
 	return blocks.GetLastUTC();
 }
 
+CatenaHash MostRecentBlockHash() const {
+	auto count = blocks.GetBlockCount();
+	if(count == 0){
+		CatenaHash ret;
+		ret.fill(0xff);
+		return ret;
+	}
+	return blocks.HashByIdx(count - 1);
+}
+
 int PubkeyCount() const {
 	return tstore.PubkeyCount();
 }
@@ -98,13 +109,19 @@ ConsortiumMemberSummary ConsortiumMember(const TXSpec& tx) const {
 	return lmap.ConsortiumMember(tx);
 }
 
+// Enable RPC service on the specified port. Returns false if RPC service is
+// already enabled. Returns true on successful initiation of RPC service,
+// though peer connections have not necessarily been established. Throws
+// exceptions on failure to initiate service.
+bool EnableRPC(int port, const std::string& chainfile, const char* peerfile);
+
 // FIXME should probably return pair including ConsortiumMemberSummary
 std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
 	return lmap.ConsortiumPatients(cmspec);
 }
 
-// Dump outstanding transactions in a human-readable format
-std::ostream& DumpOutstanding(std::ostream& s) const;
+// Only good until some mutating call is made, beware!
+const Block& OutstandingTXs() const;
 
 // serialize outstanding transactions
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
@@ -148,6 +165,9 @@ nlohmann::json InspectJSON(int start, int end) const;
 // Pass -1 for end to specify only the start of the range.
 std::vector<BlockDetail> Inspect(int start, int end) const;
 
+// Return details for the specified block hash.
+BlockDetail Inspect(const CatenaHash& hash) const;
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
@@ -155,6 +175,7 @@ TrustStore tstore;
 LedgerMap lmap;
 Blocks blocks;
 Block outstanding;
+std::unique_ptr<RPCService> rpc; // if null, RPC service is currently disabled
 
 void LoadBuiltinKeys();
 };

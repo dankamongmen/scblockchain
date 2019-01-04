@@ -25,6 +25,7 @@ struct BlockHeader {
 
 struct BlockDetail {
 public:
+// FIXME this doesn't look right...ensure we're properly moving
 BlockDetail(const BlockHeader& bhdr, unsigned offset, std::vector<std::unique_ptr<Transaction>> trans) :
   bhdr(bhdr),
   offset(offset),
@@ -80,6 +81,22 @@ time_t GetLastUTC() const {
 	return headers.back().utc;
 }
 
+CatenaHash HashByIdx(int idx) const {
+	return headers.at(idx).hash;
+}
+
+// FIXME slow, O(N) on N blocks
+int IdxByHash(const CatenaHash& hash) const {
+	auto ret = std::find_if(headers.begin(), headers.end(),
+			[hash](const BlockHeader& b){
+				return b.hash == hash;
+			});
+	if(ret == headers.end()){
+		throw std::out_of_range("no such block");
+	}
+	return ret - headers.begin();
+}
+
 // Pass -1 for end to leave the end unspecified. Start and end are inclusive.
 std::vector<BlockDetail> Inspect(int start, int end) const;
 
@@ -98,6 +115,7 @@ class Block {
 public:
 Block() = default;
 virtual ~Block() = default;
+// FIXME can we not make these constexpr?
 static const int BLOCKHEADERLEN = 96;
 static const int BLOCKVERSION = 0;
 
@@ -129,8 +147,6 @@ friend std::ostream& operator<<(std::ostream& stream, const Block& b);
 private:
 std::vector<std::unique_ptr<Transaction>> transactions;
 };
-
-std::ostream& operator<<(std::ostream& stream, const BlockHeader& bh);
 
 }
 

@@ -104,7 +104,9 @@ TEST(CatenaBlocks, BlockGeneratedNoOps){
 TEST(CatenaBlocks, BlockGeneratedBadprev){
 	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
-	Catena::CatenaHash prevhash({1});
+	Catena::CatenaHash prevhash;
+	prevhash.fill(1);
+	prevhash[0] = 0;
 	std::unique_ptr<const unsigned char[]> block;
 	size_t size;
 	Catena::Block b;

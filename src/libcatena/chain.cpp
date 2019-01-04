@@ -33,15 +33,8 @@ Chain::Chain(const void* data, unsigned len){
 	}
 }
 
-std::ostream& operator<<(std::ostream& stream, const Chain& chain){
-	stream << chain.blocks;
-	return stream;
-}
-
-std::ostream& Chain::DumpOutstanding(std::ostream& s) const {
-	s << outstanding;
-	auto p = SerializeOutstanding();
-	return HexOutput(s, p.first.get(), p.second) << std::endl;
+const Block& Chain::OutstandingTXs() const {
+	return outstanding;
 }
 
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
@@ -103,6 +96,12 @@ void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey
 // Get full block information about the specified range
 std::vector<BlockDetail> Chain::Inspect(int start, int end) const {
 	return blocks.Inspect(start, end);
+}
+
+BlockDetail Chain::Inspect(const CatenaHash& hash) const {
+	auto idx = blocks.IdxByHash(hash);
+	auto details = blocks.Inspect(idx, idx + 1);
+	return std::move(details.at(0));
 }
 
 void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
@@ -286,6 +285,20 @@ void Chain::AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patsp
 nlohmann::json Chain::PatientStatus(const TXSpec& patspec, unsigned stype) const {
 	const auto& pat = lmap.LookupPatient(patspec);
 	return pat.Status(stype);
+}
+
+bool Chain::EnableRPC(int port, const std::string& chainfile, const char* peerfile) {
+	if(rpc){
+		return false;
+	}
+	// Don't set our class's rpc ptr until we know we've succeeded
+	std::unique_ptr<RPCService> newrpc =
+		std::make_unique<RPCService>(RPCService(port, chainfile));
+	if(peerfile){
+		newrpc.get()->AddPeers(peerfile);
+	}
+	rpc = std::move(newrpc);
+	return true;
 }
 
 }
