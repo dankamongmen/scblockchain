@@ -32,9 +32,9 @@ Map of strings to T:
 
 `payload` and `encpayload` are mutually exclusive.
 
-# PatientStatusResult
+# UserStatusResult
 
-Returned by the `/pstatus` endpoint. Freeform JSON payload.
+Returned by the `/ustatus` endpoint. Freeform JSON payload.
 
 # NewConsortiumMemberTX
 
@@ -71,13 +71,13 @@ which must have its private key loaded in the catena agent.
 
 Map of strings to T:
 * `refspec`: String containing TXSpec of subject LookupAuthReq
-* `patspec`: String containing TXSpec of unveiled Patient
-* `symkey`: String containing hex-encoded AES key used to encrypt Patient payload.
+* `uspec`: String containing TXSpec of unveiled User
+* `symkey`: String containing hex-encoded AES key used to encrypt User payload.
 
 This will be signed using the patient lookup key referenced by `refspec`,
 which must have its private key loaded in the catena agent.
 
-# NewPatientTX
+# NewUserTX
 
 Map of strings to T:
 * `pubkey`: String containing PEM-encode public key (user delegation auth key)
@@ -88,27 +88,27 @@ This will be encrypted before being written to the ledger.
 This will be signed using the consortium key specified by `regspec`, which must
 have its private key loaded in the catena agent.
 
-## NewPatientTXResponse
+## NewUserTXResponse
 
 Map of strings to T:
-* `symkey`: String containing hex-encoded AES key used to encrypt Patient payload.
+* `symkey`: String containing hex-encoded AES key used to encrypt User payload.
 
-# NewPatientDelegationTX
+# NewUserDelegationTX
 
 Map of strings to T:
 * `statustype`: Integer identifying the type of status being delegated
 * `delspec`: String containing TXSpec of delegated ConsortiumMember
-* `patspec`: String containing TXSpec of delegating Patient
+* `uspec`: String containing TXSpec of delegating User
 
 This will be signed using the delegation authentication key specified by
-`patspec`, which must have its private key loaded in the catena agent.
+`uspec`, which must have its private key loaded in the catena agent.
 
-# NewPatientStatusTX
+# NewUserStatusTX
 Map of strings to T:
-* `psdspec`: String containing TXSpec of authorizing PatientStatusDelegation
+* `usdspec`: String containing TXSpec of authorizing UserStatusDelegation
 * `payload`: JSON payload containing freeform details related to this request.
 
-This will be signed using the consortium key referenced by `psdspec`,
+This will be signed using the consortium key referenced by `usdspec`,
 which must have its private key loaded in the catena agent.
 
 # TXRequestResponse

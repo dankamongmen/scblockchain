@@ -80,18 +80,18 @@ MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEaun/OP9t/4kgwQvRxVOJLXNkF2UBOzne
 -----END PUBLIC KEY-----
 ```
 
-## Patient keys
+## User keys
 
-Each patient has two keypairs (the Delegation Authorization keypair, and the
+Each user has two keypairs (the Delegation Authorization keypair, and the
 Lookup Authorization keypair) and a symmetric key. The Delegation Authorization
-public key is written into a Patient transaction. The Lookup Authorization
+public key is written into a User transaction. The Lookup Authorization
 public key is written into an ExternalLookup transaction. The symmetric key is
 encrypted and written into LookupAuth transactions.
 
-The test patient symmetric key is in `test/symmetric-test1.aes`.
+The test user symmetric key is in `test/symmetric-test1.aes`.
 
-### Test patient Delegation Authorization key 1 (475 bytes)
-The corresponding private key is in `test/pauth-test1.pem`.
+### Test user Delegation Authorization key 1 (475 bytes)
+The corresponding private key is in `test/uauth-test1.pem`.
 ```
 -----BEGIN PUBLIC KEY-----
 MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA////////////////
@@ -104,7 +104,7 @@ MEpgSYdUrSgG3xkdQEnpZc9k0Tht2QA=
 -----END PUBLIC KEY-----
 ```
 
-### Test patient Lookup Authorization key 1 (475 bytes)
+### Test user Lookup Authorization key 1 (475 bytes)
 The corresponding private key is in `test/elook-test1.pem`.
 ```
 -----BEGIN PUBLIC KEY-----
@@ -118,8 +118,8 @@ AgEBA0IABBXZN8y7o3wiR9QAsGAs/aIJ3sxqWfG3zB4Q4/Us9fzGwBSKowvHiEN+
 -----END PUBLIC KEY-----
 ```
 
-### Test patient Delegation Authorization key 2 (174 bytes)
-The corresponding private key is in `test/pauth-test2.pem`.
+### Test user Delegation Authorization key 2 (174 bytes)
+The corresponding private key is in `test/uauth-test2.pem`.
 ```
 -----BEGIN PUBLIC KEY-----
 MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEfN0YJY8tcBkmh8PeZDA0rOaMVlcj40Cd
@@ -127,7 +127,7 @@ x7J5fzK75fo+GDGAEfKPa6po7x0TuswtctMUiPp7simVBxK1ULy/AQ==
 -----END PUBLIC KEY-----
 ```
 
-### Test patient Lookup Authorization key 2 (174 bytes)
+### Test user Lookup Authorization key 2 (174 bytes)
 The corresponding private key is in `test/elook-test2.pem`.
 ```
 -----BEGIN PUBLIC KEY-----

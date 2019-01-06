@@ -1,9 +1,9 @@
 #include <iostream>
-#include <libcatena/pstatus.h>
+#include <libcatena/ustatus.h>
 
 namespace Catena {
 
-bool PatientStatusTX::Extract(const unsigned char* data, unsigned len) {
+bool UserStatusTX::Extract(const unsigned char* data, unsigned len) {
 	if(len < 2){ // 16-bit signature length
 		std::cerr << "no room for siglen in " << len << std::endl;
 		return true;
@@ -32,7 +32,7 @@ bool PatientStatusTX::Extract(const unsigned char* data, unsigned len) {
 		std::cerr << "no room for subjectspec in " << len << std::endl;
 		return true;
 	}
-	psdidx = nbo_to_ulong(data + signerhash.size(), 4);
+	usdidx = nbo_to_ulong(data + signerhash.size(), 4);
 	// FIXME verify that subjectspec is valid? verify payload is valid JSON?
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
@@ -40,24 +40,24 @@ bool PatientStatusTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool PatientStatusTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
+bool UserStatusTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
-	TXSpec psdspec;
-	memcpy(psdspec.first.data(), payload.get(), psdspec.first.size());
-	psdspec.second = psdidx;
-	auto& psd = lmap.LookupDelegation(psdspec);
-	const auto& patspec = psd.PatSpec();
-	auto& pat = lmap.LookupPatient(patspec);
+	TXSpec usdspec;
+	memcpy(usdspec.first.data(), payload.get(), usdspec.first.size());
+	usdspec.second = usdidx;
+	auto& usd = lmap.LookupDelegation(usdspec);
+	const auto& uspec = usd.USpec();
+	auto& pat = lmap.LookupUser(uspec);
 	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
-	pat.SetStatus(psd.StatusType(), nlohmann::json::parse(pload));
+	pat.SetStatus(usd.StatusType(), nlohmann::json::parse(pload));
 	return false;
 }
 
-std::ostream& PatientStatusTX::TXOStream(std::ostream& s) const {
-	s << "PatientStatus (" << siglen << "b signature, " << payloadlen << "b payload)\n";
+std::ostream& UserStatusTX::TXOStream(std::ostream& s) const {
+	s << "UserStatus (" << siglen << "b signature, " << payloadlen << "b payload)\n";
 	s << " publisher: " << signerhash << "." << signeridx << "\n";
 	// FIXME want referenced patient spec and status type
 	s << " payload: ";
@@ -66,11 +66,11 @@ std::ostream& PatientStatusTX::TXOStream(std::ostream& s) const {
 
 }
 
-std::pair<std::unique_ptr<unsigned char[]>, size_t> PatientStatusTX::Serialize() const {
+std::pair<std::unique_ptr<unsigned char[]>, size_t> UserStatusTX::Serialize() const {
 	size_t len = 4 + siglen + signerhash.size() + sizeof(signeridx) +
 		payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
-	auto data = TXType_to_nbo(TXTypes::PatientStatus, ret.get());
+	auto data = TXType_to_nbo(TXTypes::UserStatus, ret.get());
 	data = ulong_to_nbo(siglen, data, 2);
 	memcpy(data, signerhash.data(), signerhash.size());
 	data += signerhash.size();
@@ -82,8 +82,8 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> PatientStatusTX::Serialize()
 	return std::make_pair(std::move(ret), len);
 }
 
-nlohmann::json PatientStatusTX::JSONify() const {
-	nlohmann::json ret({{"type", "PatientStatus"}});
+nlohmann::json UserStatusTX::JSONify() const {
+	nlohmann::json ret({{"type", "UserStatus"}});
 	ret["sigbytes"] = siglen;
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;
@@ -91,7 +91,7 @@ nlohmann::json PatientStatusTX::JSONify() const {
 	// FIXME return referenced patient spec and status type
 	ss.str(std::string());
         hashOStream(ss, payload.get());
-        ss << "." << psdidx;
+        ss << "." << usdidx;
         ret["subjectspec"] = ss.str();
 	auto pload = std::string(reinterpret_cast<const char*>(GetJSONPayload()), GetJSONPayloadLength());
 	ret["payload"] = nlohmann::json::parse(pload);

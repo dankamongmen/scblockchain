@@ -184,10 +184,10 @@ bool LookupAuthTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	if(ptext.second < elspec.first.size() + 4){
 		throw BlockValidationException("plaintext too small for txspec");
 	}
-	TXSpec patspec;
-	memcpy(patspec.first.data(), ptext.first.get(), patspec.first.size());
-	patspec.second = nbo_to_ulong(ptext.first.get() + patspec.first.size(), 4);
-	// FIXME do something with patspec? verify it is patient? */
+	TXSpec uspec;
+	memcpy(uspec.first.data(), ptext.first.get(), uspec.first.size());
+	uspec.second = nbo_to_ulong(ptext.first.get() + uspec.first.size(), 4);
+	// FIXME do something with uspec? verify it is patient? */
 	lar.Authorize();
 	return false;
 }

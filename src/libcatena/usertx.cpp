@@ -1,10 +1,10 @@
 #include <iostream>
-#include <libcatena/patienttx.h>
 #include <libcatena/utility.h>
+#include <libcatena/usertx.h>
 
 namespace Catena {
 
-bool PatientTX::Extract(const unsigned char* data, unsigned len) {
+bool UserTX::Extract(const unsigned char* data, unsigned len) {
 	if(len < 2){ // 16-bit signature length
 		std::cerr << "no room for signature type in " << len << std::endl;
 		return true;
@@ -45,19 +45,19 @@ bool PatientTX::Extract(const unsigned char* data, unsigned len) {
 	return false;
 }
 
-bool PatientTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
+bool UserTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
 	if(tstore.Verify({signerhash, signeridx}, payload.get(),
 				payloadlen, signature, siglen)){
 		return true;
 	}
 	Keypair kp(payload.get() + 2, keylen);
 	tstore.AddKey(&kp, {blockhash, txidx});
-	lmap.AddPatient({blockhash, txidx}, {signerhash, signeridx});
+	lmap.AddUser({blockhash, txidx}, {signerhash, signeridx});
 	return false;
 }
 
-std::ostream& PatientTX::TXOStream(std::ostream& s) const {
-	s << "Patient (" << siglen << "b signature, " << payloadlen
+std::ostream& UserTX::TXOStream(std::ostream& s) const {
+	s << "User (" << siglen << "b signature, " << payloadlen
 		<< "b payload, " << keylen << "b key)\n";
 	s << " registrar: " << signerhash << "." << signeridx << "\n";
 	s << " payload is encrypted";
@@ -65,10 +65,10 @@ std::ostream& PatientTX::TXOStream(std::ostream& s) const {
 }
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
-PatientTX::Serialize() const {
+UserTX::Serialize() const {
 	size_t len = 4 + signerhash.size() + sizeof(signeridx) + siglen + payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
-	auto data = TXType_to_nbo(TXTypes::Patient, ret.get());
+	auto data = TXType_to_nbo(TXTypes::User, ret.get());
 	data = ulong_to_nbo(siglen, data, 2);
 	memcpy(data, signerhash.data(), signerhash.size());
 	data += signerhash.size();
@@ -80,8 +80,8 @@ PatientTX::Serialize() const {
 	return std::make_pair(std::move(ret), len);
 }
 
-nlohmann::json PatientTX::JSONify() const {
-	nlohmann::json ret({{"type", "Patient"}});
+nlohmann::json UserTX::JSONify() const {
+	nlohmann::json ret({{"type", "User"}});
 	ret["sigbytes"] = siglen;
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;
@@ -94,7 +94,7 @@ nlohmann::json PatientTX::JSONify() const {
 	return ret;
 }
 
-bool PatientStatusDelegationTX::Extract(const unsigned char* data, unsigned len) {
+bool UserStatusDelegationTX::Extract(const unsigned char* data, unsigned len) {
 	if(len < 2){ // 16-bit signature length
 		std::cerr << "no room for signature type in " << len << std::endl;
 		return true;
@@ -131,22 +131,22 @@ bool PatientStatusDelegationTX::Extract(const unsigned char* data, unsigned len)
 	return false;
 }
 
-bool PatientStatusDelegationTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
-	TXSpec patspec;
-	memcpy(patspec.first.data(), signerhash.data(), signerhash.size());
-	patspec.second = signeridx;
-	if(tstore.Verify(patspec, payload.get(), payloadlen, signature, siglen)){
+bool UserStatusDelegationTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
+	TXSpec uspec;
+	memcpy(uspec.first.data(), signerhash.data(), signerhash.size());
+	uspec.second = signeridx;
+	if(tstore.Verify(uspec, payload.get(), payloadlen, signature, siglen)){
 		return true;
 	}
 	TXSpec cmspec;
 	memcpy(cmspec.first.data(), payload.get(), cmspec.first.size());
 	cmspec.second = cmidx;
-	lmap.AddDelegation({blockhash, txidx}, cmspec, patspec, statustype);
+	lmap.AddDelegation({blockhash, txidx}, cmspec, uspec, statustype);
 	return false;
 }
 
-std::ostream& PatientStatusDelegationTX::TXOStream(std::ostream& s) const {
-	s << "PatientStatusDelegation (type " << statustype << " "
+std::ostream& UserStatusDelegationTX::TXOStream(std::ostream& s) const {
+	s << "UserStatusDelegation (type " << statustype << " "
 		<< siglen << "b signature, " << payloadlen << "b payload)\n";
 	s << " delegator: " << signerhash << "." << signeridx << "\n";
 	s << " delegate: ";
@@ -157,10 +157,10 @@ std::ostream& PatientStatusDelegationTX::TXOStream(std::ostream& s) const {
 }
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
-PatientStatusDelegationTX::Serialize() const {
+UserStatusDelegationTX::Serialize() const {
 	size_t len = 4 + signerhash.size() + sizeof(signeridx) + siglen + payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
-	auto data = TXType_to_nbo(TXTypes::PatientStatusDelegation, ret.get());
+	auto data = TXType_to_nbo(TXTypes::UserStatusDelegation, ret.get());
 	data = ulong_to_nbo(siglen, data, 2);
 	memcpy(data, signerhash.data(), signerhash.size());
 	data += signerhash.size();
@@ -172,8 +172,8 @@ PatientStatusDelegationTX::Serialize() const {
 	return std::make_pair(std::move(ret), len);
 }
 
-nlohmann::json PatientStatusDelegationTX::JSONify() const {
-	nlohmann::json ret({{"type", "PatientStatusDelegation"}});
+nlohmann::json UserStatusDelegationTX::JSONify() const {
+	nlohmann::json ret({{"type", "UserStatusDelegation"}});
 	ret["sigbytes"] = siglen;
 	std::stringstream ss;
 	ss << signerhash << "." << signeridx;

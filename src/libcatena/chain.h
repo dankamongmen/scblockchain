@@ -93,8 +93,8 @@ int StatusDelegationCount() const {
 	return lmap.StatusDelegationCount();
 }
 
-int PatientCount() const {
-	return lmap.PatientCount();
+int UserCount() const {
+	return lmap.UserCount();
 }
 
 int ConsortiumMemberCount() const {
@@ -116,8 +116,8 @@ ConsortiumMemberSummary ConsortiumMember(const TXSpec& tx) const {
 bool EnableRPC(int port, const std::string& chainfile, const char* peerfile);
 
 // FIXME should probably return pair including ConsortiumMemberSummary
-std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
-	return lmap.ConsortiumPatients(cmspec);
+std::vector<UserSummary> ConsortiumUsers(const TXSpec& cmspec) const {
+	return lmap.ConsortiumUsers(cmspec);
 }
 
 // Only good until some mutating call is made, beware!
@@ -138,10 +138,10 @@ void AddPrivateKey(const KeyLookup& kl, const Keypair& kp) {
 	tstore.AddKey(&kp, kl);
 }
 
-// Retrieve the most recent PatientStatus published for this patient of this
-// type. Returns a trivial JSON object if no such statuses have been published.
-// Throws InvalidTXSpec if no such patient exists.
-nlohmann::json PatientStatus(const TXSpec& patspec, unsigned stype) const;
+// Retrieve the most recent UserStatus published for this user of this type.
+// Returns a trivial JSON object if no such statuses have been published.
+// Throws InvalidTXSpec if no such user exists.
+nlohmann::json UserStatus(const TXSpec& uspec, unsigned stype) const;
 
 // Generate and sign new transactions, to be added to the ledger.
 void AddNoOp();
@@ -150,11 +150,11 @@ void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 		size_t plen, const std::string& extid, unsigned lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
-void AddLookupAuth(const TXSpec& elspec, const TXSpec& patspec, const SymmetricKey& symkey);
-void AddPatient(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
+void AddLookupAuth(const TXSpec& elspec, const TXSpec& uspec, const SymmetricKey& symkey);
+void AddUser(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
 		const SymmetricKey& symkey, const nlohmann::json& payload);
-void AddPatientStatus(const TXSpec& psdspec, const nlohmann::json& payload);
-void AddPatientStatusDelegation(const TXSpec& cmspec, const TXSpec& patspec,
+void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload);
+void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 				int stype, const nlohmann::json& payload);
 
 // Return a JSON object containing details regarding the specified block range.

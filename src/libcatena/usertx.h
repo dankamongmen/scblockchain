@@ -6,10 +6,10 @@
 
 namespace Catena {
 
-class PatientTX : public Transaction {
+class UserTX : public Transaction {
 public:
-PatientTX() = default;
-PatientTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
+UserTX() = default;
+UserTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore, LedgerMap& lmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
@@ -41,10 +41,10 @@ size_t GetPayloadLength() const {
 
 };
 
-class PatientStatusDelegationTX : public Transaction {
+class UserStatusDelegationTX : public Transaction {
 public:
-PatientStatusDelegationTX() = default;
-PatientStatusDelegationTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
+UserStatusDelegationTX() = default;
+UserStatusDelegationTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore, LedgerMap& lmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;

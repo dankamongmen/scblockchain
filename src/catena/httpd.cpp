@@ -71,7 +71,7 @@ std::stringstream& HTTPDServer::HTMLMembers(std::stringstream& ss) const {
 	const auto& cmembers = chain.ConsortiumMembers();
 	for(const auto& cm : cmembers){
 		ss << "<a href=\"/showmember?member=" << cm.cmspec
-		   << "\">" << cm.cmspec << "</a> (patients: " << cm.patients
+		   << "\">" << cm.cmspec << "</a> (users: " << cm.users
 		   << ")<pre>";
 		JSONtoHTML(ss, cm.payload) << "</pre>";
 	}
@@ -91,7 +91,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>lookup authorizations</td><td>" << chain.LookupRequestCount(true) << "</td></tr>";
 	ss << "<tr><td>external IDs</td><td>" << chain.ExternalLookupCount() << "</td></tr>";
 	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
-	ss << "<tr><td>patients</td><td>" << chain.PatientCount() << "</td></tr>";
+	ss << "<tr><td>users</td><td>" << chain.UserCount() << "</td></tr>";
 	ss << "<tr><td>status delegations</td><td>" << chain.StatusDelegationCount() << "</td></tr>";
 	ss << "</table>";
 	ss << "<h3>most recent block</h3>";
@@ -263,14 +263,14 @@ HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
 		ss << htmlhdr;
 		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 		const auto& cmember = chain.ConsortiumMember(cmspec);
-		const auto& patients = chain.ConsortiumPatients(cmspec);
+		const auto& users = chain.ConsortiumUsers(cmspec);
 		ss << "<h3>Consortium member " << cmspecstr << "</h3><pre>";
 		JSONtoHTML(ss, cmember.payload) << "</pre>";
-		ss << "<h3>Enrolled patients: " << patients.size() << "</h3>";
-		for(const auto& p : patients){
+		ss << "<h3>Enrolled users: " << users.size() << "</h3>";
+		for(const auto& u : users){
 			// FIXME be more general in the future, but for the
 			// 2018-01 demo, just link to status 0
-			ss << "<a href=\"/showpstatus?stype=0&patient=" << p.patspec << "\">" << p.patspec <<
+			ss << "<a href=\"/showustatus?stype=0&user=" << u.uspec << "\">" << u.uspec <<
 				"</a><br/>";
 		}
 		ss << "</body>";
@@ -287,22 +287,22 @@ HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
 }
 
 struct MHD_Response*
-HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
-	auto patspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "patient");
+HTTPDServer::UstatusHTML(struct MHD_Connection* conn) const {
+	auto uspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "user");
 	auto stypestr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "stype");
-	if(patspecstr == nullptr || stypestr == nullptr){
-		std::cerr << "missing required arguments in /showpstatus" << std::endl;
+	if(uspecstr == nullptr || stypestr == nullptr){
+		std::cerr << "missing required arguments in /showustatus" << std::endl;
 		return nullptr;
 	}
 	MHD_Response* resp = nullptr;
 	try{
-		auto patspec = Catena::TXSpec::StrToTXSpec(patspecstr);
+		auto uspec = Catena::TXSpec::StrToTXSpec(uspecstr);
 		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
-		auto json = chain.PatientStatus(patspec, stype).dump();
+		auto json = chain.UserStatus(uspec, stype).dump();
 		std::stringstream ss;
 		ss << htmlhdr;
 		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
-		ss << "<h3>Patient " << patspecstr << "</h3>";
+		ss << "<h3>User " << uspecstr << "</h3>";
 		ss << "<span>" << stype << "</span><span>" << json << "</span>";
 		ss << "</body>";
 		auto s = ss.str();
@@ -310,7 +310,7 @@ HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
 	}catch(Catena::InvalidTXSpecException& e){
 		std::cerr << "bad txspec (" << e.what() << ")" << std::endl;
 		return nullptr; // FIXME return error
-	}catch(Catena::PatientStatusException& e){
+	}catch(Catena::UserStatusException& e){
 		std::cerr << "invalid lookup (" << e.what() << ")" << std::endl;
 		return nullptr;
 	}catch(Catena::ConvertInputException& e){
@@ -327,18 +327,18 @@ HTTPDServer::PstatusHTML(struct MHD_Connection* conn) const {
 }
 
 struct MHD_Response*
-HTTPDServer::PstatusJSON(struct MHD_Connection* conn) const {
-	auto patspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "patient");
+HTTPDServer::UstatusJSON(struct MHD_Connection* conn) const {
+	auto uspecstr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "user");
 	auto stypestr = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "stype");
-	if(patspecstr == nullptr || stypestr == nullptr){
-		std::cerr << "missing required arguments in /pstatus" << std::endl;
+	if(uspecstr == nullptr || stypestr == nullptr){
+		std::cerr << "missing required arguments in /ustatus" << std::endl;
 		return nullptr;
 	}
 	MHD_Response* resp = nullptr;
 	try{
-		auto patspec = Catena::TXSpec::StrToTXSpec(patspecstr);
+		auto uspec = Catena::TXSpec::StrToTXSpec(uspecstr);
 		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
-		auto json = chain.PatientStatus(patspec, stype).dump();
+		auto json = chain.UserStatus(uspec, stype).dump();
 		resp = MHD_create_response_from_buffer(json.size(), const_cast<char*>(json.c_str()), MHD_RESPMEM_MUST_COPY);
 	}catch(Catena::InvalidTXSpecException& e){
 		std::cerr << "bad txspec (" << e.what() << ")" << std::endl;
@@ -489,7 +489,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) c
 	return MHD_YES;
 }
 
-int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload) const {
+int HTTPDServer::UserTXReq(struct PostState* ps, const char* upload) const {
 	nlohmann::json json;
 	Catena::SymmetricKey symkey;
 	try{
@@ -518,7 +518,7 @@ int HTTPDServer::PatientTXReq(struct PostState* ps, const char* upload) const {
 		symkey = Catena::Keypair::CreateSymmetricKey();
 		try{
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
-			chain.AddPatient(regkl,
+			chain.AddUser(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
 					kstr.size(), symkey, *payload);
 		}catch(Catena::ConvertInputException& e){
@@ -553,9 +553,9 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 	try{
 		auto json = nlohmann::json::parse(upload);
 		auto refspec = json.find("refspec");
-		auto patspec = json.find("patspec");
+		auto uspec = json.find("uspec");
 		auto symspec = json.find("symkey");
-		if(refspec == json.end() || patspec == json.end()){
+		if(refspec == json.end() || uspec == json.end()){
 			std::cerr << "missing necessary elements" << std::endl;
 			return MHD_NO;
 		}
@@ -563,20 +563,20 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 			std::cerr << "refspec was not a string" << std::endl;
 			return MHD_NO;
 		}
-		if(!(*patspec).is_string()){
-			std::cerr << "patspec was not a string" << std::endl;
+		if(!(*uspec).is_string()){
+			std::cerr << "uspec was not a string" << std::endl;
 			return MHD_NO;
 		}
 		if(!(*symspec).is_string()){
 			std::cerr << "symkey was not a string" << std::endl;
 			return MHD_NO;
 		}
-		auto patspecstr = (*patspec).get<std::string>();
+		auto uspecstr = (*uspec).get<std::string>();
 		auto refspecstr = (*refspec).get<std::string>();
 		try{
 			Catena::SymmetricKey symkey;
 			Catena::StrToBlob((*symspec).get<std::string>(), symkey);
-			auto patkl = Catena::TXSpec::StrToTXSpec(patspecstr);
+			auto patkl = Catena::TXSpec::StrToTXSpec(uspecstr);
 			auto refkl = Catena::TXSpec::StrToTXSpec(refspecstr);
 			chain.AddLookupAuth(refkl, patkl, symkey);
 		}catch(Catena::ConvertInputException& e){
@@ -594,33 +594,33 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 	return MHD_NO;
 }
 
-int HTTPDServer::PatientDelegationTXReq(struct PostState* ps, const char* upload) const {
+int HTTPDServer::UserDelegationTXReq(struct PostState* ps, const char* upload) const {
 	(void)ps;
 	(void)upload;
 	return MHD_NO;
 }
 
-int HTTPDServer::PatientStatusTXReq(struct PostState* ps, const char* upload) const {
+int HTTPDServer::UserStatusTXReq(struct PostState* ps, const char* upload) const {
 	try{
 		auto json = nlohmann::json::parse(upload);
 		auto payload = json.find("payload");
-		auto psdspec = json.find("psdspec");
-		if(payload == json.end() || psdspec == json.end()){
-			std::cerr << "missing necessary elements from NewPatientStatusTX" << std::endl;
+		auto usdspec = json.find("usdspec");
+		if(payload == json.end() || usdspec == json.end()){
+			std::cerr << "missing necessary elements from NewUserStatusTX" << std::endl;
 			return MHD_NO;
 		}
 		if(!(*payload).is_object()){
 			std::cerr << "payload was invalid JSON" << std::endl;
 			return MHD_NO;
 		}
-		if(!(*psdspec).is_string()){
-			std::cerr << "psdspec was not a string" << std::endl;
+		if(!(*usdspec).is_string()){
+			std::cerr << "usdspec was not a string" << std::endl;
 			return MHD_NO;
 		}
-		auto psdspecstr = (*psdspec).get<std::string>();
+		auto usdspecstr = (*usdspec).get<std::string>();
 		try{
-			auto psdkl = Catena::TXSpec::StrToTXSpec(psdspecstr);
-			chain.AddPatientStatus(psdkl, *payload);
+			auto psdkl = Catena::TXSpec::StrToTXSpec(usdspecstr);
+			chain.AddUserStatus(psdkl, *payload);
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
@@ -647,9 +647,9 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 		{ "/exlookup", &HTTPDServer::ExternalLookupTXReq, },
 		{ "/lauthreq", &HTTPDServer::LookupAuthReqTXReq, },
 		{ "/lauth", &HTTPDServer::LookupAuthTXReq, },
-		{ "/patient", &HTTPDServer::PatientTXReq, },
-		{ "/delpstatus", &HTTPDServer::PatientDelegationTXReq, },
-		{ "/pstatus", &HTTPDServer::PatientStatusTXReq, },
+		{ "/user", &HTTPDServer::UserTXReq, },
+		{ "/delustatus", &HTTPDServer::UserDelegationTXReq, },
+		{ "/ustatus", &HTTPDServer::UserStatusTXReq, },
 		{ nullptr, nullptr },
 	},* cmd;
 	int retcode = MHD_HTTP_OK; // FIXME callbacks need be able to set retcode
@@ -718,8 +718,8 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		{ "/show", &HTTPDServer::Show, },
 		{ "/tstore", &HTTPDServer::TStore, },
 		{ "/inspect", &HTTPDServer::Inspect, },
-		{ "/pstatus", &HTTPDServer::PstatusJSON, },
-		{ "/showpstatus", &HTTPDServer::PstatusHTML, },
+		{ "/ustatus", &HTTPDServer::UstatusJSON, },
+		{ "/showustatus", &HTTPDServer::UstatusHTML, },
 		{ "/showmember", &HTTPDServer::ShowMemberHTML, },
 		{ "/showblock", &HTTPDServer::ShowBlockHTML, },
 		{ nullptr, nullptr },

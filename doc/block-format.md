@@ -240,7 +240,7 @@ printable characters). Lookup types include:
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### Patient
+#### User
 
 Transaction type 0x0003, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the registering consortium, followed by the
@@ -288,12 +288,12 @@ payload together with the IV decrypt to a JSON-encoded payload.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### PatientStatus
+#### UserStatus
 
 Transaction type 0x0004, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the publishing consortium, followed by the
 signature, followed by the 256-bit hash and 32-bit index of the referenced
-PatientStatusDelegation transaction, followed by the JSON-encoded payload.
+UserStatusDelegation transaction, followed by the JSON-encoded payload.
 
 ```
  0                   1                   2                   3
@@ -320,8 +320,8 @@ PatientStatusDelegation transaction, followed by the JSON-encoded payload.
 |                    ConsortiumMember index                     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |              ...ECDSA signature (70--72 bytes)...             |
-|         ...32 bytes for PatientStatusDelegation hash...       |
-|         ...4 bytes for PatientStatusDelegation txidx...       |
+|           ...32 bytes for UserStatusDelegation hash...        |
+|           ...4 bytes for UserStatusDelegation txidx...        |
 |                    ...json status payload...                  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
@@ -374,11 +374,11 @@ and ExternalLookup transactions referenced by the signing ExternalLookup
 transaction.
 
 The encrypted payload decodes to the 256-bit hash and 32-bit index of the
-Patient transaction being looked up, a 16-bit symmetric key type, and possibly
-a symmetric key (usable to decrypt the Patient transaction's payload). The
+User transaction being looked up, a 16-bit symmetric key type, and possibly
+a symmetric key (usable to decrypt the User transaction's payload). The
 current key types are:
 
-* 0x0000 - No symmetric key provided, Patient TXSpec lookup only
+* 0x0000 - No symmetric key provided, User TXSpec lookup only
 * 0x0001 - 256-bit (32 byte) AES key
 
 Though this transaction bears a LookupAuthReq TXSpec, it is signed by the key
@@ -415,10 +415,10 @@ LookupAuthReq transaction does not itself publish a public key.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### PatientStatusDelegation
+#### UserStatusDelegation
 
 Transaction type 0x0007, followed by a 16-bit signature length, followed by
-the 256-bit hash and 32-bit index of the delegating patient, followed by the
+the 256-bit hash and 32-bit index of the delegating user, followed by the
 signature, followed by the 256-bit hash and 32-bit index of the authorized
 ConsortiumMember transaction, followed by a 32-bit status type, followed by a
 subtype-dependent JSON-encoded payload.
@@ -436,7 +436,7 @@ subtype-dependent JSON-encoded payload.
 |                                                               |
 +                                                               +
 |                                                               |
-+                         Patient hash                          +
++                           User hash                           +
 |                                                               |
 +                                                               +
 |                                                               |
@@ -445,7 +445,7 @@ subtype-dependent JSON-encoded payload.
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                        Patient index                          |
+|                          User index                           |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |              ...ECDSA signature (70--72 bytes)...             |
 |            ...32 bytes for ConsortiumMember hash...           |

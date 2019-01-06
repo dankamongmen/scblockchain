@@ -5,10 +5,10 @@
 
 namespace Catena {
 
-class PatientStatusTX : public Transaction {
+class UserStatusTX : public Transaction {
 public:
-PatientStatusTX() = default;
-PatientStatusTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
+UserStatusTX() = default;
+UserStatusTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
 bool Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore, LedgerMap& lmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
@@ -19,7 +19,7 @@ private:
 unsigned char signature[SIGLEN];
 CatenaHash signerhash;
 uint32_t signeridx;
-uint32_t psdidx;
+uint32_t usdidx;
 size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;
 size_t payloadlen; // total length of signed payload

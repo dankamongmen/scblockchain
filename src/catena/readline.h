@@ -25,14 +25,14 @@ template <typename Iterator> int CommitOutstanding(const Iterator start, const I
 template <typename Iterator> int TStore(const Iterator start, const Iterator end);
 template <typename Iterator> int NewMember(const Iterator start, const Iterator end);
 template <typename Iterator> int GetMembers(const Iterator start, const Iterator end);
-template <typename Iterator> int NewPatient(const Iterator start, const Iterator end);
+template <typename Iterator> int NewUser(const Iterator start, const Iterator end);
 template <typename Iterator> int NewExternalLookup(const Iterator start, const Iterator end);
 template <typename Iterator> int NewLookupAuth(const Iterator start, const Iterator end);
 template <typename Iterator> int NewLookupAuthReq(const Iterator start, const Iterator end);
 template <typename Iterator> int NewNoOp(const Iterator start, const Iterator end);
-template <typename Iterator> int NewPatientStatus(const Iterator start, const Iterator end);
-template <typename Iterator> int GetPatientStatus(const Iterator start, const Iterator end);
-template <typename Iterator> int NewPatientStatusDelegation(const Iterator start, const Iterator end);
+template <typename Iterator> int NewUserStatus(const Iterator start, const Iterator end);
+template <typename Iterator> int GetUserStatus(const Iterator start, const Iterator end);
+template <typename Iterator> int NewUserStatusDelegation(const Iterator start, const Iterator end);
 
 std::ostream& MemberSummary(std::ostream& s, const Catena::ConsortiumMemberSummary& cm) const;
 };
