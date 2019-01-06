@@ -112,11 +112,14 @@ table (transactions ought not have trailing padding).
 
 ```
 
-#### NoOp
+## Transactions
+
+### NewVersion
 
 Transaction type 0x0000, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the signing party, followed by the
-signature, followed by an arbitrary payload.
+signature, followed by a NewVersion JSON payload. Only builtin keys can sign
+this message.
 
 ```
  0                   1                   2                   3
@@ -142,12 +145,11 @@ signature, followed by an arbitrary payload.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                          signer index                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|              ...ECDSA signature (70--72 bytes)...             |
-|                          ...payload...                        |
+|                    ...NewVersion payload...                   |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### Consortium Member
+### Consortium Member
 
 Transaction type 0x0001, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the signing party, followed by the
@@ -197,7 +199,7 @@ The JSON payload is free-form. An example payload might be:
 }
 ```
 
-#### External Lookup
+### External Lookup
 
 Transaction type 0x0002, followed by a 16-bit lookup type, followed by the
 256-bit hash and 32-bit index of the registering consortium, followed by the
@@ -240,7 +242,7 @@ printable characters). Lookup types include:
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### User
+### User
 
 Transaction type 0x0003, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the registering consortium, followed by the
@@ -288,7 +290,7 @@ payload together with the IV decrypt to a JSON-encoded payload.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### UserStatus
+### UserStatus
 
 Transaction type 0x0004, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the publishing consortium, followed by the
@@ -326,7 +328,7 @@ UserStatusDelegation transaction, followed by the JSON-encoded payload.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### LookupAuthReq
+### LookupAuthReq
 
 Transaction type 0x0005, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the requesting consortium, followed by the
@@ -364,7 +366,7 @@ ExternalLookup transaction, followed by the JSON-encoded payload.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### LookupAuth
+### LookupAuth
 
 Transaction type 0x0006, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the LookupAuthReq being authorized,
@@ -415,7 +417,7 @@ LookupAuthReq transaction does not itself publish a public key.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-#### UserStatusDelegation
+### UserStatusDelegation
 
 Transaction type 0x0007, followed by a 16-bit signature length, followed by
 the 256-bit hash and 32-bit index of the delegating user, followed by the

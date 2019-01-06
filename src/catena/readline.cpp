@@ -196,16 +196,6 @@ int ReadlineUI::TStore(const Iterator start, const Iterator end){
 	return 0;
 }
 
-template <typename Iterator>
-int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
-	if(start != end){
-		std::cerr << "command does not accept arguments" << std::endl;
-		return -1;
-	}
-	chain.AddNoOp();
-	return 0;
-}
-
 std::ostream& ReadlineUI::MemberSummary(std::ostream& s, const Catena::ConsortiumMemberSummary& cm) const {
 	s << cm.cmspec << " (" << cm.users << " users) ";
 	s << ANSI_GREY << std::setw(1) << cm.payload << ANSI_WHITE << std::endl;
@@ -470,7 +460,6 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
 		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
-		{ .cmd = "noop", .fxn = &ReadlineUI::NewNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
 		{ .cmd = "getmembers", .fxn = &ReadlineUI::GetMembers, .help = "list consortium members, or one with detail", },
 		{ .cmd = "exlookup", .fxn = &ReadlineUI::NewExternalLookup, .help = "create new ExternalLookup transaction", },

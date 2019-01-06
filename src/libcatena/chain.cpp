@@ -1,6 +1,7 @@
 #include <cstring>
 #include <libcatena/externallookuptx.h>
 #include <libcatena/lookupauthreqtx.h>
+#include <libcatena/newversiontx.h>
 #include <libcatena/ustatus.h>
 #include <libcatena/builtin.h>
 #include <libcatena/utility.h>
@@ -61,8 +62,8 @@ void Chain::FlushOutstanding(){
 	outstanding.Flush();
 }
 
-void Chain::AddNoOp(){
-	outstanding.AddTransaction(std::make_unique<NoOpTX>());
+void Chain::AddNewVersion(){
+	outstanding.AddTransaction(std::make_unique<NewVersionTX>());
 }
 
 void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,

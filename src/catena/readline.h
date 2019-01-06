@@ -29,7 +29,6 @@ template <typename Iterator> int NewUser(const Iterator start, const Iterator en
 template <typename Iterator> int NewExternalLookup(const Iterator start, const Iterator end);
 template <typename Iterator> int NewLookupAuth(const Iterator start, const Iterator end);
 template <typename Iterator> int NewLookupAuthReq(const Iterator start, const Iterator end);
-template <typename Iterator> int NewNoOp(const Iterator start, const Iterator end);
 template <typename Iterator> int NewUserStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int GetUserStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int NewUserStatusDelegation(const Iterator start, const Iterator end);

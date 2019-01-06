@@ -1,5 +1,15 @@
 # Catena JSON schemata
 
+# NewVersion
+
+Included as the payload in NewVersion transactions.
+
+Map of strings to T:
+* `version`: String containing version
+* `hash`: String containing hex encoding of SHA256 hash of release package
+* `URL`: String containing URL where this release can be downloaded
+* `utc`: Timestamp of release time
+
 # InspectResult
 
 Returned by the `/inspect` endpoint. Array of BlockDetails structures.

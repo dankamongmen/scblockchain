@@ -89,7 +89,6 @@ command):
 * `outstanding`: print outstanding transactions in a human-readable format.
 * `commit`: coalesce outstanding transactions and add them to ledger.
 * `flush`: flush (drop) outstanding transactions.
-* `noop`: generate a NoOp transaction.
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
 TXSpec for the signing key, a filename containing the new member's public key,
 and an arbitrary JSON-encoded payload.

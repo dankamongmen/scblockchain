@@ -3,6 +3,7 @@
 #include <iostream>
 #include <libcatena/externallookuptx.h>
 #include <libcatena/lookupauthreqtx.h>
+#include <libcatena/newversiontx.h>
 #include <libcatena/ustatus.h>
 #include <libcatena/usertx.h>
 #include <libcatena/utility.h>
@@ -10,25 +11,6 @@
 #include <libcatena/tx.h>
 
 namespace Catena {
-
-bool NoOpTX::Extract(const unsigned char* data __attribute__ ((unused)),
-			unsigned len __attribute__ ((unused))){
-	return false;
-}
-
-std::ostream& NoOpTX::TXOStream(std::ostream& s) const {
-	return s << "NoOp";
-}
-
-nlohmann::json NoOpTX::JSONify() const {
-	return nlohmann::json({{"type", "NoOp"}});
-}
-
-std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
-	std::unique_ptr<unsigned char[]> ret(new unsigned char[2]);
-	TXType_to_nbo(TXTypes::NoOp, ret.get());
-	return std::make_pair(std::move(ret), 2);
-}
 
 // Each transaction starts with a 16-bit unsigned type. Throws
 // TransactionException on an invalid or unknown type.
@@ -43,8 +25,8 @@ std::unique_ptr<Transaction> Transaction::LexTX(const unsigned char* data, unsig
 	data += sizeof(txtype);
 	Transaction* tx;
 	switch(static_cast<TXTypes>(txtype)){
-	case TXTypes::NoOp:
-		tx = new NoOpTX(blkhash, txidx);
+	case TXTypes::NewVersion:
+		tx = new NewVersionTX(blkhash, txidx);
 		break;
 	case TXTypes::ConsortiumMember:
 		tx = new ConsortiumMemberTX(blkhash, txidx);
