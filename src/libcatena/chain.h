@@ -1,11 +1,11 @@
 #ifndef CATENA_LIBCATENA_CHAIN
 #define CATENA_LIBCATENA_CHAIN
 
+#include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <libcatena/truststore.h>
 #include <libcatena/block.h>
 #include <libcatena/sig.h>
-#include <libcatena/rpc.h>
 
 namespace Catena {
 
@@ -109,12 +109,6 @@ ConsortiumMemberSummary ConsortiumMember(const TXSpec& tx) const {
 	return lmap.ConsortiumMember(tx);
 }
 
-// Enable RPC service on the specified port. Returns false if RPC service is
-// already enabled. Returns true on successful initiation of RPC service,
-// though peer connections have not necessarily been established. Throws
-// exceptions on failure to initiate service.
-bool EnableRPC(int port, const std::string& chainfile, const char* peerfile);
-
 // FIXME should probably return pair including ConsortiumMemberSummary
 std::vector<UserSummary> ConsortiumUsers(const TXSpec& cmspec) const {
 	return lmap.ConsortiumUsers(cmspec);
@@ -175,7 +169,7 @@ TrustStore tstore;
 LedgerMap lmap;
 Blocks blocks;
 Block outstanding;
-std::unique_ptr<RPCService> rpc; // if null, RPC service is currently disabled
+std::mutex lock;
 
 void LoadBuiltinKeys();
 };

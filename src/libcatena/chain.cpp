@@ -287,18 +287,4 @@ nlohmann::json Chain::UserStatus(const TXSpec& uspec, unsigned stype) const {
 	return u.Status(stype);
 }
 
-bool Chain::EnableRPC(int port, const std::string& chainfile, const char* peerfile) {
-	if(rpc){
-		return false;
-	}
-	// Don't set our class's rpc ptr until we know we've succeeded
-	std::unique_ptr<RPCService> newrpc =
-		std::make_unique<RPCService>(RPCService(port, chainfile));
-	if(peerfile){
-		newrpc.get()->AddPeers(peerfile);
-	}
-	rpc = std::move(newrpc);
-	return true;
-}
-
 }
