@@ -18,13 +18,7 @@ might or might not work.
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
-
-External projects (see the `ext/` directory) include:
-
-* nlohmann\_json (https://github.com/nlohmann/json) version 3.5.0 (released 2018-12-22, MIT)
-
-Dependencies included do not need to be installed on the host system, but their
-presence should not lead to any problems.
+    * clang++ 7.0.1 seemed to have problems with v3.5.0
 
 ## Running the catena daemon
 
