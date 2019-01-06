@@ -1,5 +1,6 @@
 #include <sstream>
 #include <fstream>
+#include <libcatena/utility.h>
 #include <libcatena/rpc.h>
 
 namespace Catena {
@@ -13,8 +14,10 @@ RPCService::RPCService(int port, const std::string& chainfile) :
 }
 
 void RPCService::AddPeers(const std::string& peerfile) {
-	std::ifstream in(peerfile); // FIXME zee error cheques?
-	in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	std::ifstream in(peerfile);
+	if(!in.is_open()){
+		throw std::ifstream::failure("couldn't open " + peerfile);
+	}
 	std::vector<Peer> ret;
 	std::string line;
 	while(std::getline(in, line)){
@@ -23,8 +26,11 @@ void RPCService::AddPeers(const std::string& peerfile) {
 		}
 		ret.emplace_back(line, port);
 	}
-	// FIXME more error cheques
-	// FIXME add ret to peer set
+	if(!in.eof()){
+		throw ConvertInputException("couldn't extract lines from file");
+	}
+	// FIXME filter out duplicates?
+	peers.insert(peers.end(), ret.begin(), ret.end());
 }
 
 }

@@ -15,6 +15,8 @@ NetworkException() : std::runtime_error("network error"){}
 NetworkException(const std::string& s) : std::runtime_error(s){}
 };
 
+constexpr int MaxActiveRPCPeers = 8;
+
 class RPCService {
 public:
 RPCService() = delete;
@@ -36,12 +38,10 @@ int Port() const {
 	return port;
 }
 
-static constexpr int MaxActivePeers = 8;
-
 void PeerCount(int* defined, int* active, int* maxactive) {
 	*defined = peers.size();
 	*active = 0; // FIXME
-	*maxactive = MaxActivePeers;
+	*maxactive = MaxActiveRPCPeers;
 }
 
 private:
