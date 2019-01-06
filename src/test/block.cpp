@@ -49,7 +49,8 @@ TEST(CatenaBlocks, BlocksInvalidShort){
 	Catena::Blocks cbs;
 	char block[Catena::Block::BLOCKHEADERLEN];
 	// Should fail on fewer bytes than the minimum
-	EXPECT_TRUE(cbs.LoadData(block, sizeof(block) - 1, lmap, tstore));
+	EXPECT_THROW(cbs.LoadData(block, sizeof(block) - 1, lmap, tstore),
+			Catena::BlockHeaderException);
 }
 
 // A chunk large enough to be a valid block, but containing all 0s
@@ -59,7 +60,8 @@ TEST(CatenaBlocks, BlocksInvalidZeroes){
 	Catena::Blocks cbs;
 	char block[Catena::Block::BLOCKHEADERLEN];
 	memset(block, 0, sizeof(block));
-	EXPECT_TRUE(cbs.LoadData(block, sizeof(block), lmap, tstore));
+	EXPECT_THROW(cbs.LoadData(block, sizeof(block), lmap, tstore),
+			Catena::BlockHeaderException);
 }
 
 // Generate a simple block, and read it back
@@ -114,7 +116,8 @@ TEST(CatenaBlocks, BlockGeneratedBadprev){
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
-	EXPECT_TRUE(cbs.LoadData(block.get(), size, lmap, tstore));
+	EXPECT_THROW(cbs.LoadData(block.get(), size, lmap, tstore),
+			Catena::BlockHeaderException);
 }
 
 // Generate two simple blocks, concatenate them, and read them back

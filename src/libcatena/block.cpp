@@ -53,33 +53,28 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
-bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
+void Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		unsigned len, const CatenaHash& prevhash, uint64_t prevutc){
 	if(len < Block::BLOCKHEADERLEN){
-		std::cerr << "needed " << Block::BLOCKHEADERLEN <<
-			" bytes, had only " << len << std::endl;
-		return true;
+		throw BlockHeaderException("block was too short");
 	}
 	memcpy(chdr->hash.data(), data, chdr->hash.size());
 	data += chdr->hash.size();
 	unsigned const char* hashstart = data;
 	memcpy(chdr->prev.data(), data, chdr->prev.size());
 	if(chdr->prev != prevhash){
-		std::cerr << "invalid prev hash (wanted " << prevhash << ")" << std::endl;
-		return true;
+		throw BlockHeaderException("invalid prev hash");
 	}
 	data += chdr->prev.size();
 	chdr->version = nbo_to_ulong(data, 2);
 	data += 2; // 16-bit version field
 	if(chdr->version != Block::BLOCKVERSION){
-		std::cerr << "expected version " << Block::BLOCKVERSION << ", got " << chdr->version << std::endl;
-		return true;
+		throw BlockHeaderException("invalid version");
 	}
 	chdr->totlen = nbo_to_ulong(data, 3);
 	data += 3; // 24-bit totlen field
 	if(chdr->totlen < Block::BLOCKHEADERLEN || chdr->totlen > len){
-		std::cerr << "invalid totlen " << chdr->totlen << std::endl;
-		return true;
+		throw BlockHeaderException("invalid advertised length");
 	}
 	chdr->txcount = nbo_to_ulong(data, 3);
 	data += 3; // 24-bit txcount field
@@ -87,23 +82,19 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	data += 5; // 40-bit UTC field
 	// FIXME reject 0 UTC?
 	if(chdr->utc < prevutc){ // allow non-strictly-increasing timestamps?
-		std::cerr << "utc " << chdr->utc << " was less than " << prevutc << std::endl;
-		return true;
+		throw BlockHeaderException("utc timestamp was earlier than prior");
 	}
 	for(int i = 0 ; i < 19 ; ++i){ // 19 reserved bytes
-		if(*data){
-			std::cerr << "non-zero reserved byte" << std::endl;
-			return false;
+		if(*data){ // FIXME make this a warning?
+			throw BlockHeaderException("non-zero reserved byte");
 		}
 		++data;
 	}
 	CatenaHash hash;
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
 	if(hash != chdr->hash){
-		std::cerr << "invalid block hash (wanted " << hash << ")" << std::endl;
-		return true;
+		throw BlockHeaderException("incorrect block hash");
 	}
-	return false;
 }
 
 // Verify new blocks relative to the loaded blocks (i.e., do not replay already-
@@ -129,9 +120,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, LedgerMap& lmap,
 		Block block;
 		BlockHeader chdr;
 		chdr.txidx = blocknum;
-		if(Block::ExtractHeader(&chdr, data, len, prevhash, prevutc)){
-			return -1;
-		}
+		Block::ExtractHeader(&chdr, data, len, prevhash, prevutc);
 		data += Block::BLOCKHEADERLEN;
 		prevhash = chdr.hash;
 		prevutc = chdr.utc;

@@ -12,6 +12,13 @@
 
 namespace Catena {
 
+class BlockHeaderException : public std::runtime_error {
+public:
+BlockHeaderException() : std::runtime_error("invalid block header"){}
+BlockHeaderException(const std::string& s) : std::runtime_error(s){}
+};
+
+
 // NOT the on-disk packed format
 struct BlockHeader {
 	CatenaHash hash;
@@ -124,7 +131,8 @@ static const int BLOCKVERSION = 0;
 std::pair<std::unique_ptr<const unsigned char[]>, size_t>
 	SerializeBlock(CatenaHash& prevhash) const;
 
-static bool ExtractHeader(BlockHeader* chdr, const unsigned char* data,
+// Throws InvalidBlockException on errors
+static void ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		unsigned len, const CatenaHash& prevhash, uint64_t prevutc);
 
 std::vector<std::unique_ptr<Transaction>>
