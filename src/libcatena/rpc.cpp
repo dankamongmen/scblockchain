@@ -5,8 +5,9 @@
 
 namespace Catena {
 
-RPCService::RPCService(int port, const std::string& chainfile) :
-  port(port) {
+RPCService::RPCService(Chain& chain, int port, const std::string& chainfile) :
+  port(port),
+  ledger(chain) {
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
 	}

@@ -1,10 +1,15 @@
 #ifndef CATENA_LIBCATENA_RPC
 #define CATENA_LIBCATENA_RPC
 
+// RPC service for a Catena node. We currently create the Chain object, and then
+// hand it to RPCService, but someday soon Chain will be originating events, and
+// might want to know about said service...perhaps it ought be part of Chain?
+
 #include <string>
 #include <vector>
 #include <stdexcept>
 #include <openssl/ssl.h>
+#include <libcatena/chain.h>
 #include <libcatena/peer.h>
 
 namespace Catena {
@@ -24,7 +29,7 @@ RPCService() = delete;
 // cert trusted by this chain.
 // FIXME probably need to accept our own cert+key files, ugh. might be able to
 //   have our own cert as the last in the cachainfile?
-RPCService(int port, const std::string& chainfile);
+RPCService(Chain& chain, int port, const std::string& chainfile);
 virtual ~RPCService() = default;
 
 // peerfile must contain one peer per line, specified as an IPv4 or IPv6
@@ -46,6 +51,7 @@ void PeerCount(int* defined, int* active, int* maxactive) {
 
 private:
 int port;
+Chain& ledger;
 std::vector<Peer> peers;
 //SSL_CTX* sslctx;
 };
