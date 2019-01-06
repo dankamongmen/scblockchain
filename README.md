@@ -1,5 +1,10 @@
 # catena - a distributed ledger for health information
 
+Detailed subdocumentation:
+* [Block serialization format](doc/block-format.md)
+* [P2P networking](doc/networking.md)
+* [JSON schemata for web API](doc/json-schema.md)
+
 ## Building
 
 The default target is `all`, which will build all binaries and docs. To run
