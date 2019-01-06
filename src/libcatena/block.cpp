@@ -37,7 +37,7 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 		}else{
 			txlen = len;
 		}
-		std::unique_ptr<Transaction> tx(Transaction::lexTX(data, txlen, chdr->hash, i));
+		std::unique_ptr<Transaction> tx(Transaction::LexTX(data, txlen, chdr->hash, i));
 		if(tx == nullptr){
 			return true;
 		}

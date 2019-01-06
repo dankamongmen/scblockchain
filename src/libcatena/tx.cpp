@@ -30,14 +30,13 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t> NoOpTX::Serialize() const {
 	return std::make_pair(std::move(ret), 2);
 }
 
-// Each transaction starts with a 16-bit unsigned type. Returns nullptr on any
-// failure to parse, or if the length is wrong for the transaction.
-std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsigned len,
+// Each transaction starts with a 16-bit unsigned type. Throws
+// TransactionException on an invalid or unknown type.
+std::unique_ptr<Transaction> Transaction::LexTX(const unsigned char* data, unsigned len,
 					const CatenaHash& blkhash, unsigned txidx){
 	uint16_t txtype;
 	if(len < sizeof(txtype)){
-		std::cerr << "no room for transaction type in " << len << std::endl;
-		return 0;
+		throw TransactionException("too small for transaction type field");
 	}
 	txtype = nbo_to_ulong(data, sizeof(txtype));
 	len -= sizeof(txtype);
@@ -69,12 +68,11 @@ std::unique_ptr<Transaction> Transaction::lexTX(const unsigned char* data, unsig
 		tx = new UserStatusDelegationTX(blkhash, txidx);
 		break;
 	default:
-		std::cerr << "unknown transaction type " << txtype << std::endl;
-		return nullptr;
+		throw TransactionException("unknown transaction type " + std::to_string(txtype));
 	}
-	if(tx->Extract(data, len)){
+	if(tx->Extract(data, len)){ // FIXME convert to exception-based
 		delete tx;
-		return nullptr;
+		throw TransactionException("error extracting transaction");
 	}
 	return std::unique_ptr<Transaction>(tx);
 }

@@ -7,8 +7,8 @@
 TEST(CatenaTransactions, EmptyTX){
 	Catena::CatenaHash hash;
 	unsigned char buf[1] = {0};
-	EXPECT_EQ(Catena::Transaction::lexTX(buf, 0, hash, 0), nullptr);
-	EXPECT_EQ(Catena::Transaction::lexTX(buf, 1, hash, 0), nullptr);
+	EXPECT_THROW(Catena::Transaction::LexTX(buf, 0, hash, 0), Catena::TransactionException);
+	EXPECT_THROW(Catena::Transaction::LexTX(buf, 1, hash, 0), Catena::TransactionException);
 }
 
 static inline const unsigned char *uccast(const char* s){
@@ -17,7 +17,7 @@ static inline const unsigned char *uccast(const char* s){
 
 TEST(CatenaTransactions, NoOp){
 	Catena::CatenaHash hash;
-	EXPECT_NE(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00"), 4, hash, 0), nullptr);
+	EXPECT_NE(Catena::Transaction::LexTX(uccast("\x00\x00\x00\x00"), 4, hash, 0), nullptr);
 }
 
 TEST(CatenaTransactions, NoOpSerialize){

@@ -12,6 +12,12 @@
 
 namespace Catena {
 
+class TransactionException : public std::runtime_error {
+public:
+TransactionException() : std::runtime_error("invalid transaction"){}
+TransactionException(const std::string& s) : std::runtime_error(s){}
+};
+
 enum class TXTypes {
 	NoOp = 0x0000,
 	ConsortiumMember = 0x0001,
@@ -51,7 +57,7 @@ friend std::ostream& operator<<(std::ostream& s, const Transaction* t){
 }
 
 static std::unique_ptr<Transaction>
-lexTX(const unsigned char* data, unsigned len,
+LexTX(const unsigned char* data, unsigned len,
 	const CatenaHash& blkhash, unsigned txidx);
 
 protected:
