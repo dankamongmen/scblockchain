@@ -2,11 +2,12 @@
 #include <signal.h>
 #include <unistd.h>
 #include <iostream>
+#include <libcatena/rpc.h>
 #include <libcatena/sig.h>
 #include <libcatena/chain.h>
 #include <libcatena/utility.h>
-#include "catena/httpd.h"
 #include "catena/readline.h"
+#include "catena/httpd.h"
 
 using namespace CatenaAgent;
 
@@ -125,12 +126,15 @@ int main(int argc, char **argv){
 				return EXIT_FAILURE;
 			}
 		}
+		// These don't have defauult constructors, so declare pointers
+		// to them, and only set those pointers when we need them.
 		std::unique_ptr<HTTPDServer> httpd;
+		std::unique_ptr<Catena::RPCService> rpcd;
 		if(rpc_port){
 			std::cout << "Enabling RPC on port " << rpc_port << std::endl;
-			if(!chain.EnableRPC(rpc_port, chain_file, peer_file)){
-				std::cerr << "Coudln't set up RPC service at " << rpc_port << std::endl;
-				return EXIT_FAILURE;
+			rpcd = std::make_unique<Catena::RPCService>(chain, rpc_port, chain_file);
+			if(peer_file){
+				rpcd.get()->AddPeers(peer_file);
 			}
 		}
 		if(httpd_port){
@@ -144,12 +148,17 @@ int main(int argc, char **argv){
 			ReadlineUI rline(chain);
 			rline.InputLoop();
 		}
+		return EXIT_SUCCESS;
+	}catch(Catena::NetworkException& e){
+		std::cerr << e.what() << std::endl;
+	}catch(Catena::ConvertInputException& e){
+		std::cerr << e.what() << std::endl;
+	}catch(Catena::BlockHeaderException& e){
+		std::cerr << ledger_file << ": " << e.what() << std::endl;
 	}catch(Catena::BlockValidationException& e){
 		std::cerr << ledger_file << ": " << e.what() << std::endl;
-		return EXIT_FAILURE;
 	}catch(std::ifstream::failure& e){
 		std::cerr << ledger_file << ": " << e.what() << std::endl;
-		return EXIT_FAILURE;
 	}
-	return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }
