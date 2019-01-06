@@ -1,11 +1,11 @@
 #include <memory>
 #include <cstring>
 #include <iostream>
-#include "libcatena/utility.h"
-#include "libcatena/chain.h"
-#include "libcatena/block.h"
-#include "libcatena/hash.h"
-#include "libcatena/tx.h"
+#include <libcatena/utility.h>
+#include <libcatena/chain.h>
+#include <libcatena/block.h>
+#include <libcatena/hash.h>
+#include <libcatena/tx.h>
 
 namespace Catena {
 
@@ -145,18 +145,19 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, LedgerMap& lmap,
 bool Blocks::LoadData(const void* data, unsigned len, LedgerMap& lmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
+	memledger.clear();
 	auto blocknum = VerifyData(static_cast<const unsigned char*>(data),
 					len, lmap, tstore);
 	if(blocknum < 0){
 		return true;
 	}
+	memledger.assign((const unsigned char*)data, ((const unsigned char*)data) + len);
 	return false;
 }
 
 bool Blocks::LoadFile(const std::string& fname, LedgerMap& lmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
-	filename = "";
 	size_t size;
 	// Returns nullptr on zero-byte file, but LoadData handles that fine
 	const auto& memblock = ReadBinaryFile(fname, &size);
@@ -168,12 +169,10 @@ bool Blocks::LoadFile(const std::string& fname, LedgerMap& lmap, TrustStore& tst
 }
 
 bool Blocks::AppendBlock(const unsigned char* block, size_t blen, LedgerMap& lmap, TrustStore& tstore){
-	std::cout << "Validating " << blen << " byte block\n";
 	if(VerifyData(block, blen, lmap, tstore) <= 0){
 		return true;
 	}
-	if(filename != ""){
-		std::cout << "Appending " << blen << " byte block\n";
+	if(!filename.empty()){
 		// FIXME if we have an error writing out, do we need to remove
 		// the new data from internal data structures from VerifyData?
 		// Safest thing might be to copy+append first, then verify, then
@@ -185,9 +184,8 @@ bool Blocks::AppendBlock(const unsigned char* block, size_t blen, LedgerMap& lma
 			std::cerr << "error updating file " << filename << std::endl;
 			return true;
 		}
-		std::cout << "Wrote " << blen << " bytes to " << filename << std::endl;
 	}else{
-		std::cout << "Ledger is not file-backed, not writing data\n";
+		memledger.insert(memledger.end(), block, block + blen);
 	}
 	return false;
 }

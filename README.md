@@ -17,7 +17,7 @@ might or might not work.
 * OpenSSL 1.1+ (libopenssl-dev) (older versions *probably will not* work)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
-* JSON for Modern C++ 3.4.0+ (nlohmann-json3-dev)
+* JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
 
 External projects (see the `ext/` directory) include:
 

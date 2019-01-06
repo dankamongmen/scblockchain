@@ -47,7 +47,7 @@ void PeerCount(int* defined, int* active, int* maxactive) {
 private:
 int port;
 std::vector<Peer> peers;
-SSL_CTX* sslctx;
+//SSL_CTX* sslctx;
 };
 
 }

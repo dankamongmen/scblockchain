@@ -114,6 +114,7 @@ std::vector<BlockHeader> headers;
 int VerifyData(const unsigned char* data, unsigned len,
 		LedgerMap& lmap, TrustStore& tstore);
 std::string filename; // for in-memory chains, "", otherwise name from LoadFile
+std::vector<unsigned char> memledger; // non-empty iff filename.empty()
 };
 
 // A descriptor of a single block, and logic to serialize blocks
