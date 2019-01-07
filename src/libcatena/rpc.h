@@ -11,14 +11,9 @@
 #include <openssl/ssl.h>
 #include <libcatena/chain.h>
 #include <libcatena/peer.h>
+#include <libcatena/tls.h>
 
 namespace Catena {
-
-class NetworkException : public std::runtime_error {
-public:
-NetworkException() : std::runtime_error("network error"){}
-NetworkException(const std::string& s) : std::runtime_error(s){}
-};
 
 constexpr int MaxActiveRPCPeers = 8;
 
@@ -30,7 +25,6 @@ RPCService() = delete;
 // FIXME probably need to accept our own cert+key files, ugh. might be able to
 //   have our own cert as the last in the cachainfile?
 RPCService(Chain& chain, int port, const std::string& chainfile);
-virtual ~RPCService() = default;
 
 // peerfile must contain one peer per line, specified as an IPv4 or IPv6
 // address and optional ":port" suffix. If a port is not specified for a peer,
@@ -53,7 +47,7 @@ private:
 int port;
 Chain& ledger;
 std::vector<Peer> peers;
-//SSL_CTX* sslctx;
+SSLCtxRAII sslctx;
 };
 
 }

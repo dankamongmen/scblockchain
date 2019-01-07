@@ -7,11 +7,17 @@ namespace Catena {
 
 RPCService::RPCService(Chain& chain, int port, const std::string& chainfile) :
   port(port),
-  ledger(chain) {
+  ledger(chain),
+  sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method())))	{
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
 	}
-	(void)chainfile; // FIXME do crap
+	if(1 != SSL_CTX_set_min_proto_version(sslctx.get(), TLS1_3_VERSION)){
+		throw NetworkException("couldn't force TLSv1.3+");
+	}
+	if(1 != SSL_CTX_use_certificate_chain_file(sslctx.get(), chainfile.c_str())){
+		throw NetworkException("couldn't load certificate chain");
+	}
 }
 
 void RPCService::AddPeers(const std::string& peerfile) {
