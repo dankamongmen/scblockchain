@@ -149,6 +149,10 @@ this message.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
+The version and utc announced in the transaction payload ought not be less than
+or equal to any other published NewVersion transaction, to protect against
+replay.
+
 ### Consortium Member
 
 Transaction type 0x0001, followed by a 16-bit signature length, followed by

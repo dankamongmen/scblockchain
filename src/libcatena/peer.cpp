@@ -1,9 +1,12 @@
 #include <cctype>
 #include <netdb.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <libcatena/utility.h>
 #include <libcatena/peer.h>
+#include <libcatena/rpc.h>
+#include <libcatena/dns.h>
 
 namespace Catena {
 
@@ -43,6 +46,28 @@ Peer::Peer(const std::string& addr, int defaultport) {
 		throw ConvertInputException("bad address: " + address);
 	}
 	freeaddrinfo(res);
+}
+
+int Peer::Connect() {
+	struct addrinfo hints{};
+	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	AddrInfo ai(address.c_str(), NULL, &hints);
+	const struct addrinfo* info = ai.AddrList();
+	do{
+		int fd = socket(info->ai_family, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, info->ai_protocol);
+		if(fd < 0){
+			continue;
+		}
+		if(connect(fd, info->ai_addr, info->ai_addrlen)){
+			close(fd);
+			continue;
+		}
+		// FIXME overlay TLS
+		return fd;
+	}while( (info = info->ai_next) );
+	throw NetworkException("couldn't connect to " + address);
 }
 
 }
