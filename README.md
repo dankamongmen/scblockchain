@@ -19,7 +19,7 @@ might or might not work.
     * Tested with clang++ 7.0.1 and g++ 8.2.0
 * GNU Make 4.2.1+
 * Google Test 1.8.1+ (libgtest-dev)
-* OpenSSL 1.1+ (libopenssl-dev) (older versions *probably will not* work)
+* OpenSSL 1.1.1+ (libopenssl-dev) (1.1.1 is required for TLSv1.3)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
