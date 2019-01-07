@@ -56,7 +56,8 @@ int Peer::Connect() {
 	AddrInfo ai(address.c_str(), NULL, &hints);
 	const struct addrinfo* info = ai.AddrList();
 	do{
-		int fd = socket(info->ai_family, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, info->ai_protocol);
+		// only set SOCK_NONBLOCK after we've connect()ed
+		int fd = socket(info->ai_family, SOCK_STREAM | SOCK_CLOEXEC, info->ai_protocol);
 		if(fd < 0){
 			continue;
 		}
@@ -65,6 +66,7 @@ int Peer::Connect() {
 			continue;
 		}
 		// FIXME overlay TLS
+		// FIXME add SOCK_NONBLOCK
 		return fd;
 	}while( (info = info->ai_next) );
 	throw NetworkException("couldn't connect to " + address);
