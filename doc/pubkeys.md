@@ -186,6 +186,6 @@ Key lives in `test/ca/intermediate/testcorp/private/testnode1.key.pem`.
 * C = US
 * ST = Georgia
 * L = Atlanta
-* C = US
-* ST = Georgia
-* L = Atlanta
+* O = TestCorp
+* OU = testnode1
+* CN = testnode1
