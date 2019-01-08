@@ -107,9 +107,23 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
+	std::cout << "cxx: " << Catena::GetCompilerID() << "\n";
+	std::cout << "libc: " << Catena::GetLibcID() << "\n";
+	std::cout << "json: JSON for Modern C++ " <<
+		NLOHMANN_JSON_VERSION_MAJOR << "." <<
+		NLOHMANN_JSON_VERSION_MINOR << "." <<
+		NLOHMANN_JSON_VERSION_PATCH << "\n";
+	std::cout << "crypto: " << SSLeay_version(SSLEAY_VERSION) << "\n";
+	std::cout << "\n";
 	std::cout << "chain bytes: " << chain.Size() << "\n";
+	std::cout << "blocks: " << chain.GetBlockCount() << "\n";
+	std::cout << "transactions: " << chain.TXCount() << "\n";
+	std::cout << "outstanding TXs: " << chain.OutstandingTXCount() << "\n";
 	std::cout << "consortium members: " << chain.ConsortiumMemberCount() << "\n";
 	std::cout << "lookup requests: " << chain.LookupRequestCount() << "\n";
+	std::cout << "lookup authorizations: " << chain.LookupRequestCount(true) << "\n";
+	std::cout << "external IDs: " << chain.ExternalLookupCount() << "\n";
+	std::cout << "public keys: " << chain.PubkeyCount() << "\n";
 	std::cout << "users: " << chain.UserCount() << "\n";
 	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
 	std::cout << std::flush;
