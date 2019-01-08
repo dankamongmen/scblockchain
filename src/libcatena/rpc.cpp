@@ -1,20 +1,30 @@
 #include <sstream>
 #include <fstream>
+#include <libcatena/utility.h>
 #include <libcatena/rpc.h>
 
 namespace Catena {
 
-RPCService::RPCService(int port, const std::string& chainfile) :
-  port(port) {
+RPCService::RPCService(Chain& chain, int port, const std::string& chainfile) :
+  port(port),
+  ledger(chain),
+  sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method())))	{
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
 	}
-	(void)chainfile; // FIXME do crap
+	if(1 != SSL_CTX_set_min_proto_version(sslctx.get(), TLS1_3_VERSION)){
+		throw NetworkException("couldn't force TLSv1.3+");
+	}
+	if(1 != SSL_CTX_use_certificate_chain_file(sslctx.get(), chainfile.c_str())){
+		throw NetworkException("couldn't load certificate chain");
+	}
 }
 
 void RPCService::AddPeers(const std::string& peerfile) {
-	std::ifstream in(peerfile); // FIXME zee error cheques?
-	in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	std::ifstream in(peerfile);
+	if(!in.is_open()){
+		throw std::ifstream::failure("couldn't open " + peerfile);
+	}
 	std::vector<Peer> ret;
 	std::string line;
 	while(std::getline(in, line)){
@@ -23,8 +33,11 @@ void RPCService::AddPeers(const std::string& peerfile) {
 		}
 		ret.emplace_back(line, port);
 	}
-	// FIXME more error cheques
-	// FIXME add ret to peer set
+	if(!in.eof()){
+		throw ConvertInputException("couldn't extract lines from file");
+	}
+	// FIXME filter out duplicates?
+	peers.insert(peers.end(), ret.begin(), ret.end());
 }
 
 }

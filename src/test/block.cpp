@@ -3,6 +3,7 @@
 #include <libcatena/block.h>
 #include <libcatena/builtin.h>
 #include <libcatena/truststore.h>
+#include <libcatena/newversiontx.h>
 #include "test/defs.h"
 
 TEST(CatenaBlocks, BlocksGenesisBlock){
@@ -49,7 +50,8 @@ TEST(CatenaBlocks, BlocksInvalidShort){
 	Catena::Blocks cbs;
 	char block[Catena::Block::BLOCKHEADERLEN];
 	// Should fail on fewer bytes than the minimum
-	EXPECT_TRUE(cbs.LoadData(block, sizeof(block) - 1, lmap, tstore));
+	EXPECT_THROW(cbs.LoadData(block, sizeof(block) - 1, lmap, tstore),
+			Catena::BlockHeaderException);
 }
 
 // A chunk large enough to be a valid block, but containing all 0s
@@ -59,7 +61,8 @@ TEST(CatenaBlocks, BlocksInvalidZeroes){
 	Catena::Blocks cbs;
 	char block[Catena::Block::BLOCKHEADERLEN];
 	memset(block, 0, sizeof(block));
-	EXPECT_TRUE(cbs.LoadData(block, sizeof(block), lmap, tstore));
+	EXPECT_THROW(cbs.LoadData(block, sizeof(block), lmap, tstore),
+			Catena::BlockHeaderException);
 }
 
 // Generate a simple block, and read it back
@@ -78,8 +81,8 @@ TEST(CatenaBlocks, BlockGenerated){
 	EXPECT_FALSE(cbs.LoadData(block.get(), size, lmap, tstore));
 }
 
-// Generate a block with some NoOps, and read it back
-TEST(CatenaBlocks, BlockGeneratedNoOps){
+// Generate a block with some NewVersions, and read it back
+TEST(CatenaBlocks, BlockGeneratedNewVersions){
 	Catena::LedgerMap lmap;
 	Catena::TrustStore tstore;
 	for(auto i = 0 ; i < 4096 ; i += 16){
@@ -87,7 +90,7 @@ TEST(CatenaBlocks, BlockGeneratedNoOps){
 		memset(prevhash.data(), 0xff, prevhash.size());
 		Catena::Block b;
 		for(auto j = 0 ; j < i + 1 ; ++j){
-			b.AddTransaction(std::make_unique<Catena::NoOpTX>());
+			b.AddTransaction(std::make_unique<Catena::NewVersionTX>());
 		}
 		EXPECT_EQ(i + 1, b.TransactionCount());
 		std::unique_ptr<const unsigned char[]> block;
@@ -114,7 +117,8 @@ TEST(CatenaBlocks, BlockGeneratedBadprev){
 	ASSERT_NE(nullptr, block);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
-	EXPECT_TRUE(cbs.LoadData(block.get(), size, lmap, tstore));
+	EXPECT_THROW(cbs.LoadData(block.get(), size, lmap, tstore),
+			Catena::BlockHeaderException);
 }
 
 // Generate two simple blocks, concatenate them, and read them back

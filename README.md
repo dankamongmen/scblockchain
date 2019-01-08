@@ -1,5 +1,11 @@
 # catena - a distributed ledger for health information
 
+Detailed subdocumentation:
+* [Block serialization format](doc/block-format.md)
+* [P2P networking](doc/networking.md)
+* [JSON schemata for web API](doc/json-schema.md)
+* [Testing keys](doc/pubkeys.md)
+
 ## Building
 
 The default target is `all`, which will build all binaries and docs. To run
@@ -10,21 +16,15 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 Required version numbers indicate the minimal version tested. Older versions
 might or might not work.
 
-* C++ compiler with C++14 support
-    * Tested with clang++ 7.0.1 and g++ 8.2.0
+* C++ compiler with C++17 support
+    * Tested with `clang++` 7.0.1 and `g++` 8.2.0
 * GNU Make 4.2.1+
 * Google Test 1.8.1+ (libgtest-dev)
-* OpenSSL 1.1+ (libopenssl-dev) (older versions *probably will not* work)
+* OpenSSL 1.1.1+ (libopenssl-dev) (1.1.1 is required for TLSv1.3)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
-* JSON for Modern C++ 3.4.0+ (nlohmann-json3-dev)
-
-External projects (see the `ext/` directory) include:
-
-* nlohmann\_json (https://github.com/nlohmann/json) version 3.5.0 (released 2018-12-22, MIT)
-
-Dependencies included do not need to be installed on the host system, but their
-presence should not lead to any problems.
+* JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
+    * NB: `clang++` 7.0.1 seemed to have problems with v3.5.0
 
 ## Running the catena daemon
 
@@ -90,12 +90,11 @@ command):
 * `outstanding`: print outstanding transactions in a human-readable format.
 * `commit`: coalesce outstanding transactions and add them to ledger.
 * `flush`: flush (drop) outstanding transactions.
-* `noop`: generate a NoOp transaction.
 * `member`: generate a ConsortiumMember transaction. takes as its arguments a
 TXSpec for the signing key, a filename containing the new member's public key,
 and an arbitrary JSON-encoded payload.
 * `getmember`: list all consortium members, or one specified member with
-patient details.
+user details.
 * `exlookup`: generate an ExternalLookup transaction. takes as its arguments
 a TXSpec for the signing key, an integer specifying the lookup type, a filename
 containing the new association's public key, and an external identifier valid
@@ -104,22 +103,22 @@ for the specified lookup type.
 a TXSpec for the requesting ConsortiumMember, a TXSpec for the referenced
 ExternalLookup, and a JSON payload.
 * `lauth`: generate a LookupAuth transaction. takes as its arguments a TXSpec
-for the referenced LookupAuthReq, a TXSpec for the unveiled Patient, and a
-filename containing the patient's symmetric key.
-* `patient`: generate a Patient transaction. takes as its arguments a filename
+for the referenced LookupAuthReq, a TXSpec for the unveiled User, and a
+filename containing the user's symmetric key.
+* `user`: generate a User transaction. takes as its arguments a filename
 containing the new entity's authorization public key, a filename containing the
 raw symmetric key, and an arbitrary JSON payload. This payload will be
 encrypted.
-* `delpstatus`: generate a PatientStatusDelegation transaction. takes as its
-arguments a TXSpec for the delegating Patient, a TXSpec for the delegated
+* `delustatus`: generate a UserStatusDelegation transaction. takes as its
+arguments a TXSpec for the delegating User, a TXSpec for the delegated
 ConsortiumMember, and a status type.
-* `pstatus`: generate a PatientStatus transaction. takes as its arguments a
-TXSpec for the referenced PatientStatusDelegation, and a JSON payload.
-* `getpstatus`: show the most recent PatientStatus for the specified patient
-and patient status delegation type.
+* `ustatus`: generate a UserStatus transaction. takes as its arguments a
+TXSpec for the referenced UserStatusDelegation, and a JSON payload.
+* `getustatus`: show the most recent UserStatus for the specified user
+and user status delegation type.
 
 Use of commands that generate signed or encrypted transactions requires an
-appropriate private key having been loaded with the `-u` option.
+appropriate private key having been loaded with the `-k` option.
 
 ### HTTP services of cantena
 
@@ -149,23 +148,23 @@ of the same information as is available from the `summary` command.
 * POST `/lauth`: JSON equivalent of the `lauth` command
     * Requires an application/json body of type NewLookupAuthorizationTX
     * Replies with application/json body of type TXRequestResponse
-* POST `/patient`: JSON equivalent of the `patient` command
-    * Requires an application/json body of type NewPatientTX
-    * Replies with application/json body of type NewPatientTXResponse or, on
+* POST `/user`: JSON equivalent of the `user` command
+    * Requires an application/json body of type NewUserTX
+    * Replies with application/json body of type NewUserTXResponse or, on
 failure, TXRequestResponse
-* POST `/delpstatus`: JSON equivalent of the `delpstatus` command
-    * Requires an application/json body of type NewPatientStatusDelegationTX
+* POST `/delustatus`: JSON equivalent of the `delustatus` command
+    * Requires an application/json body of type NewUserStatusDelegationTX
     * Replies with application/json body of type TXRequestResponse
-* POST `/pstatus`: JSON equivalent of the `pstatus` command
-    * Requires an application/json body of type NewPatientStatusTX
+* POST `/ustatus`: JSON equivalent of the `ustatus` command
+    * Requires an application/json body of type NewUserStatusTX
     * Replies with application/json body of type TXRequestResponse
-* GET `/pstatus`: JSON equivalent of the `getpstatus` command
-    * Required query argument: `patient`, TXSpec of Patient
+* GET `/ustatus`: JSON equivalent of the `getustatus` command
+    * Required query argument: `user`, TXSpec of User
     * Required query argument: `stype`, integer specifying delegated status type
-    * Replies with application/json body of type PatientStatusResult or, on
+    * Replies with application/json body of type UserStatusResult or, on
 failure, TXRequestResponse
-* GET `/showpstatus`: HTML equivalent of `/pstatus`
-    * Accepts same query arguments as `/pstatus`
+* GET `/showustatus`: HTML equivalent of `/ustatus`
+    * Accepts same query arguments as `/ustatus`
 * GET `/showmembers`: HTML equivalent of `/getmembers`
     * Required query argument: `member`, TXSpec of ConsortiumMember
 * GET `/showblock`: HTML information about a particular block by hash

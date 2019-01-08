@@ -12,15 +12,21 @@
 
 namespace Catena {
 
+class TransactionException : public std::runtime_error {
+public:
+TransactionException() : std::runtime_error("invalid transaction"){}
+TransactionException(const std::string& s) : std::runtime_error(s){}
+};
+
 enum class TXTypes {
-	NoOp = 0x0000,
+	NewVersion = 0x0000,
 	ConsortiumMember = 0x0001,
 	ExternalLookup = 0x0002,
-	Patient = 0x0003,
-	PatientStatus = 0x0004,
+	User = 0x0003,
+	UserStatus = 0x0004,
 	LookupAuthReq = 0x0005,
 	LookupAuth = 0x0006,
-	PatientStatusDelegation = 0x0007,
+	UserStatusDelegation = 0x0007,
 };
 
 // TXType is always serialized as a 16-bit unsigned integer
@@ -51,7 +57,7 @@ friend std::ostream& operator<<(std::ostream& s, const Transaction* t){
 }
 
 static std::unique_ptr<Transaction>
-lexTX(const unsigned char* data, unsigned len,
+LexTX(const unsigned char* data, unsigned len,
 	const CatenaHash& blkhash, unsigned txidx);
 
 protected:
@@ -59,20 +65,6 @@ protected:
 // into validate(). wrap them up in a lambda?
 unsigned txidx; // transaction index within block
 CatenaHash blockhash; // containing block hash
-};
-
-class NoOpTX : public Transaction {
-public:
-NoOpTX() = default;
-NoOpTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
-bool Extract(const unsigned char* data, unsigned len) override;
-bool Validate(TrustStore& tstore __attribute__ ((unused)),
-		LedgerMap& map __attribute__ ((unused))) override {
-	return false;
-}
-nlohmann::json JSONify() const override;
-std::ostream& TXOStream(std::ostream& s) const override;
-std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
 };
 
 }

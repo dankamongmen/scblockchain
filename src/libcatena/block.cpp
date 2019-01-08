@@ -1,11 +1,11 @@
 #include <memory>
 #include <cstring>
 #include <iostream>
-#include "libcatena/utility.h"
-#include "libcatena/chain.h"
-#include "libcatena/block.h"
-#include "libcatena/hash.h"
-#include "libcatena/tx.h"
+#include <libcatena/utility.h>
+#include <libcatena/chain.h>
+#include <libcatena/block.h>
+#include <libcatena/hash.h>
+#include <libcatena/tx.h>
 
 namespace Catena {
 
@@ -37,7 +37,7 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 		}else{
 			txlen = len;
 		}
-		std::unique_ptr<Transaction> tx(Transaction::lexTX(data, txlen, chdr->hash, i));
+		std::unique_ptr<Transaction> tx(Transaction::LexTX(data, txlen, chdr->hash, i));
 		if(tx == nullptr){
 			return true;
 		}
@@ -53,33 +53,28 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 	return false;
 }
 
-bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
+void Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 		unsigned len, const CatenaHash& prevhash, uint64_t prevutc){
 	if(len < Block::BLOCKHEADERLEN){
-		std::cerr << "needed " << Block::BLOCKHEADERLEN <<
-			" bytes, had only " << len << std::endl;
-		return true;
+		throw BlockHeaderException("block was too short");
 	}
 	memcpy(chdr->hash.data(), data, chdr->hash.size());
 	data += chdr->hash.size();
 	unsigned const char* hashstart = data;
 	memcpy(chdr->prev.data(), data, chdr->prev.size());
 	if(chdr->prev != prevhash){
-		std::cerr << "invalid prev hash (wanted " << prevhash << ")" << std::endl;
-		return true;
+		throw BlockHeaderException("invalid prev hash");
 	}
 	data += chdr->prev.size();
 	chdr->version = nbo_to_ulong(data, 2);
 	data += 2; // 16-bit version field
 	if(chdr->version != Block::BLOCKVERSION){
-		std::cerr << "expected version " << Block::BLOCKVERSION << ", got " << chdr->version << std::endl;
-		return true;
+		throw BlockHeaderException("invalid version");
 	}
 	chdr->totlen = nbo_to_ulong(data, 3);
 	data += 3; // 24-bit totlen field
 	if(chdr->totlen < Block::BLOCKHEADERLEN || chdr->totlen > len){
-		std::cerr << "invalid totlen " << chdr->totlen << std::endl;
-		return true;
+		throw BlockHeaderException("invalid advertised length");
 	}
 	chdr->txcount = nbo_to_ulong(data, 3);
 	data += 3; // 24-bit txcount field
@@ -87,23 +82,19 @@ bool Block::ExtractHeader(BlockHeader* chdr, const unsigned char* data,
 	data += 5; // 40-bit UTC field
 	// FIXME reject 0 UTC?
 	if(chdr->utc < prevutc){ // allow non-strictly-increasing timestamps?
-		std::cerr << "utc " << chdr->utc << " was less than " << prevutc << std::endl;
-		return true;
+		throw BlockHeaderException("utc timestamp was earlier than prior");
 	}
 	for(int i = 0 ; i < 19 ; ++i){ // 19 reserved bytes
-		if(*data){
-			std::cerr << "non-zero reserved byte" << std::endl;
-			return false;
+		if(*data){ // FIXME make this a warning?
+			throw BlockHeaderException("non-zero reserved byte");
 		}
 		++data;
 	}
 	CatenaHash hash;
 	catenaHash(hashstart, chdr->totlen - HASHLEN, hash);
 	if(hash != chdr->hash){
-		std::cerr << "invalid block hash (wanted " << hash << ")" << std::endl;
-		return true;
+		throw BlockHeaderException("incorrect block hash");
 	}
-	return false;
 }
 
 // Verify new blocks relative to the loaded blocks (i.e., do not replay already-
@@ -129,9 +120,7 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, LedgerMap& lmap,
 		Block block;
 		BlockHeader chdr;
 		chdr.txidx = blocknum;
-		if(Block::ExtractHeader(&chdr, data, len, prevhash, prevutc)){
-			return -1;
-		}
+		Block::ExtractHeader(&chdr, data, len, prevhash, prevutc);
 		data += Block::BLOCKHEADERLEN;
 		prevhash = chdr.hash;
 		prevutc = chdr.utc;
@@ -156,18 +145,19 @@ int Blocks::VerifyData(const unsigned char *data, unsigned len, LedgerMap& lmap,
 bool Blocks::LoadData(const void* data, unsigned len, LedgerMap& lmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
+	memledger.clear();
 	auto blocknum = VerifyData(static_cast<const unsigned char*>(data),
 					len, lmap, tstore);
 	if(blocknum < 0){
 		return true;
 	}
+	memledger.assign((const unsigned char*)data, ((const unsigned char*)data) + len);
 	return false;
 }
 
 bool Blocks::LoadFile(const std::string& fname, LedgerMap& lmap, TrustStore& tstore){
 	offsets.clear();
 	headers.clear();
-	filename = "";
 	size_t size;
 	// Returns nullptr on zero-byte file, but LoadData handles that fine
 	const auto& memblock = ReadBinaryFile(fname, &size);
@@ -179,12 +169,10 @@ bool Blocks::LoadFile(const std::string& fname, LedgerMap& lmap, TrustStore& tst
 }
 
 bool Blocks::AppendBlock(const unsigned char* block, size_t blen, LedgerMap& lmap, TrustStore& tstore){
-	std::cout << "Validating " << blen << " byte block\n";
 	if(VerifyData(block, blen, lmap, tstore) <= 0){
 		return true;
 	}
-	if(filename != ""){
-		std::cout << "Appending " << blen << " byte block\n";
+	if(!filename.empty()){
 		// FIXME if we have an error writing out, do we need to remove
 		// the new data from internal data structures from VerifyData?
 		// Safest thing might be to copy+append first, then verify, then
@@ -196,9 +184,8 @@ bool Blocks::AppendBlock(const unsigned char* block, size_t blen, LedgerMap& lma
 			std::cerr << "error updating file " << filename << std::endl;
 			return true;
 		}
-		std::cout << "Wrote " << blen << " bytes to " << filename << std::endl;
 	}else{
-		std::cout << "Ledger is not file-backed, not writing data\n";
+		memledger.insert(memledger.end(), block, block + blen);
 	}
 	return false;
 }

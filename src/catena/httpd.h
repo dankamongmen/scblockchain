@@ -39,8 +39,8 @@ struct MHD_Response* Favicon(struct MHD_Connection*) const;
 struct MHD_Response* Show(struct MHD_Connection*) const;
 struct MHD_Response* TStore(struct MHD_Connection*) const;
 struct MHD_Response* Inspect(struct MHD_Connection*) const;
-struct MHD_Response* PstatusHTML(struct MHD_Connection* conn) const;
-struct MHD_Response* PstatusJSON(struct MHD_Connection* conn) const;
+struct MHD_Response* UstatusHTML(struct MHD_Connection* conn) const;
+struct MHD_Response* UstatusJSON(struct MHD_Connection* conn) const;
 struct MHD_Response* ShowMemberHTML(struct MHD_Connection* conn) const;
 struct MHD_Response* ShowBlockHTML(struct MHD_Connection* conn) const;
 
@@ -52,9 +52,9 @@ static int Handler(void* cls, struct MHD_Connection* conn, const char* url,
 int ExternalLookupTXReq(struct PostState* ps, const char* upload) const;
 int LookupAuthReqTXReq(struct PostState* ps, const char* upload) const;
 int LookupAuthTXReq(struct PostState* ps, const char* upload) const;
-int PatientTXReq(struct PostState* ps, const char* upload) const;
-int PatientDelegationTXReq(struct PostState* ps, const char* upload) const;
-int PatientStatusTXReq(struct PostState* ps, const char* upload) const;
+int UserTXReq(struct PostState* ps, const char* upload) const;
+int UserDelegationTXReq(struct PostState* ps, const char* upload) const;
+int UserStatusTXReq(struct PostState* ps, const char* upload) const;
 int MemberTXReq(struct PostState* ps, const char* upload) const;
 
 int HandlePost(struct MHD_Connection* conn, const char* url,

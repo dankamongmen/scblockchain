@@ -24,18 +24,28 @@ TEST(CatenaChain, ChainGenesisMock){
 }
 
 TEST(CatenaChain, ChainAddConsortiumMember){
-	Catena::Chain chain(MOCKLEDGER);
 	Catena::Keypair kp(ECDSAKEY);
 	Catena::TXSpec cm1(CM1_TEST_TX);
-	chain.AddPrivateKey(cm1, kp);
 	Catena::Keypair newkp;
 	newkp.Generate();
 	auto pem = newkp.PubkeyPEM();
 	ASSERT_LT(0, pem.length());
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+	auto origsize = chain.Size();
+	EXPECT_EQ(0, chain.TXCount());
+	EXPECT_EQ(0, chain.GetBlockCount());
+	EXPECT_EQ(0, chain.OutstandingTXCount());
 	nlohmann::json j = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
 	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
 					pem.length(), j);
-	// FIXME do commit, check result
+	EXPECT_EQ(1, chain.OutstandingTXCount());
+	EXPECT_EQ(0, chain.TXCount());
+	EXPECT_EQ(origsize, chain.Size());
+	chain.CommitOutstanding();
+	EXPECT_LT(origsize, chain.Size());
+	EXPECT_EQ(1, chain.TXCount());
+	EXPECT_EQ(1, chain.GetBlockCount());
 }
 
 // FIXME add tests which reject

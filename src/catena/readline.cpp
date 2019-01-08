@@ -110,7 +110,7 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 	std::cout << "chain bytes: " << chain.Size() << "\n";
 	std::cout << "consortium members: " << chain.ConsortiumMemberCount() << "\n";
 	std::cout << "lookup requests: " << chain.LookupRequestCount() << "\n";
-	std::cout << "patients: " << chain.PatientCount() << "\n";
+	std::cout << "users: " << chain.UserCount() << "\n";
 	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
 	std::cout << std::flush;
 	return 0;
@@ -196,18 +196,8 @@ int ReadlineUI::TStore(const Iterator start, const Iterator end){
 	return 0;
 }
 
-template <typename Iterator>
-int ReadlineUI::NewNoOp(const Iterator start, const Iterator end){
-	if(start != end){
-		std::cerr << "command does not accept arguments" << std::endl;
-		return -1;
-	}
-	chain.AddNoOp();
-	return 0;
-}
-
 std::ostream& ReadlineUI::MemberSummary(std::ostream& s, const Catena::ConsortiumMemberSummary& cm) const {
-	s << cm.cmspec << " (" << cm.patients << " patients) ";
+	s << cm.cmspec << " (" << cm.users << " users) ";
 	s << ANSI_GREY << std::setw(1) << cm.payload << ANSI_WHITE << std::endl;
 	return s;
 }
@@ -223,10 +213,10 @@ int ReadlineUI::GetMembers(const Iterator start, const Iterator end) {
 			const auto& txspec = Catena::TXSpec::StrToTXSpec(start[0]);
 			const auto& cm = chain.ConsortiumMember(txspec);
 			MemberSummary(std::cout, cm);
-			const auto& patients = chain.ConsortiumPatients(txspec);
+			const auto& users = chain.ConsortiumUsers(txspec);
 			std::cout << ANSI_GREY;
-			for(const auto& p : patients){
-				std::cout << p.patspec << "\n";
+			for(const auto& u : users){
+				std::cout << u.uspec << "\n";
 			}
 			return 0;
 		}catch(Catena::ConvertInputException& e){
@@ -270,7 +260,7 @@ int ReadlineUI::NewMember(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
+int ReadlineUI::NewUser(const Iterator start, const Iterator end){
 	if(end - start != 4){
 		std::cerr << "4 arguments required: ConsortiumMember spec, public key file, symmetric key file, JSON payload" << std::endl;
 		return -1;
@@ -288,7 +278,7 @@ int ReadlineUI::NewPatient(const Iterator start, const Iterator end){
 		}
 		memcpy(skey.data(), symkey.get(), skey.size());
 		auto payload = nlohmann::json::parse(json);
-		chain.AddPatient(cmspec, pkey.get(), plen, skey, payload);
+		chain.AddUser(cmspec, pkey.get(), plen, skey, payload);
 		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read a key (" << e.what() << ")" << std::endl;
@@ -327,12 +317,12 @@ template <typename Iterator>
 int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 	// FIXME make symmetric key file optional for anonymous passthrough
 	if(start + 3 != end){
-		std::cerr << "3 arguments required: LookupAuthReq spec, Patient spec, symmetric key file" << std::endl;
+		std::cerr << "3 arguments required: LookupAuthReq spec, User spec, symmetric key file" << std::endl;
 		return -1;
 	}
 	try{
 		auto larspec = Catena::TXSpec::StrToTXSpec(start[0]);
-		auto patspec = Catena::TXSpec::StrToTXSpec(start[1]);
+		auto uspec = Catena::TXSpec::StrToTXSpec(start[1]);
 		size_t symlen;
 		auto symkey = Catena::ReadBinaryFile(start[2], &symlen);
 		Catena::SymmetricKey skey;
@@ -341,7 +331,7 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 			return -1;
 		}
 		memcpy(skey.data(), symkey.get(), skey.size());
-		chain.AddLookupAuth(larspec, patspec, skey);
+		chain.AddLookupAuth(larspec, uspec, skey);
 		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read symmetric key (" << e.what() << ")" << std::endl;
@@ -354,19 +344,19 @@ int ReadlineUI::NewLookupAuth(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
+int ReadlineUI::NewUserStatus(const Iterator start, const Iterator end){
 	if(start + 2 != end){
-		std::cerr << "2 arguments required: PatientStatusDelegation spec, JSON payload" << std::endl;
+		std::cerr << "2 arguments required: UserStatusDelegation spec, JSON payload" << std::endl;
 		return -1;
 	}
 	const auto& json = start[1];
 	try{
-		auto psdspec = Catena::TXSpec::StrToTXSpec(start[0]);
+		auto usdspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		auto payload = nlohmann::json::parse(json);
-		chain.AddPatientStatus(psdspec, payload);
+		chain.AddUserStatus(usdspec, payload);
 		return 0;
 	}catch(Catena::InvalidTXSpecException& e){
-		std::cerr << "bad PatientStatusDelegation (" << e.what() << ")" << std::endl;
+		std::cerr << "bad UserStatusDelegation (" << e.what() << ")" << std::endl;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
 	}catch(Catena::SigningException& e){
@@ -378,18 +368,18 @@ int ReadlineUI::NewPatientStatus(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
+int ReadlineUI::GetUserStatus(const Iterator start, const Iterator end){
 	if(start + 2 != end){
-		std::cerr << "2 arguments required: Patient spec, status type" << std::endl;
+		std::cerr << "2 arguments required: User spec, status type" << std::endl;
 		return -1;
 	}
 	try{
-		auto patspec = Catena::TXSpec::StrToTXSpec(start[0]);
+		auto uspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		auto stype = Catena::StrToLong(start[1], 0, LONG_MAX);
-		auto json = chain.PatientStatus(patspec, stype);
+		auto json = chain.UserStatus(uspec, stype);
 		std::cout << json.dump() << "\n";
 		return 0;
-	}catch(Catena::PatientStatusException& e){
+	}catch(Catena::UserStatusException& e){
 		std::cerr << "couldn't get status (" << e.what() << ")" << std::endl;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "couldn't extract TXspec (" << e.what() << ")" << std::endl;
@@ -398,18 +388,18 @@ int ReadlineUI::GetPatientStatus(const Iterator start, const Iterator end){
 }
 
 template <typename Iterator>
-int ReadlineUI::NewPatientStatusDelegation(const Iterator start, const Iterator end){
+int ReadlineUI::NewUserStatusDelegation(const Iterator start, const Iterator end){
 	if(start + 4 != end){
-		std::cerr << "4 arguments required: Patient spec, ConsortiumMember spec, status type, JSON payload" << std::endl;
+		std::cerr << "4 arguments required: User spec, ConsortiumMember spec, status type, JSON payload" << std::endl;
 		return -1;
 	}
 	const auto& json = start[3];
 	try{
-		auto patspec = Catena::TXSpec::StrToTXSpec(start[0]);
+		auto uspec = Catena::TXSpec::StrToTXSpec(start[0]);
 		auto cmspec = Catena::TXSpec::StrToTXSpec(start[1]);
 		auto stype = Catena::StrToLong(start[2], 0, LONG_MAX);
 		auto payload = nlohmann::json::parse(json);
-		chain.AddPatientStatusDelegation(cmspec, patspec, stype, payload);
+		chain.AddUserStatusDelegation(cmspec, uspec, stype, payload);
 		return 0;
 	}catch(Catena::ConvertInputException& e){
 		std::cerr << "bad argument (" << e.what() << ")" << std::endl;
@@ -470,16 +460,15 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "commit", .fxn = &ReadlineUI::CommitOutstanding, "commit outstanding transactions to ledger", },
 		{ .cmd = "flush", .fxn = &ReadlineUI::FlushOutstanding, "flush (drop) outstanding transactions", },
 		{ .cmd = "tstore", .fxn = &ReadlineUI::TStore, .help = "dump trust store (key info)", },
-		{ .cmd = "noop", .fxn = &ReadlineUI::NewNoOp, .help = "create new NoOp transaction", },
 		{ .cmd = "member", .fxn = &ReadlineUI::NewMember, .help = "create new ConsortiumMember transaction", },
 		{ .cmd = "getmembers", .fxn = &ReadlineUI::GetMembers, .help = "list consortium members, or one with detail", },
 		{ .cmd = "exlookup", .fxn = &ReadlineUI::NewExternalLookup, .help = "create new ExternalLookup transaction", },
 		{ .cmd = "lauthreq", .fxn = &ReadlineUI::NewLookupAuthReq, .help = "create new LookupAuthorizationRequest transaction", },
 		{ .cmd = "lauth", .fxn = &ReadlineUI::NewLookupAuth, .help = "create new LookupAuthorization transaction", },
-		{ .cmd = "patient", .fxn = &ReadlineUI::NewPatient, .help = "create new Patient transaction", },
-		{ .cmd = "delpstatus", .fxn = &ReadlineUI::NewPatientStatusDelegation, .help = "create new PatientStatusDelegation transaction", },
-		{ .cmd = "pstatus", .fxn = &ReadlineUI::NewPatientStatus, .help = "create new PatientStatus transaction", },
-		{ .cmd = "getpstatus", .fxn = &ReadlineUI::GetPatientStatus, .help = "look up a patient's status", },
+		{ .cmd = "patient", .fxn = &ReadlineUI::NewUser, .help = "create new User transaction", },
+		{ .cmd = "delustatus", .fxn = &ReadlineUI::NewUserStatusDelegation, .help = "create new UserStatusDelegation transaction", },
+		{ .cmd = "ustatus", .fxn = &ReadlineUI::NewUserStatus, .help = "create new UserStatus transaction", },
+		{ .cmd = "getustatus", .fxn = &ReadlineUI::GetUserStatus, .help = "look up a patient's status", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;

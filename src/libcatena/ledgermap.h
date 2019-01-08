@@ -18,10 +18,10 @@ InvalidTXSpecException() : std::runtime_error("bad transaction spec"){}
 InvalidTXSpecException(const std::string& s) : std::runtime_error(s){}
 };
 
-class PatientStatusException : public std::runtime_error {
+class UserStatusException : public std::runtime_error {
 public:
-PatientStatusException() : std::runtime_error("bad patient status"){}
-PatientStatusException(const std::string& s) : std::runtime_error(s){}
+UserStatusException() : std::runtime_error("bad user status"){}
+UserStatusException(const std::string& s) : std::runtime_error(s){}
 };
 
 class LookupRequest {
@@ -59,17 +59,17 @@ class StatusDelegation {
 public:
 StatusDelegation() = delete;
 
-StatusDelegation(int stype, const TXSpec& cmspec, const TXSpec& patspec) :
+StatusDelegation(int stype, const TXSpec& cmspec, const TXSpec& uspec) :
 	statustype(stype),
 	cmspec(cmspec),
-	patspec(patspec) {}
+	uspec(uspec) {}
 
 int StatusType() const {
 	return statustype;
 }
 
-TXSpec PatSpec(void) const {
-	return patspec;
+TXSpec USpec(void) const {
+	return uspec;
 }
 
 TXSpec CMSpec(void) const {
@@ -79,22 +79,22 @@ TXSpec CMSpec(void) const {
 private:
 int statustype;
 TXSpec cmspec; // ConsortiumMemberTX
-TXSpec patspec; // PatientTX
+TXSpec uspec; // UserTX
 };
 
-struct PatientSummary {
-PatientSummary(const TXSpec& txspec) :
-	patspec(txspec) {}
+struct UserSummary {
+UserSummary(const TXSpec& txspec) :
+	uspec(txspec) {}
 
-TXSpec patspec;
+TXSpec uspec;
 };
 
-class Patient {
+class User {
 public:
 nlohmann::json Status(int stype) const {
 	const auto& it = statuses.find(stype);
 	if(it == statuses.end()){
-		throw PatientStatusException("patient had no such status");
+		throw UserStatusException("user had no such status");
 	}
 	return it->second;
 }
@@ -115,11 +115,11 @@ std::map<int, nlohmann::json> statuses;
 struct ConsortiumMemberSummary {
 ConsortiumMemberSummary(const TXSpec& txspec, int pcount, const nlohmann::json& pload) :
 	cmspec(txspec),
-	patients(pcount),
+	users(pcount),
 	payload(pload) {}
 
 TXSpec cmspec;
-int patients;
+int users;
 nlohmann::json payload;
 };
 
@@ -128,17 +128,17 @@ public:
 
 ConsortiumMember(const nlohmann::json& json) : payload(json) {}
 
-int PatientCount() const {
-	return patients.size();
+int UserCount() const {
+	return users.size();
 }
 
-void AddPatient(const TXSpec& p) {
-	patients.push_back(p);
+void AddUser(const TXSpec& u) {
+	users.push_back(u);
 }
 
-std::vector<PatientSummary> Patients() const {
-	std::vector<PatientSummary> ret;
-	for(auto it = std::begin(patients) ; it != std::end(patients); ++it){
+std::vector<UserSummary> Users() const {
+	std::vector<UserSummary> ret;
+	for(auto it = std::begin(users) ; it != std::end(users); ++it){
 		ret.emplace_back(*it);
 	}
 	return ret;
@@ -149,7 +149,7 @@ nlohmann::json Payload() const {
 }
 
 private:
-std::vector<TXSpec> patients;
+std::vector<TXSpec> users;
 nlohmann::json payload;
 };
 
@@ -183,8 +183,8 @@ int StatusDelegationCount() const {
 	return delegations.size();
 }
 
-int PatientCount() const {
-	return patients.size();
+int UserCount() const {
+	return users.size();
 }
 
 int ConsortiumMemberCount() const {
@@ -215,32 +215,32 @@ StatusDelegation& LookupDelegation(const TXSpec& psd) {
 	return it->second;
 }
 
-void AddDelegation(const TXSpec& psdspec, const TXSpec& cmspec,
-			const TXSpec& patspec, int stype) {
-	delegations.emplace(psdspec, StatusDelegation{stype, cmspec, patspec});
+void AddDelegation(const TXSpec& usdspec, const TXSpec& cmspec,
+			const TXSpec& uspec, int stype) {
+	delegations.emplace(usdspec, StatusDelegation{stype, cmspec, uspec});
 }
 
-void AddPatient(const TXSpec& patspec, const TXSpec& cmspec) {
+void AddUser(const TXSpec& uspec, const TXSpec& cmspec) {
 	auto it = cmembers.find(cmspec);
 	if(it == cmembers.end()){
 		throw InvalidTXSpecException("unknown consortium member");
 	}
-	patients.emplace(patspec, Patient{});
-	it->second.AddPatient(patspec);
+	users.emplace(uspec, User{});
+	it->second.AddUser(uspec);
 }
 
-const Patient& LookupPatient(const TXSpec& pat) const {
-	const auto& it = patients.find(pat);
-	if(it == patients.end()){
-		throw InvalidTXSpecException("unknown patient");
+const User& LookupUser(const TXSpec& u) const {
+	const auto& it = users.find(u);
+	if(it == users.end()){
+		throw InvalidTXSpecException("unknown user");
 	}
 	return it->second;
 }
 
-Patient& LookupPatient(const TXSpec& pat) {
-	const auto& it = patients.find(pat);
-	if(it == patients.end()){
-		throw InvalidTXSpecException("unknown patient");
+User& LookupUser(const TXSpec& u) {
+	const auto& it = users.find(u);
+	if(it == users.end()){
+		throw InvalidTXSpecException("unknown user");
 	}
 	return it->second;
 }
@@ -253,7 +253,7 @@ std::vector<ConsortiumMemberSummary> ConsortiumMembers() const {
 	std::vector<ConsortiumMemberSummary> ret;
 	for(auto it = std::begin(cmembers) ; it != std::end(cmembers); ++it){
 		ret.emplace_back(ConsortiumMemberSummary(it->first,
-				it->second.PatientCount(), it->second.Payload()));
+				it->second.UserCount(), it->second.Payload()));
 	}
 	return ret;
 }
@@ -263,16 +263,16 @@ ConsortiumMemberSummary ConsortiumMember(const TXSpec& cmspec) const {
 	if(it == cmembers.end()){
 		throw InvalidTXSpecException("unknown consortium member");
 	}
-	return ConsortiumMemberSummary(it->first, it->second.PatientCount(),
+	return ConsortiumMemberSummary(it->first, it->second.UserCount(),
 					it->second.Payload());
 }
 
-std::vector<PatientSummary> ConsortiumPatients(const TXSpec& cmspec) const {
+std::vector<UserSummary> ConsortiumUsers(const TXSpec& cmspec) const {
 	auto it = cmembers.find(cmspec);
 	if(it == cmembers.end()){
 		throw InvalidTXSpecException("unknown consortium member");
 	}
-	return it->second.Patients();
+	return it->second.Users();
 }
 
 private:
@@ -282,7 +282,7 @@ private:
 // unordered_map. Both guarantee validity of pointers to container data.
 std::map<TXSpec, LookupRequest> lookupreqs;
 std::map<TXSpec, StatusDelegation> delegations;
-std::map<TXSpec, Patient> patients;
+std::map<TXSpec, User> users;
 std::map<TXSpec, Catena::ConsortiumMember> cmembers;
 std::set<TXSpec> extlookups;
 };

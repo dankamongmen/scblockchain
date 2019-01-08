@@ -1,3 +1,6 @@
 .out
 .tags
 *.swp
+**/index.txt.old
+**/index.txt.attr.old
+**/serial.old

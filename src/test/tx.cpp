@@ -1,5 +1,6 @@
 #include <cstring>
 #include <gtest/gtest.h>
+#include <libcatena/newversiontx.h>
 #include <libcatena/utility.h>
 #include <libcatena/hash.h>
 #include <libcatena/tx.h>
@@ -7,22 +8,22 @@
 TEST(CatenaTransactions, EmptyTX){
 	Catena::CatenaHash hash;
 	unsigned char buf[1] = {0};
-	EXPECT_EQ(Catena::Transaction::lexTX(buf, 0, hash, 0), nullptr);
-	EXPECT_EQ(Catena::Transaction::lexTX(buf, 1, hash, 0), nullptr);
+	EXPECT_THROW(Catena::Transaction::LexTX(buf, 0, hash, 0), Catena::TransactionException);
+	EXPECT_THROW(Catena::Transaction::LexTX(buf, 1, hash, 0), Catena::TransactionException);
 }
 
 static inline const unsigned char *uccast(const char* s){
 	return reinterpret_cast<const unsigned char*>(s);
 }
 
-TEST(CatenaTransactions, NoOp){
+TEST(CatenaTransactions, NewVersion){
 	Catena::CatenaHash hash;
-	EXPECT_NE(Catena::Transaction::lexTX(uccast("\x00\x00\x00\x00"), 4, hash, 0), nullptr);
+	EXPECT_NE(Catena::Transaction::LexTX(uccast("\x00\x00\x00\x00"), 4, hash, 0), nullptr);
 }
 
-TEST(CatenaTransactions, NoOpSerialize){
+TEST(CatenaTransactions, NewVersionSerialize){
 	const unsigned char expected[] = { 0x0, 0x0 };
-	Catena::NoOpTX tx;
+	Catena::NewVersionTX tx;
 	auto r = tx.Serialize();
 	ASSERT_EQ(r.second, sizeof(expected));
 	EXPECT_EQ(0, memcmp(r.first.get(), expected, sizeof(expected)));
