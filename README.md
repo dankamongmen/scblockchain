@@ -4,6 +4,7 @@ Detailed subdocumentation:
 * [Block serialization format](doc/block-format.md)
 * [P2P networking](doc/networking.md)
 * [JSON schemata for web API](doc/json-schema.md)
+* [Testing keys](doc/pubkeys.md)
 
 ## Building
 
@@ -15,15 +16,15 @@ unit tests, use the `test` target, which will build any necessary dependencies.
 Required version numbers indicate the minimal version tested. Older versions
 might or might not work.
 
-* C++ compiler with C++14 support
-    * Tested with clang++ 7.0.1 and g++ 8.2.0
+* C++ compiler with C++17 support
+    * Tested with `clang++` 7.0.1 and `g++` 8.2.0
 * GNU Make 4.2.1+
 * Google Test 1.8.1+ (libgtest-dev)
 * OpenSSL 1.1.1+ (libopenssl-dev) (1.1.1 is required for TLSv1.3)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
-    * clang++ 7.0.1 seemed to have problems with v3.5.0
+    * NB: `clang++` 7.0.1 seemed to have problems with v3.5.0
 
 ## Running the catena daemon
 
