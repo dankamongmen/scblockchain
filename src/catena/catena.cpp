@@ -78,7 +78,7 @@ int main(int argc, char **argv){
 		}case 'k':{
 			const char* delim = strchr(optarg, ',');
 			if(delim == nullptr || delim == optarg){
-				std::cerr << "format: -v keyfile,txhash.txidx" << std::endl;
+				std::cerr << "format: -k keyfile,txhash.txidx" << std::endl;
 				usage(std::cerr, argv[0], EXIT_FAILURE);
 			}
 			try{
@@ -98,6 +98,10 @@ int main(int argc, char **argv){
 		default:
 			usage(std::cout, argv[0], EXIT_FAILURE);
 		}
+	}
+	if(argv[optind]){
+		std::cerr << "unexpected arguments" << std::endl;
+		usage(std::cerr, argv[0], EXIT_FAILURE);
 	}
 	Catena::IgnoreSignal(SIGPIPE);
 	if(ledger_file == nullptr){
