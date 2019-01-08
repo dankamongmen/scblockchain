@@ -94,8 +94,14 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>users</td><td>" << chain.UserCount() << "</td></tr>";
 	ss << "<tr><td>status delegations</td><td>" << chain.StatusDelegationCount() << "</td></tr>";
 	ss << "</table>";
-	ss << "<h3>most recent block</h3>";
-	BlockHTML(ss, chain.MostRecentBlockHash(), false);
+	Catena::CatenaHash mostrecent = chain.MostRecentBlockHash();
+	if(!mostrecent.IsGenesis()){
+		ss << "<h3>most recent block (<a href=\"/showblock?hash=" <<
+			mostrecent << "\">details</a>)</h3>";
+		BlockHTML(ss, chain.MostRecentBlockHash(), false);
+	}else{
+		ss << "<h3>no blocks on ledger</h3>";
+	}
 	return ss;
 }
 
@@ -226,6 +232,7 @@ std::stringstream& HTTPDServer::BlockHTML(std::stringstream& ss, const Catena::C
 			if(i + perline > blk.bhdr.totlen){
 				blen = blk.bhdr.totlen - i;
 			}
+			ss << std::hex << std::setfill('0') << std::setw(5) << i << " ";
 			Catena::HexOutput(ss, blk.bytes.get() + i, blen);
 			ss << "<br/>";
 		}

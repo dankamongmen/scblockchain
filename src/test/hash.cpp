@@ -52,3 +52,11 @@ TEST(CatenaHash, SHA256Serialize){
 		EXPECT_STREQ(ss.str().c_str(), t->str);
 	}
 }
+
+TEST(CatenaHash, IsGenesis){
+	Catena::CatenaHash hash;
+	hash.fill(0xff);
+	EXPECT_TRUE(hash.IsGenesis());
+	hash.data()[0] = 0x7f;
+	EXPECT_FALSE(hash.IsGenesis());
+}
