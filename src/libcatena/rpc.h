@@ -17,6 +17,7 @@ namespace Catena {
 constexpr int MaxActiveRPCPeers = 8;
 
 class Chain;
+class PolledListenFD;
 
 class RPCService {
 public:
@@ -54,12 +55,16 @@ std::vector<PeerInfo> Peers() const {
 	return ret;
 }
 
+// Callback for listen()ing sockets. Initiates SSL_accept().
+int Accept(int sd);
+
 private:
 int port;
 Chain& ledger;
 std::vector<Peer> peers;
 SSLCtxRAII sslctx;
-int sd4, sd6; // IPv4 and IPv6 listening sockets
+PolledListenFD* lsd4; // IPv4 and IPv6 listening sockets
+PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
 int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
@@ -67,7 +72,6 @@ std::atomic<bool> cancelled; // lame signal to Epoller
 void Epoller();
 int EpollListeners();
 void OpenListeners();
-int Accept(int sd);
 };
 
 }

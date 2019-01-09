@@ -90,7 +90,15 @@ SSL_CTX* get() {
 	SSL_CTX_free(sslctx);
 }
 
-SSLRAII NewSSL() const {
+SSL* NewSSL() const {
+	SSL* ret = SSL_new(sslctx);
+	if(ret == nullptr){
+		throw NetworkException("couldn't get TLS context");
+	}
+	return ret;
+}
+
+SSLRAII NewSSLRAII() const {
 	return SSLRAII(SSL_new(sslctx));
 }
 

@@ -13,52 +13,127 @@
 
 namespace Catena {
 
-void RPCService::OpenListeners() {
-	sd4 = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
-	if(sd4 < 0){
-		throw NetworkException("couldn't get TCP/IPv4 socket");
+// Each epoll()ed file descriptor has an associated free pointer. That pointer
+// should yield up a PolledFD derivative.
+class PolledFD {
+public:
+PolledFD(int sd) :
+  sd(sd) {
+	  if(sd < 0){
+		  throw NetworkException("tried to poll on negative fd");
+	  }
+}
+
+virtual void Callback(RPCService& rpc) = 0;
+
+virtual ~PolledFD() {
+	if(close(sd)){
+		std::cerr << "error closing epoll()ed sd " << sd << std::endl;
 	}
+}
+
+int FD() const {
+	return sd;
+}
+
+protected:
+int sd;
+};
+
+class PolledListenFD : public PolledFD {
+public:
+PolledListenFD(int family) :
+  PolledFD(socket(family, SOCK_STREAM | SOCK_CLOEXEC, 0)) {
 	int reuse = 1;
-	if(setsockopt(sd4, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))){
-		close(sd4);
-		throw NetworkException("couldn't set IPv4 SO_REUSEADDR");
+	if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))){
+		close(sd);
+		throw NetworkException("couldn't set SO_REUSEADDR");
 	}
-	struct sockaddr_in sin;
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(port);
-	sin.sin_addr.s_addr = INADDR_ANY;
-	if(bind(sd4, (const struct sockaddr*)&sin, sizeof(sin))){
-		close(sd4);
-		throw NetworkException("couldn't bind IPv4 listener");
+}
+
+void Callback(RPCService& rpc) override {
+	rpc.Accept(sd);
+}
+};
+
+class PolledTLSFD : public PolledFD {
+public:
+PolledTLSFD(int sd, SSL* ssl) :
+  PolledFD(sd),
+  ssl(ssl) {
+	if(ssl == nullptr){
+		throw NetworkException("tried to poll on null tls");
 	}
-	sd6 = socket(AF_INET6, SOCK_STREAM | SOCK_CLOEXEC, 0);
-	if(sd6 < 0){
-		close(sd4);
-		throw NetworkException("couldn't get TCP/IPv6 socket");
+	SSL_set_fd(ssl, sd); // FIXME can fail
+}
+
+~PolledTLSFD() {
+	SSL_free(ssl);
+}
+
+// FIXME get rid of this, have Accept() use Callback()
+SSL* HackSSL() const {
+	return ssl;
+}
+
+// FIXME it isn't always an accept! could be established...
+void Callback(RPCService& rpc) override {
+	auto ra = SSL_accept(ssl);
+	if(ra == 0){
+std::cerr << "HORRIBLE TLS ERROR YAY\n";
+		// FIXME kill ourselves off
+	}else if(ra < 0){
+std::cerr << "HORRIBLE INTERMEDIACY!\n";
+		auto oerr = SSL_get_error(ssl, ra);
+		if(oerr == SSL_ERROR_WANT_READ){
+		}else if(oerr == SSL_ERROR_WANT_WRITE){
+		}
+		// FIXME handle partial SSL_accept()
+	}else{
+std::cerr << "HORRIBLE SSL SUCCESS AUGH\n";
+		// FIXME success add back as something else
 	}
+	(void)rpc; // FIXME
+}
+
+private:
+SSL* ssl;
+};
+
+void RPCService::OpenListeners() {
+	lsd4 = new PolledListenFD(AF_INET);
 	try{
-		if(setsockopt(sd6, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))){
-			throw NetworkException("couldn't set IPv4 SO_REUSEADDR");
+		struct sockaddr_in sin;
+		memset(&sin, 0, sizeof(sin));
+		sin.sin_family = AF_INET;
+		sin.sin_port = htons(port);
+		sin.sin_addr.s_addr = INADDR_ANY;
+		if(bind(lsd4->FD(), (const struct sockaddr*)&sin, sizeof(sin))){
+			throw NetworkException("couldn't bind IPv4 listener");
 		}
-		struct sockaddr_in6 sin6;
-		memset(&sin6, 0, sizeof(sin6));
-		sin6.sin6_family = AF_INET6;
-		sin6.sin6_port = htons(port);
-		memcpy(&sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-		int v6only = 1;
-		if(setsockopt(sd6, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only))){
-			throw NetworkException("no pure IPv6 listeners");
-		}
-		if(bind(sd6, (const struct sockaddr*)&sin6, sizeof(sin6))){
-			throw NetworkException("couldn't bind IPv6 listener");
-		}
-		if(listen(sd4, SOMAXCONN) || listen(sd6, SOMAXCONN)){
-			throw NetworkException("couldn't set up listener queues");
+		lsd6 = new PolledListenFD(AF_INET6);
+		try{
+			struct sockaddr_in6 sin6;
+			memset(&sin6, 0, sizeof(sin6));
+			sin6.sin6_family = AF_INET6;
+			sin6.sin6_port = htons(port);
+			memcpy(&sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any));
+			int v6only = 1;
+			if(setsockopt(lsd6->FD(), IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only))){
+				throw NetworkException("no pure IPv6 listeners");
+			}
+			if(bind(lsd6->FD(), (const struct sockaddr*)&sin6, sizeof(sin6))){
+				throw NetworkException("couldn't bind IPv6 listener");
+			}
+			if(listen(lsd4->FD(), SOMAXCONN) || listen(lsd6->FD(), SOMAXCONN)){
+				throw NetworkException("couldn't set up listener queues");
+			}
+		}catch(...){
+			delete lsd6;
+			throw;
 		}
 	}catch(...){
-		close(sd6);
-		close(sd4);
+		delete lsd4;
 		throw;
 	}
 }
@@ -71,13 +146,13 @@ int RPCService::EpollListeners() {
 	try{
 		struct epoll_event ev = {
 			.events = EPOLLIN,
-			.data = { .fd = sd4, },
+			.data = { .ptr = lsd4, },
 		};
-		if(epoll_ctl(ret, EPOLL_CTL_ADD, sd4, &ev)){
+		if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd4->FD(), &ev)){
 			throw NetworkException("couldn't epoll on sd4");
 		}
-		ev.data.fd = sd6;
-		if(epoll_ctl(ret, EPOLL_CTL_ADD, sd6, &ev)){
+		ev.data.ptr = lsd6;
+		if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd6->FD(), &ev)){
 			throw NetworkException("couldn't epoll on sd6");
 		}
 	}catch(...){
@@ -111,8 +186,8 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
 			throw;
 		}
 	}catch(...){
-		close(sd4);
-		close(sd6);
+		delete lsd4;
+		delete lsd6;
 		throw;
 	}
 }
@@ -121,15 +196,11 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
 RPCService::~RPCService() {
 	cancelled.store(true);
 	epoller.join();
-	if(close(sd4)){
-		std::cerr << "warning: error closing ipv4 listening socket\n";
-	}
-	if(close(sd6)){
-		std::cerr << "warning: error closing ipv6 listening socket\n";
-	}
 	if(close(epollfd)){
 		std::cerr << "warning: error closing epoll fd\n";
 	}
+	delete lsd4;
+	delete lsd6;
 }
 
 // FIXME need arrange this all as non-blocking
@@ -148,33 +219,46 @@ int RPCService::Accept(int sd) {
 			throw NetworkException("error naming socket");
 		}
 		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
-		auto ssl = sslctx.NewSSL();
-		ssl.SetFD(ret);
-		auto ra = SSL_accept(ssl.get());
+		// FIXME don't want SSLRAII, as we hand this off, but also don't
+		// want to leak SSL* on exceptions...
+		auto sfd = new PolledTLSFD(ret, sslctx.NewSSL());
+		// FIXME rewrite all the following as a call to sfd->Callback
+		auto ra = SSL_accept(sfd->HackSSL());
 		if(1 != ra){
-			auto oerr = SSL_get_error(ssl.get(), ra);
+			auto oerr = SSL_get_error(sfd->HackSSL(), ra);
 			if(oerr == SSL_ERROR_WANT_READ){
 				// FIXME this isn't picking up a remote shutdown
 				struct epoll_event ev = {
-					.events = EPOLLIN,
-					.data = { .fd = ret, },
+					.events = EPOLLIN | EPOLLRDHUP,
+					.data = { .ptr = sfd, },
 				};
 				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+					delete sfd;
 					throw NetworkException("couldn't epoll-r on new sd");
 				}
 			}else if(oerr == SSL_ERROR_WANT_WRITE){
 				struct epoll_event ev = {
-					.events = EPOLLOUT,
-					.data = { .fd = ret, },
+					.events = EPOLLOUT | EPOLLRDHUP,
+					.data = { .ptr = sfd, },
 				};
 				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+					delete sfd;
 					throw NetworkException("couldn't epoll-w on new sd");
 				}
 			}else{
 				throw NetworkException("error accepting TLS");
 			}
 		}else{
-			// FIXME set it up to start transacting
+			// FIXME this isn't picking up a remote shutdown
+			// FIXME will be seen as accept()ing socket
+			struct epoll_event ev = {
+				.events = EPOLLIN | EPOLLRDHUP,
+				.data = { .ptr = sfd, },
+			};
+			if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+				delete sfd;
+				throw NetworkException("couldn't epoll-r on new sd");
+			}
 		}
 		return ret;
 	}catch(...){
@@ -194,23 +278,11 @@ void RPCService::Epoller() {
 			throw NetworkException(std::string("epoll_wait() error: ") + strerror(errno));
 		}
 		if(eret){
-			if(ev.data.fd == sd4){
-				try{
-					auto sd = Accept(sd4);
-					close(sd); // FIXME
-				}catch(NetworkException& e){
-					std::cerr << "couldn't accept on " << sd4 << ": " << e.what() << std::endl;
-				}
-			}else if(ev.data.fd == sd6){
-				try{
-					auto sd = Accept(sd4);
-					close(sd); // FIXME
-				}catch(NetworkException& e){
-					std::cerr << "couldn't accept on " << sd4 << ": " << e.what() << std::endl;
-				}
-			}else{
-std::cerr << "UNKNOWN FD " << ev.data.fd << "\n";
-				continue; // FIXME handle new ones
+			PolledFD* pfd = static_cast<PolledFD*>(ev.data.ptr);
+			try{
+				pfd->Callback(*this);
+			}catch(NetworkException& e){
+				std::cerr << "error handling epoll result" << std::endl;
 			}
 		}
 	}
