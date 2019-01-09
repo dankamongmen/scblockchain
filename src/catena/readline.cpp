@@ -126,6 +126,12 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 	std::cout << "public keys: " << chain.PubkeyCount() << "\n";
 	std::cout << "users: " << chain.UserCount() << "\n";
 	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
+	auto port = chain.RPCPort();
+	if(port){
+		std::cout << "rpc port: " << port << "\n";
+	}else{
+		std::cout << "rpc port: not configured\n";
+	}
 	std::cout << std::flush;
 	return 0;
 }

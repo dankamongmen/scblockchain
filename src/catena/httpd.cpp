@@ -93,6 +93,12 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
 	ss << "<tr><td>users</td><td>" << chain.UserCount() << "</td></tr>";
 	ss << "<tr><td>status delegations</td><td>" << chain.StatusDelegationCount() << "</td></tr>";
+	auto port = chain.RPCPort();
+	if(port){
+		ss << "<tr><td>rpc port</td><td>" << port << "</td></tr>";
+	}else{
+		ss << "<tr><td>rpc port</td><td>n/a</td></tr>";
+	}
 	ss << "</table>";
 	Catena::CatenaHash mostrecent = chain.MostRecentBlockHash();
 	if(!mostrecent.IsGenesis()){
