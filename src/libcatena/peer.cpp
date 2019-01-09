@@ -78,6 +78,7 @@ std::cerr << "connect failed on sd " << fd << "\n";
 			close(fd);
 			continue;
 		}
+		std::cout << "connected " << fd << " to " << address << "\n";
 		// FIXME overlay TLS
 		// FIXME add SOCK_NONBLOCK
 		lasttime = time(NULL);

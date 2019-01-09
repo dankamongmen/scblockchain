@@ -1,13 +1,14 @@
 #include <cstring>
 #include <sstream>
 #include <fstream>
+#include <unistd.h>
+#include <sys/epoll.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <libcatena/utility.h>
 #include <libcatena/rpc.h>
 
 #include <iostream>
-#include <unistd.h>
 
 namespace Catena {
 
@@ -53,6 +54,30 @@ void RPCService::OpenListeners() {
 	}
 }
 
+int RPCService::EpollListeners() {
+	int ret = epoll_create1(EPOLL_CLOEXEC);
+	if(ret < 0){
+		throw NetworkException("couldn't get an epoll");
+	}
+	try{
+		struct epoll_event ev = {
+			.events = EPOLLIN,
+			.data = { .fd = sd4, },
+		};
+		if(epoll_ctl(ret, EPOLL_CTL_ADD, sd4, &ev)){
+			throw NetworkException("couldn't epoll on sd4");
+		}
+		ev.data.fd = sd6;
+		if(epoll_ctl(ret, EPOLL_CTL_ADD, sd6, &ev)){
+			throw NetworkException("couldn't epoll on sd6");
+		}
+	}catch(...){
+		close(ret);
+		throw;
+	}
+	return ret;
+}
+
 RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
   port(port),
   ledger(ledger),
@@ -68,12 +93,24 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
 		throw NetworkException("couldn't load certificate chain");
 	}
 	OpenListeners();
-	epoller = std::thread(&RPCService::Epoller, this);
+	try{
+		epollfd = EpollListeners();
+		try{
+			epoller = std::thread(&RPCService::Epoller, this);
+		}catch(...){
+			close(epollfd);
+			throw;
+		}
+	}catch(...){
+		close(sd4);
+		close(sd6);
+		throw;
+	}
 }
 
 // FIXME probably need rule of 5
 RPCService::~RPCService() {
-	cancelled = true; // FIXME needs be at least an atomic
+	cancelled.store(true);
 	epoller.join();
 	if(close(sd4)){
 		std::cerr << "warning: error closing ipv4 listening socket\n";
@@ -81,17 +118,35 @@ RPCService::~RPCService() {
 	if(close(sd6)){
 		std::cerr << "warning: error closing ipv6 listening socket\n";
 	}
+	if(close(epollfd)){
+		std::cerr << "warning: error closing epoll fd\n";
+	}
 }
 
 void RPCService::Epoller() {
 	while(1) {
-		// FIXME
-		if(cancelled){
-			std::cout << "not epollin' no mo'\n";
+		if(cancelled.load()){
+std::cout << "not epollin' no mo'\n";
 			return;
 		}
-		std::cout << "epollin'\n";
-		sleep(1);
+		struct epoll_event ev; // FIXME accept multiple events
+std::cout << "waiting on " << epollfd << "\n";
+		auto eret = epoll_wait(epollfd, &ev, 1, 100); // FIXME kill timeout
+		if(eret < 0 && errno != EINTR){
+			throw NetworkException(std::string("epoll_wait() error: ") + strerror(errno));
+		}
+		if(eret){
+std::cout << "hell yeah got event " << ev.data.fd << "\n";
+			if(ev.data.fd == sd4){
+				auto sd = accept(sd4, NULL, NULL);
+				close(sd); // FIXME
+			}else if(ev.data.fd == sd6){
+				auto sd = accept(sd6, NULL, NULL);
+				close(sd); // FIXME
+			}else{
+				continue; // FIXME handle new ones
+			}
+		}
 	}
 }
 

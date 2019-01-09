@@ -39,6 +39,7 @@ std::future<int> ConnectAsync() {
 	return std::async(std::launch::async, &Peer::Connect, this);
 }
 
+// FIXME needs lock against Connect() for at least "lasttime" purposes
 PeerInfo Info() const {
 	PeerInfo ret{address, port, lasttime};
 	return ret;

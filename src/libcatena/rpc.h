@@ -60,10 +60,12 @@ Chain& ledger;
 std::vector<Peer> peers;
 SSLCtxRAII sslctx;
 int sd4, sd6; // IPv4 and IPv6 listening sockets
+int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
 
 void Epoller();
+int EpollListeners();
 void OpenListeners();
 };
 
