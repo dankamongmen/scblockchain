@@ -1,3 +1,4 @@
+#include <netdb.h>
 #include <cstring>
 #include <sstream>
 #include <fstream>
@@ -17,6 +18,11 @@ void RPCService::OpenListeners() {
 	if(sd4 < 0){
 		throw NetworkException("couldn't get TCP/IPv4 socket");
 	}
+	int reuse = 1;
+	if(setsockopt(sd4, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))){
+		close(sd4);
+		throw NetworkException("couldn't set IPv4 SO_REUSEADDR");
+	}
 	struct sockaddr_in sin;
 	memset(&sin, 0, sizeof(sin));
 	sin.sin_family = AF_INET;
@@ -31,26 +37,29 @@ void RPCService::OpenListeners() {
 		close(sd4);
 		throw NetworkException("couldn't get TCP/IPv6 socket");
 	}
-	struct sockaddr_in6 sin6;
-	memset(&sin6, 0, sizeof(sin6));
-	sin6.sin6_family = AF_INET6;
-	sin6.sin6_port = htons(port);
-	memcpy(&sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-	int v6only = 1;
-	if(setsockopt(sd6, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only))){
+	try{
+		if(setsockopt(sd6, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))){
+			throw NetworkException("couldn't set IPv4 SO_REUSEADDR");
+		}
+		struct sockaddr_in6 sin6;
+		memset(&sin6, 0, sizeof(sin6));
+		sin6.sin6_family = AF_INET6;
+		sin6.sin6_port = htons(port);
+		memcpy(&sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any));
+		int v6only = 1;
+		if(setsockopt(sd6, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only))){
+			throw NetworkException("no pure IPv6 listeners");
+		}
+		if(bind(sd6, (const struct sockaddr*)&sin6, sizeof(sin6))){
+			throw NetworkException("couldn't bind IPv6 listener");
+		}
+		if(listen(sd4, SOMAXCONN) || listen(sd6, SOMAXCONN)){
+			throw NetworkException("couldn't set up listener queues");
+		}
+	}catch(...){
 		close(sd6);
 		close(sd4);
-		throw NetworkException("no pure IPv6 listeners");
-	}
-	if(bind(sd6, (const struct sockaddr*)&sin6, sizeof(sin6))){
-		close(sd6);
-		close(sd4);
-		throw NetworkException("couldn't bind IPv6 listener");
-	}
-	if(listen(sd4, SOMAXCONN) || listen(sd6, SOMAXCONN)){
-		close(sd6);
-		close(sd4);
-		throw NetworkException("couldn't set up listener queues");
+		throw;
 	}
 }
 
@@ -123,26 +132,50 @@ RPCService::~RPCService() {
 	}
 }
 
+// FIXME need arrange this all as non-blocking
+int RPCService::Accept(int sd) {
+	struct sockaddr ss;
+	socklen_t slen = sizeof(ss);
+	int ret = accept(sd, &ss, &slen);
+	if(ret < 0){
+		throw NetworkException("error accept()ing socket");
+	}
+	char paddr[INET6_ADDRSTRLEN];
+	char pport[6];
+	if(getnameinfo(&ss, slen, paddr, sizeof(paddr), pport, sizeof(pport),
+			NI_NUMERICHOST | NI_NUMERICSERV)){
+		throw NetworkException("error naming socket");
+	}
+	std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
+	// FIXME do TLS wrap
+	return ret;
+}
+
 void RPCService::Epoller() {
 	while(1) {
 		if(cancelled.load()){
-std::cout << "not epollin' no mo'\n";
 			return;
 		}
 		struct epoll_event ev; // FIXME accept multiple events
-std::cout << "waiting on " << epollfd << "\n";
 		auto eret = epoll_wait(epollfd, &ev, 1, 100); // FIXME kill timeout
 		if(eret < 0 && errno != EINTR){
 			throw NetworkException(std::string("epoll_wait() error: ") + strerror(errno));
 		}
 		if(eret){
-std::cout << "hell yeah got event " << ev.data.fd << "\n";
 			if(ev.data.fd == sd4){
-				auto sd = accept(sd4, NULL, NULL);
-				close(sd); // FIXME
+				try{
+					auto sd = Accept(sd4);
+					close(sd); // FIXME
+				}catch(NetworkException& e){
+					std::cerr << "couldn't accept on " << sd4 << ": " << e.what() << std::endl;
+				}
 			}else if(ev.data.fd == sd6){
-				auto sd = accept(sd6, NULL, NULL);
-				close(sd); // FIXME
+				try{
+					auto sd = Accept(sd4);
+					close(sd); // FIXME
+				}catch(NetworkException& e){
+					std::cerr << "couldn't accept on " << sd4 << ": " << e.what() << std::endl;
+				}
 			}else{
 				continue; // FIXME handle new ones
 			}

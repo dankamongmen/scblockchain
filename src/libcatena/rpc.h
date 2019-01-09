@@ -67,6 +67,7 @@ std::atomic<bool> cancelled; // lame signal to Epoller
 void Epoller();
 int EpollListeners();
 void OpenListeners();
+int Accept(int sd);
 };
 
 }
