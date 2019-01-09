@@ -60,6 +60,13 @@ int Peer::Connect() {
 	AddrInfo ai(address.c_str(), NULL, &hints); // blocking call, can throw
 	const struct addrinfo* info = ai.AddrList();
 	do{
+		if(info->ai_family == AF_INET){
+			((struct sockaddr_in*)info->ai_addr)->sin_port = htons(port);
+		}else if(info->ai_family == AF_INET6){
+			((struct sockaddr_in6*)info->ai_addr)->sin6_port = htons(port);
+		}else{
+			continue;
+		}
 		// only set SOCK_NONBLOCK after we've connect()ed
 		int fd = socket(info->ai_family, SOCK_STREAM | SOCK_CLOEXEC, info->ai_protocol);
 std::cout << "socket family " << info->ai_family << " sd " << fd << "\n";
