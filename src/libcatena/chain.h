@@ -169,6 +169,9 @@ std::vector<PeerInfo> Peers() const;
 // Throws NetworkException if RPC networking has not been enabled
 void AddPeers(const std::string& peerfile);
 
+// Returns 0 if RPC networking has not been enabled
+int RPCPort() const;
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:

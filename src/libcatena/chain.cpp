@@ -310,4 +310,11 @@ void Chain::EnableRPC(int port, const std::string& chainfile) {
 	rpcnet = std::make_unique<RPCService>(*this, port, chainfile);
 }
 
+int Chain::RPCPort() const {
+	if(!rpcnet){
+		return 0;
+	}
+	return rpcnet.get()->Port();
+}
+
 }
