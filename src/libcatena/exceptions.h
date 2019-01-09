@@ -55,6 +55,24 @@ KeypairException() : std::runtime_error("keypair error"){}
 KeypairException(const std::string& s) : std::runtime_error(s){}
 };
 
+class InvalidTXSpecException : public std::runtime_error {
+public:
+InvalidTXSpecException() : std::runtime_error("bad transaction spec"){}
+InvalidTXSpecException(const std::string& s) : std::runtime_error(s){}
+};
+
+class UserStatusException : public std::runtime_error {
+public:
+UserStatusException() : std::runtime_error("bad user status"){}
+UserStatusException(const std::string& s) : std::runtime_error(s){}
+};
+
+class TransactionException : public std::runtime_error {
+public:
+TransactionException() : std::runtime_error("invalid transaction"){}
+TransactionException(const std::string& s) : std::runtime_error(s){}
+};
+
 }
 
 #endif

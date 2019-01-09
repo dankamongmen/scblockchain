@@ -12,18 +12,6 @@
 
 namespace Catena {
 
-class InvalidTXSpecException : public std::runtime_error {
-public:
-InvalidTXSpecException() : std::runtime_error("bad transaction spec"){}
-InvalidTXSpecException(const std::string& s) : std::runtime_error(s){}
-};
-
-class UserStatusException : public std::runtime_error {
-public:
-UserStatusException() : std::runtime_error("bad user status"){}
-UserStatusException(const std::string& s) : std::runtime_error(s){}
-};
-
 class LookupRequest {
 public:
 LookupRequest() = delete;
