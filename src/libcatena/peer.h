@@ -9,6 +9,12 @@ namespace Catena {
 // inactive (no connection), pending (connection attempted but not yet
 // established), or active (connection established).
 
+// For returning (copied) details about a Peer beyond libcatena
+struct PeerInfo {
+std::string address;
+int port;
+};
+
 class Peer {
 public:
 Peer() = delete;
@@ -30,6 +36,11 @@ int Connect();
 // condition variable...
 std::future<int> ConnectAsync() {
 	return std::async(std::launch::async, &Peer::Connect, this);
+}
+
+PeerInfo Info() const {
+	PeerInfo ret{address, port};
+	return ret;
 }
 
 private:

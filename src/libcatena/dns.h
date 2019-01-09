@@ -4,7 +4,7 @@
 // RAII wrapper for getaddrinfo() results
 #include <netdb.h>
 #include <sys/types.h>
-#include <libcatena/rpc.h>
+#include <libcatena/exceptions.h>
 
 namespace Catena {
 

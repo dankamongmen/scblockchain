@@ -10,24 +10,6 @@
 
 namespace Catena {
 
-class SigningException : public std::runtime_error {
-public:
-SigningException() : std::runtime_error("error signing"){}
-SigningException(const std::string& s) : std::runtime_error(s){}
-};
-
-class EncryptException : public std::runtime_error {
-public:
-EncryptException() : std::runtime_error("error encrypting"){}
-EncryptException(const std::string& s) : std::runtime_error(s){}
-};
-
-class DecryptException : public std::runtime_error {
-public:
-DecryptException() : std::runtime_error("error decrypting"){}
-DecryptException(const std::string& s) : std::runtime_error(s){}
-};
-
 using KeyLookup = TXSpec;
 
 class TrustStore {

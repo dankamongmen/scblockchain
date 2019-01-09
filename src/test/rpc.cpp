@@ -1,6 +1,7 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <libcatena/rpc.h>
+#include <libcatena/chain.h>
 #include <libcatena/utility.h>
 #include "test/defs.h"
 

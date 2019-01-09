@@ -8,16 +8,11 @@
 #include <memory>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <libcatena/exceptions.h>
 
 namespace Catena {
 
 using SymmetricKey = std::array<unsigned char, 32>; // 256-bit AES key
-
-class KeypairException : public std::runtime_error {
-public:
-KeypairException() : std::runtime_error("keypair error"){}
-KeypairException(const std::string& s) : std::runtime_error(s){}
-};
 
 class Keypair {
 public:

@@ -116,6 +116,7 @@ ConsortiumMember, and a status type.
 TXSpec for the referenced UserStatusDelegation, and a JSON payload.
 * `getustatus`: show the most recent UserStatus for the specified user
 and user status delegation type.
+* `peers`: show network peers
 
 Use of commands that generate signed or encrypted transactions requires an
 appropriate private key having been loaded with the `-k` option.

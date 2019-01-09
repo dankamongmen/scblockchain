@@ -12,12 +12,6 @@
 
 namespace Catena {
 
-class BlockHeaderException : public std::runtime_error {
-public:
-BlockHeaderException() : std::runtime_error("invalid block header"){}
-BlockHeaderException(const std::string& s) : std::runtime_error(s){}
-};
-
 // NOT the on-disk packed format
 struct BlockHeader {
 	CatenaHash hash;

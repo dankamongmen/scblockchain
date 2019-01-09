@@ -32,6 +32,7 @@ template <typename Iterator> int NewLookupAuthReq(const Iterator start, const It
 template <typename Iterator> int NewUserStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int GetUserStatus(const Iterator start, const Iterator end);
 template <typename Iterator> int NewUserStatusDelegation(const Iterator start, const Iterator end);
+template <typename Iterator> int Peers(const Iterator start, const Iterator end);
 
 std::ostream& MemberSummary(std::ostream& s, const Catena::ConsortiumMemberSummary& cm) const;
 };

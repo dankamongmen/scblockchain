@@ -136,9 +136,9 @@ int main(int argc, char **argv){
 		std::unique_ptr<Catena::RPCService> rpcd;
 		if(rpc_port){
 			std::cout << "Enabling RPC on port " << rpc_port << std::endl;
-			rpcd = std::make_unique<Catena::RPCService>(chain, rpc_port, chain_file);
+			chain.EnableRPC(rpc_port, chain_file);
 			if(peer_file){
-				rpcd.get()->AddPeers(peer_file);
+				chain.AddPeers(peer_file);
 			}
 		}
 		if(httpd_port){

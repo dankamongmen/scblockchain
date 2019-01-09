@@ -4,16 +4,13 @@
 #include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <libcatena/truststore.h>
+#include <libcatena/exceptions.h>
 #include <libcatena/block.h>
+#include <libcatena/peer.h>
 #include <libcatena/sig.h>
+#include <libcatena/rpc.h>
 
 namespace Catena {
-
-class BlockValidationException : public std::runtime_error {
-public:
-BlockValidationException() : std::runtime_error("error validating block"){}
-BlockValidationException(const std::string& s) : std::runtime_error(s){}
-};
 
 // The ledger (one or more CatenaBlocks on disk) as indexed in memory. The
 // Chain can have blocks added to it, either produced locally or received over
@@ -22,7 +19,6 @@ BlockValidationException(const std::string& s) : std::runtime_error(s){}
 class Chain {
 public:
 Chain() = default;
-virtual ~Chain() = default;
 
 // Constructing a Chain requires lexing and validating blocks. On a logic error
 // within the chain, a BlockValidationException exception is thrown. Exceptions
@@ -162,6 +158,17 @@ std::vector<BlockDetail> Inspect(int start, int end) const;
 // Return details for the specified block hash.
 BlockDetail Inspect(const CatenaHash& hash) const;
 
+// Enable p2p rpc networking. Throws NetworkException if already enabled for
+// this ledger, or a variety of other possible problems.
+void EnableRPC(int port, const std::string& chainfile);
+
+// Return details about the RPC p2p network peers. Throws NetworkException if
+// p2p networking has not been enabled.
+std::vector<PeerInfo> Peers() const;
+
+// Throws NetworkException if RPC networking has not been enabled
+void AddPeers(const std::string& peerfile);
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
@@ -169,6 +176,7 @@ TrustStore tstore;
 LedgerMap lmap;
 Blocks blocks;
 Block outstanding;
+std::unique_ptr<RPCService> rpcnet;
 std::mutex lock;
 
 void LoadBuiltinKeys();

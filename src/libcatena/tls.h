@@ -2,16 +2,11 @@
 #define CATENA_LIBCATENA_TLS
 
 #include <openssl/ssl.h>
+#include <libcatena/exceptions.h>
 
 // RAII wrappers for OpenSSL objects e.g. SSL_CTX
 
 namespace Catena {
-
-class NetworkException : public std::runtime_error {
-public:
-NetworkException() : std::runtime_error("network error"){}
-NetworkException(const std::string& s) : std::runtime_error(s){}
-};
 
 class SSLCtxRAII {
 public:
