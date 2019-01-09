@@ -27,6 +27,8 @@ RPCService() = delete;
 //   have our own cert as the last in the cachainfile?
 RPCService(Chain& ledger, int port, const std::string& chainfile);
 
+~RPCService();
+
 // peerfile must contain one peer per line, specified as an IPv4 or IPv6
 // address and optional ":port" suffix. If a port is not specified for a peer,
 // the RPC service port is assumed. Blank lines and comment lines beginning
@@ -57,6 +59,12 @@ int port;
 Chain& ledger;
 std::vector<Peer> peers;
 SSLCtxRAII sslctx;
+int sd4, sd6; // IPv4 and IPv6 listening sockets
+std::thread epoller; // sits on epoll() with listen()ing socket and peers
+bool cancelled;
+
+void Epoller();
+void OpenListeners();
 };
 
 }
