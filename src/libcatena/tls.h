@@ -4,9 +4,55 @@
 #include <openssl/ssl.h>
 #include <libcatena/exceptions.h>
 
-// RAII wrappers for OpenSSL objects e.g. SSL_CTX
+// RAII wrappers for OpenSSL objects e.g. SSL_CTX, SSL
 
 namespace Catena {
+
+class SSLRAII {
+public:
+
+SSLRAII() = delete;
+
+// Usually called ala SSLRAII(SSL_new(sslctx))
+SSLRAII(SSL* ssl) :
+  ssl(ssl) {
+	if(ssl == nullptr){
+		throw NetworkException("couldn't get TLS conn");
+	}
+}
+
+SSLRAII(const SSLRAII& s) {
+	SSL_up_ref(s.ssl);
+	ssl = s.ssl;
+}
+
+SSLRAII& operator=(const SSLRAII& other) {
+	if(this != &other){
+		SSL_free(ssl);
+		if( (ssl = other.ssl) ){
+			SSL_up_ref(ssl);
+		}
+	}
+	return *this;
+}
+
+SSL* get() {
+	return ssl;
+}
+
+void SetFD(int sd) {
+	if(1 != SSL_set_fd(ssl, sd)){
+		throw NetworkException("couldn't bind SSL sd");
+	}
+}
+
+~SSLRAII() {
+	SSL_free(ssl);
+}
+
+private:
+SSL* ssl;
+};
 
 class SSLCtxRAII {
 public:
@@ -42,6 +88,10 @@ SSL_CTX* get() {
 
 ~SSLCtxRAII() {
 	SSL_CTX_free(sslctx);
+}
+
+SSLRAII NewSSL() const {
+	return SSLRAII(SSL_new(sslctx));
 }
 
 private:
