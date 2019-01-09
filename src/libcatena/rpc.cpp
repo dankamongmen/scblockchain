@@ -234,7 +234,8 @@ int RPCService::Accept(int sd) {
 		}
 		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
 		// FIXME don't want SSLRAII, as we hand this off, but also don't
-		// want to leak SSL* on exceptions...
+		// want to leak SSL* on exceptions...also, we need this cleaned
+		// up on RPCService destroy even if we never see another event...
 		auto sfd = new PolledTLSFD(ret, sslctx.NewSSL());
 		// FIXME rewrite all the following as a call to sfd->Callback
 		auto ra = SSL_accept(sfd->HackSSL());
