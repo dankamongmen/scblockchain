@@ -136,19 +136,51 @@ RPCService::~RPCService() {
 int RPCService::Accept(int sd) {
 	struct sockaddr ss;
 	socklen_t slen = sizeof(ss);
-	int ret = accept(sd, &ss, &slen);
+	int ret = accept4(sd, &ss, &slen, SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if(ret < 0){
 		throw NetworkException("error accept()ing socket");
 	}
-	char paddr[INET6_ADDRSTRLEN];
-	char pport[6];
-	if(getnameinfo(&ss, slen, paddr, sizeof(paddr), pport, sizeof(pport),
-			NI_NUMERICHOST | NI_NUMERICSERV)){
-		throw NetworkException("error naming socket");
+	try{
+		char paddr[INET6_ADDRSTRLEN];
+		char pport[6];
+		if(getnameinfo(&ss, slen, paddr, sizeof(paddr), pport, sizeof(pport),
+				NI_NUMERICHOST | NI_NUMERICSERV)){
+			throw NetworkException("error naming socket");
+		}
+		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
+		auto ssl = sslctx.NewSSL();
+		ssl.SetFD(ret);
+		auto ra = SSL_accept(ssl.get());
+		if(1 != ra){
+			auto oerr = SSL_get_error(ssl.get(), ra);
+			if(oerr == SSL_ERROR_WANT_READ){
+				// FIXME this isn't picking up a remote shutdown
+				struct epoll_event ev = {
+					.events = EPOLLIN,
+					.data = { .fd = ret, },
+				};
+				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+					throw NetworkException("couldn't epoll-r on new sd");
+				}
+			}else if(oerr == SSL_ERROR_WANT_WRITE){
+				struct epoll_event ev = {
+					.events = EPOLLOUT,
+					.data = { .fd = ret, },
+				};
+				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+					throw NetworkException("couldn't epoll-w on new sd");
+				}
+			}else{
+				throw NetworkException("error accepting TLS");
+			}
+		}else{
+			// FIXME set it up to start transacting
+		}
+		return ret;
+	}catch(...){
+		close(ret);
+		throw;
 	}
-	std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
-	// FIXME do TLS wrap
-	return ret;
 }
 
 void RPCService::Epoller() {
@@ -177,6 +209,7 @@ void RPCService::Epoller() {
 					std::cerr << "couldn't accept on " << sd4 << ": " << e.what() << std::endl;
 				}
 			}else{
+std::cerr << "UNKNOWN FD " << ev.data.fd << "\n";
 				continue; // FIXME handle new ones
 			}
 		}
