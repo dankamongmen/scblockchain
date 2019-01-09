@@ -12,7 +12,8 @@
 
 namespace Catena {
 
-Peer::Peer(const std::string& addr, int defaultport) :
+Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx) :
+  sslctx(sctx),
   lasttime(time(NULL)) {
 	// If there's a colon, the remainder must be a valid port. If there is
 	// no colon, assume the entirety to be the address.
@@ -51,6 +52,46 @@ Peer::Peer(const std::string& addr, int defaultport) :
 	freeaddrinfo(res);
 }
 
+static int
+tls_cert_verify(int preverify_ok, X509_STORE_CTX* x509_ctx){
+	if(!preverify_ok){
+		int e = X509_STORE_CTX_get_error(x509_ctx);
+		std::cerr << "cert verification error: " << X509_verify_cert_error_string(e) << std::endl;
+	}
+	X509* cert = X509_STORE_CTX_get_current_cert(x509_ctx);
+	if(cert){
+		X509_NAME* certsub = X509_get_subject_name(cert);
+		char *cn = X509_NAME_oneline(certsub, nullptr, 0);
+		if(cn){
+			std::cout << "server cert: " << cn << std::endl;
+			free(cn);
+		}
+	}
+	return preverify_ok;
+}
+
+BIO* Peer::TLSConnect(int sd) {
+	auto ret = BIO_new_ssl_connect(sslctx.get()->get());
+	if(ret == nullptr){
+		throw NetworkException("coudln't get TLS connect BIO");
+	}
+	SSL* s;
+	BIO_get_ssl(ret, &s);
+	SSL_set_fd(s, sd);
+	SSL_set_verify(s, SSL_VERIFY_PEER, tls_cert_verify);
+	if(1 != SSL_connect(s)){
+		std::cout << "ssl connect failure" << std::endl;
+		BIO_free_all(ret);
+		return nullptr;
+	}
+	if(X509_V_OK != SSL_get_verify_result(s)){
+		std::cout << "ssl verify failure" << std::endl;
+		BIO_free_all(ret);
+		return nullptr;
+	}
+	return ret;
+}
+
 int Peer::Connect() {
 	lasttime = time(NULL);
 	struct addrinfo hints{};
@@ -69,19 +110,23 @@ int Peer::Connect() {
 		}
 		// only set SOCK_NONBLOCK after we've connect()ed
 		int fd = socket(info->ai_family, SOCK_STREAM | SOCK_CLOEXEC, info->ai_protocol);
-std::cout << "socket family " << info->ai_family << " sd " << fd << "\n";
 		if(fd < 0){
 			continue;
 		}
 		if(connect(fd, info->ai_addr, info->ai_addrlen)){ // blocks
-std::cerr << "connect failed on sd " << fd << "\n";
+			std::cerr << "connect failed on sd " << fd << "\n";
 			close(fd);
 			continue;
 		}
 		std::cout << "connected " << fd << " to " << address << "\n";
-		// FIXME overlay TLS
-		// FIXME add SOCK_NONBLOCK
 		lasttime = time(NULL);
+		try{
+			TLSConnect(fd);
+		}catch(...){
+			close(fd);
+			throw;
+		}
+		// FIXME add SOCK_NONBLOCK
 		return fd;
 	}while( (info = info->ai_next) );
 	lasttime = time(NULL);

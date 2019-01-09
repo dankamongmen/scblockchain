@@ -71,6 +71,7 @@ PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
 int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
+std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
 
 void Epoller();
 int EpollListeners();

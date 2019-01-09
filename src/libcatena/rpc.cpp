@@ -180,7 +180,8 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
   port(port),
   ledger(ledger),
   sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method()))),
-  cancelled(false) {
+  cancelled(false),
+  clictx(std::make_shared<SSLCtxRAII>(SSLCtxRAII(SSL_CTX_new(TLS_method())))) {
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
 	}
@@ -320,7 +321,7 @@ void RPCService::AddPeers(const std::string& peerfile) {
 		if(line.length() == 0 || line[0] == '#'){
 			continue;
 		}
-		ret.emplace_back(line, port);
+		ret.emplace_back(line, port, clictx);
 	}
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");

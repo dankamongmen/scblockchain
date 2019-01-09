@@ -2,6 +2,8 @@
 #define CATENA_LIBCATENA_PEER
 
 #include <future>
+#include <openssl/bio.h>
+#include <libcatena/tls.h>
 
 namespace Catena {
 
@@ -19,7 +21,7 @@ time_t lasttime;
 class Peer {
 public:
 Peer() = delete;
-Peer(const std::string& addr, int defaultport);
+Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx);
 virtual ~Peer() = default;
 
 int Port() const {
@@ -46,9 +48,12 @@ PeerInfo Info() const {
 }
 
 private:
+std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;
 int port;
 time_t lasttime; // last time this was used, successfully or otherwise
+
+BIO* TLSConnect(int sd);
 };
 
 }
