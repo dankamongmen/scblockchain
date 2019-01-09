@@ -470,8 +470,16 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 	}
 	try{
 		const auto pinfo = chain.Peers();
+		time_t now = time(NULL);
 		for(auto p : pinfo){
-			std::cout << p.address << ":" << p.port << "\n";
+			std::cout << p.address << ":" << p.port;
+			if(p.lasttime == -1){
+				std::cout << " (unused)";
+			}else{
+				int since = difftime(now, p.lasttime);
+				std::cout << " (last used " << since << "s ago)";
+			}
+			std::cout << "\n";
 		}
 	}catch(Catena::NetworkException& e){
 		std::cerr << "couldn't get peers: " << e.what() << std::endl;
