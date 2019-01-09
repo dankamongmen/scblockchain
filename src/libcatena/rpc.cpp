@@ -36,8 +36,11 @@ void RPCService::AddPeers(const std::string& peerfile) {
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");
 	}
-	// FIXME filter out duplicates?
-	peers.insert(peers.end(), ret.begin(), ret.end());
+	for(auto const& r : ret){
+		// FIXME filter out duplicates?
+		peers.insert(peers.end(), r);
+		peers.back().ConnectAsync();
+	}
 }
 
 }

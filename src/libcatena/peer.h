@@ -13,6 +13,7 @@ namespace Catena {
 struct PeerInfo {
 std::string address;
 int port;
+time_t lasttime;
 };
 
 class Peer {
@@ -39,13 +40,14 @@ std::future<int> ConnectAsync() {
 }
 
 PeerInfo Info() const {
-	PeerInfo ret{address, port};
+	PeerInfo ret{address, port, lasttime};
 	return ret;
 }
 
 private:
 std::string address;
 int port;
+time_t lasttime; // last time this was used, successfully or otherwise
 };
 
 }

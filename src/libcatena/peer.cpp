@@ -8,9 +8,12 @@
 #include <libcatena/rpc.h>
 #include <libcatena/dns.h>
 
+#include <iostream>
+
 namespace Catena {
 
-Peer::Peer(const std::string& addr, int defaultport) { 
+Peer::Peer(const std::string& addr, int defaultport) :
+  lasttime(time(NULL)) {
 	// If there's a colon, the remainder must be a valid port. If there is
 	// no colon, assume the entirety to be the address.
 	auto colon = addr.find(':');
@@ -49,26 +52,31 @@ Peer::Peer(const std::string& addr, int defaultport) {
 }
 
 int Peer::Connect() {
+	lasttime = time(NULL);
 	struct addrinfo hints{};
 	hints.ai_flags = AI_NUMERICHOST;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	AddrInfo ai(address.c_str(), NULL, &hints);
+	AddrInfo ai(address.c_str(), NULL, &hints); // blocking call, can throw
 	const struct addrinfo* info = ai.AddrList();
 	do{
 		// only set SOCK_NONBLOCK after we've connect()ed
 		int fd = socket(info->ai_family, SOCK_STREAM | SOCK_CLOEXEC, info->ai_protocol);
+std::cout << "socket family " << info->ai_family << " sd " << fd << "\n";
 		if(fd < 0){
 			continue;
 		}
-		if(connect(fd, info->ai_addr, info->ai_addrlen)){
+		if(connect(fd, info->ai_addr, info->ai_addrlen)){ // blocks
+std::cerr << "connect failed on sd " << fd << "\n";
 			close(fd);
 			continue;
 		}
 		// FIXME overlay TLS
 		// FIXME add SOCK_NONBLOCK
+		lasttime = time(NULL);
 		return fd;
 	}while( (info = info->ai_next) );
+	lasttime = time(NULL);
 	throw NetworkException("couldn't connect to " + address);
 }
 
