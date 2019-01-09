@@ -61,7 +61,7 @@ std::vector<Peer> peers;
 SSLCtxRAII sslctx;
 int sd4, sd6; // IPv4 and IPv6 listening sockets
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
-bool cancelled;
+std::atomic<bool> cancelled; // lame signal to Epoller
 
 void Epoller();
 void OpenListeners();
