@@ -24,7 +24,8 @@ PolledFD(int sd) :
 	  }
 }
 
-virtual void Callback(RPCService& rpc) = 0;
+// If Callback() returns true, the PolledFD will be deleted in the epoll loop.
+virtual bool Callback(RPCService& rpc) = 0;
 
 virtual ~PolledFD() {
 	if(close(sd)){
@@ -51,8 +52,9 @@ PolledListenFD(int family) :
 	}
 }
 
-void Callback(RPCService& rpc) override {
+bool Callback(RPCService& rpc) override {
 	rpc.Accept(sd);
+	return false;
 }
 };
 
@@ -77,23 +79,35 @@ SSL* HackSSL() const {
 }
 
 // FIXME it isn't always an accept! could be established...
-void Callback(RPCService& rpc) override {
+bool Callback(RPCService& rpc) override {
 	auto ra = SSL_accept(ssl);
 	if(ra == 0){
-std::cerr << "HORRIBLE TLS ERROR YAY\n";
-		// FIXME kill ourselves off
+		std::cerr << "error accepting TLS" << std::endl;
+		return true;
 	}else if(ra < 0){
-std::cerr << "HORRIBLE INTERMEDIACY!\n";
 		auto oerr = SSL_get_error(ssl, ra);
-		if(oerr == SSL_ERROR_WANT_READ){
-		}else if(oerr == SSL_ERROR_WANT_WRITE){
-		}
 		// FIXME handle partial SSL_accept()
+		if(oerr == SSL_ERROR_WANT_READ){
+			struct epoll_event ev = {
+				.events = EPOLLIN | EPOLLRDHUP,
+				.data = { .ptr = &*this, },
+			};
+			rpc.EpollMod(sd, ev);
+		}else if(oerr == SSL_ERROR_WANT_WRITE){
+			struct epoll_event ev = {
+				.events = EPOLLOUT | EPOLLRDHUP,
+				.data = { .ptr = &*this, },
+			};
+			rpc.EpollMod(sd, ev);
+		}else{
+			std::cerr << "error accepting TLS" << std::endl;
+			return true;
+		}
 	}else{
 std::cerr << "HORRIBLE SSL SUCCESS AUGH\n";
 		// FIXME success add back as something else
 	}
-	(void)rpc; // FIXME
+	return false;
 }
 
 private:
@@ -246,6 +260,7 @@ int RPCService::Accept(int sd) {
 					throw NetworkException("couldn't epoll-w on new sd");
 				}
 			}else{
+				delete sfd;
 				throw NetworkException("error accepting TLS");
 			}
 		}else{
@@ -280,9 +295,14 @@ void RPCService::Epoller() {
 		if(eret){
 			PolledFD* pfd = static_cast<PolledFD*>(ev.data.ptr);
 			try{
-				pfd->Callback(*this);
+				if(pfd->Callback(*this)){
+					if(epoll_ctl(epollfd, EPOLL_CTL_DEL, pfd->FD(), NULL)){
+						std::cerr << "error removing epoll on " << pfd->FD() << std::endl;
+					}
+					delete pfd;
+				}
 			}catch(NetworkException& e){
-				std::cerr << "error handling epoll result" << std::endl;
+				std::cerr << "error handling epoll result: " << e.what() << std::endl;
 			}
 		}
 	}
@@ -309,6 +329,10 @@ void RPCService::AddPeers(const std::string& peerfile) {
 		peers.insert(peers.end(), r);
 		peers.back().ConnectAsync();
 	}
+}
+
+int RPCService::EpollMod(int fd, struct epoll_event& ev) {
+	return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
 }

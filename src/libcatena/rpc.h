@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <sys/epoll.h>
 #include <openssl/ssl.h>
 #include <libcatena/peer.h>
 #include <libcatena/tls.h>
@@ -57,6 +58,8 @@ std::vector<PeerInfo> Peers() const {
 
 // Callback for listen()ing sockets. Initiates SSL_accept().
 int Accept(int sd);
+// Should only be called from within an epoll loop callback
+int EpollMod(int sd, struct epoll_event& ev);
 
 private:
 int port;
