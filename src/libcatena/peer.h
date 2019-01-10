@@ -18,12 +18,16 @@ int port;
 time_t lasttime;
 std::string subject;
 std::string issuer;
+bool configured;
 };
 
 class Peer {
 public:
 Peer() = delete;
-Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx);
+// Set configured if the entry was provided to us via configuration (as
+// opposed to discovery), and should thus never be removed.
+Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx,
+		bool configured);
 virtual ~Peer() = default;
 
 int Port() const {
@@ -45,7 +49,8 @@ std::future<int> ConnectAsync() {
 
 // FIXME needs lock against Connect() for at least "lasttime" purposes
 PeerInfo Info() const {
-	PeerInfo ret{address, port, lasttime, lastSubjectCN, lastIssuerCN};
+	PeerInfo ret{address, port, lasttime, lastSubjectCN, lastIssuerCN,
+			configured};
 	return ret;
 }
 
@@ -56,6 +61,7 @@ int port;
 time_t lasttime; // last time this was used, successfully or otherwise
 std::string lastSubjectCN; // subject CN from last TLS handshake
 std::string lastIssuerCN; // issuer CN from last TLS handshake
+bool configured; // were we provided during initial configuration?
 
 BIO* TLSConnect(int sd);
 };

@@ -360,7 +360,7 @@ void RPCService::AddPeers(const std::string& peerfile) {
 		if(line.length() == 0 || line[0] == '#'){
 			continue;
 		}
-		ret.emplace_back(line, port, clictx);
+		ret.emplace_back(line, port, clictx, true);
 	}
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");
