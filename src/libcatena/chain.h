@@ -177,6 +177,11 @@ void PeerCount(int* defined, int* active, int* maxactive) const {
 	return rpcnet.get()->PeerCount(defined, active, maxactive);
 }
 
+// Get the node's RPC name. Safe to call only if RPC networking has been enabled.
+std::pair<std::string, std::string> RPCName() const {
+	return rpcnet.get()->Name();
+}
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:

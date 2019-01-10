@@ -53,29 +53,6 @@ Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII>
 	freeaddrinfo(res);
 }
 
-static std::string X509CN(X509_NAME* xname) {
-	int lastpos = -1;
-	lastpos = X509_NAME_get_index_by_NID(xname, NID_commonName, lastpos);
-	if(lastpos == -1){
-		throw NetworkException("no subject common name in cert");
-	}
-	X509_NAME_ENTRY* e = X509_NAME_get_entry(xname, lastpos);
-	auto asn1 = X509_NAME_ENTRY_get_data(e);
-	auto str = ASN1_STRING_get0_data(asn1);
-	std::string ret(reinterpret_cast<const char*>(str));
-	return ret;
-}
-
-static std::string X509SubjectCN(const X509* cert) {
-	auto xname = X509_get_subject_name(cert);
-	return X509CN(xname);
-}
-
-static std::string X509IssuerCN(const X509* cert) {
-	auto xname = X509_get_issuer_name(cert);
-	return X509CN(xname);
-}
-
 BIO* Peer::TLSConnect(int sd) {
 	auto ret = BIO_new_ssl_connect(sslctx.get()->get());
 	if(ret == nullptr){
@@ -102,10 +79,9 @@ BIO* Peer::TLSConnect(int sd) {
 		return nullptr; // FIXME throw
 	}
 	try{
-		auto subcn = X509SubjectCN(x509);
-		auto isscn = X509IssuerCN(x509);
-		lastSubjectCN = subcn;
-		lastIssuerCN = isscn;
+		auto xname = X509NetworkName(x509);
+		lastSubjectCN = xname.first;
+		lastIssuerCN = xname.second;
 	}catch(...){
 		X509_free(x509);
 		BIO_free_all(ret);
