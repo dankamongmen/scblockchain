@@ -113,6 +113,25 @@ void IgnoreSignal(int signum);
 
 int tls_cert_verify(int preverify_ok, X509_STORE_CTX* x509_ctx);
 
+std::string X509CN(X509_NAME* xname);
+
+inline std::string X509SubjectCN(const X509* cert) {
+	auto xname = X509_get_subject_name(cert);
+	return X509CN(xname);
+}
+
+inline std::string X509IssuerCN(const X509* cert) {
+	auto xname = X509_get_issuer_name(cert);
+	return X509CN(xname);
+}
+
+inline std::pair<std::string, std::string>
+X509NetworkName(const X509* cert) {
+	auto subcn = X509SubjectCN(cert);
+	auto isscn = X509IssuerCN(cert);
+	return std::make_pair(isscn, subcn);
+}
+
 inline std::string GetCompilerID(){
 #if defined(__GNUC__) && !defined(__clang__)
 	return std::string("GNU C++ ") + __VERSION__;
