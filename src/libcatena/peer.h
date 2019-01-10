@@ -16,6 +16,8 @@ struct PeerInfo {
 std::string address;
 int port;
 time_t lasttime;
+std::string subject;
+std::string issuer;
 };
 
 class Peer {
@@ -43,7 +45,7 @@ std::future<int> ConnectAsync() {
 
 // FIXME needs lock against Connect() for at least "lasttime" purposes
 PeerInfo Info() const {
-	PeerInfo ret{address, port, lasttime};
+	PeerInfo ret{address, port, lasttime, lastSubjectCN, lastIssuerCN};
 	return ret;
 }
 
