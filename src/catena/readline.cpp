@@ -114,20 +114,6 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		NLOHMANN_JSON_VERSION_MINOR << "." <<
 		NLOHMANN_JSON_VERSION_PATCH << "\n";
 	std::cout << "crypto: " << SSLeay_version(SSLEAY_VERSION) << "\n";
-	auto port = chain.RPCPort();
-	if(port){
-		std::cout << "rpc port: " << port << "\n";
-		int peersDefined, peersActive, peersMax;
-		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
-		std::cout << "configured peers: " << peersDefined << "\n";
-		std::cout << "active peers: " << peersActive << "\n";
-		std::cout << "max active peers: " << peersMax << "\n";
-	}else{
-		std::cout << "rpc port: not configured\n";
-		std::cout << "configured peers: n/a\n";
-		std::cout << "active peers: n/a\n";
-		std::cout << "max active peers: n/a\n";
-	}
 	std::cout << "\n";
 	std::cout << "chain bytes: " << chain.Size() << "\n";
 	std::cout << "blocks: " << chain.GetBlockCount() << "\n";
@@ -140,6 +126,24 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 	std::cout << "public keys: " << chain.PubkeyCount() << "\n";
 	std::cout << "users: " << chain.UserCount() << "\n";
 	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
+	std::cout << "\n";
+	auto port = chain.RPCPort();
+	if(port){
+		std::cout << "rpc port: " << port << "\n";
+		auto rname = chain.RPCName();
+		std::cout << "rpc name: " << rname.first << " → " << rname.second << "\n";
+		int peersDefined, peersActive, peersMax;
+		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
+		std::cout << "configured peers: " << peersDefined << "\n";
+		std::cout << "active peers: " << peersActive << "\n";
+		std::cout << "max active peers: " << peersMax << "\n";
+	}else{
+		std::cout << "rpc port: not configured\n";
+		std::cout << "rpc name: n/a\n";
+		std::cout << "configured peers: n/a\n";
+		std::cout << "active peers: n/a\n";
+		std::cout << "max active peers: n/a\n";
+	}
 	std::cout << std::flush;
 	return 0;
 }
