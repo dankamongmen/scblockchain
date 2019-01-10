@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <ostream>
+#include <openssl/x509.h>
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
 #include <gnu/libc-version.h>
 #endif
@@ -109,6 +110,8 @@ void StrToBlob(const std::string& s, std::array<unsigned char, SIZE>& out) {
 }
 
 void IgnoreSignal(int signum);
+
+int tls_cert_verify(int preverify_ok, X509_STORE_CTX* x509_ctx);
 
 inline std::string GetCompilerID(){
 #if defined(__GNUC__) && !defined(__clang__)

@@ -1,14 +1,13 @@
 #include <cctype>
 #include <netdb.h>
 #include <unistd.h>
+#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <libcatena/utility.h>
 #include <libcatena/peer.h>
 #include <libcatena/rpc.h>
 #include <libcatena/dns.h>
-
-#include <iostream>
 
 namespace Catena {
 
@@ -50,24 +49,6 @@ Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII>
 		throw ConvertInputException("bad address: " + address);
 	}
 	freeaddrinfo(res);
-}
-
-static int
-tls_cert_verify(int preverify_ok, X509_STORE_CTX* x509_ctx){
-	if(!preverify_ok){
-		int e = X509_STORE_CTX_get_error(x509_ctx);
-		std::cerr << "cert verification error: " << X509_verify_cert_error_string(e) << std::endl;
-	}
-	X509* cert = X509_STORE_CTX_get_current_cert(x509_ctx);
-	if(cert){
-		X509_NAME* certsub = X509_get_subject_name(cert);
-		char *cn = X509_NAME_oneline(certsub, nullptr, 0);
-		if(cn){
-			std::cout << "server cert: " << cn << std::endl;
-			free(cn);
-		}
-	}
-	return preverify_ok;
 }
 
 BIO* Peer::TLSConnect(int sd) {
