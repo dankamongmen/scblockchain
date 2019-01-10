@@ -32,6 +32,10 @@ RPCService(Chain& ledger, int port, const std::string& chainfile,
 
 ~RPCService();
 
+std::pair<std::string, std::string> Name() const {
+	return std::make_pair(issuerCN, subjectCN);
+}
+
 // peerfile must contain one peer per line, specified as an IPv4 or IPv6
 // address and optional ":port" suffix. If a port is not specified for a peer,
 // the RPC service port is assumed. Blank lines and comment lines beginning
@@ -73,6 +77,8 @@ int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
 std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
+std::string issuerCN; // taken from our X509 certificate
+std::string subjectCN;
 
 void Epoller();
 int EpollListeners();
