@@ -25,6 +25,7 @@ static void usage(std::ostream& os, const char* name, int exitcode){
 	os << " -r port: RPC service port, 0 to disable, default: " << DEFAULT_RPC_PORT << "\n";
 	os << " -C certchain: certificate chain for RPC authentication\n";
 	os << " -P peerfile: file containing initial RPC peers\n";
+	os << " -v keyfile: file containing PEM key for RPC authentication\n";
 	os << " -h: print usage information\n";
 	os << " -d: daemonize\n";
 	os << std::flush;
@@ -38,9 +39,10 @@ int main(int argc, char **argv){
 	const char* ledger_file = nullptr;
 	const char* chain_file = nullptr;
 	const char* peer_file = nullptr;
+	const char* key_file = nullptr;
 	bool daemonize = false;
 	int c;
-	while(-1 != (c = getopt(argc, argv, "P:C:k:l:p:r:hd"))){
+	while(-1 != (c = getopt(argc, argv, "P:C:k:l:p:r:v:hd"))){
 		switch(c){
 		case 'd':
 			daemonize = true;
@@ -60,6 +62,13 @@ int main(int argc, char **argv){
 				std::cerr << "bad value for RPC port: " << e.what() << std::endl;
 				usage(std::cerr, argv[0], EXIT_FAILURE);
 			}
+			break;
+		}case 'v':{
+			if(key_file){
+				std::cerr << "key file may only be specified once" << std::endl;
+				usage(std::cerr, argv[0], EXIT_FAILURE);
+			}
+			key_file = optarg;
 			break;
 		}case 'P':{
 			if(peer_file){
@@ -108,11 +117,11 @@ int main(int argc, char **argv){
 		std::cerr << "ledger must be specified with -l" << std::endl;
 		usage(std::cerr, argv[0], EXIT_FAILURE);
 	}
-	if(rpc_port && chain_file == nullptr){
-		std::cerr << "cert chain file must be specified with -C for RPC" << std::endl;
+	if(rpc_port && (chain_file == nullptr || key_file == nullptr)){
+		std::cerr << "-C and -v must be specified for RPC" << std::endl;
 		usage(std::cerr, argv[0], EXIT_FAILURE);
-	}else if(rpc_port == 0 && (chain_file || peer_file)){
-		std::cerr << "warning: -C/-P have no meaning without -r" << std::endl;
+	}else if(rpc_port == 0 && (chain_file || peer_file || key_file)){
+		std::cerr << "warning: -C/-P/-v have no meaning without -r" << std::endl;
 		// not a fatal error
 	}
 	try{
@@ -136,7 +145,7 @@ int main(int argc, char **argv){
 		std::unique_ptr<Catena::RPCService> rpcd;
 		if(rpc_port){
 			std::cout << "Enabling RPC on port " << rpc_port << std::endl;
-			chain.EnableRPC(rpc_port, chain_file);
+			chain.EnableRPC(rpc_port, chain_file, key_file);
 			if(peer_file){
 				chain.AddPeers(peer_file);
 			}
