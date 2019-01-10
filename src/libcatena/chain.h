@@ -172,6 +172,11 @@ void AddPeers(const std::string& peerfile);
 // Returns 0 if RPC networking has not been enabled
 int RPCPort() const;
 
+// Safe to call only if RPC networking has been enabled (RPCPort() != 0)
+void PeerCount(int* defined, int* active, int* maxactive) const {
+	return rpcnet.get()->PeerCount(defined, active, maxactive);
+}
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
