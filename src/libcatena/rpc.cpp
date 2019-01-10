@@ -186,10 +186,13 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
 		throw NetworkException("invalid port " + std::to_string(port));
 	}
 	if(1 != SSL_CTX_set_min_proto_version(sslctx.get(), TLS1_3_VERSION)){
-		throw NetworkException("couldn't force TLSv1.3+");
+		throw NetworkException("couldn't force server TLSv1.3+");
 	}
 	if(1 != SSL_CTX_use_certificate_chain_file(sslctx.get(), chainfile.c_str())){
-		throw NetworkException("couldn't load certificate chain");
+		throw NetworkException("couldn't load server certificate chain");
+	}
+	if(1 != SSL_CTX_set_min_proto_version(clictx.get()->get(), TLS1_3_VERSION)){
+		throw NetworkException("couldn't force client TLSv1.3+");
 	}
 	OpenListeners();
 	try{
