@@ -57,7 +57,8 @@ X.509 certificates signed by a common CA. The certificate chain for this CA
 must be specified via the `-C` argument. If RPC service is requested, but the
 certificate chain is missing or invalid, Catena will refuse to start. It is not
 meaningful to provide `-C` without enabling RPC service via `-r`, but it is
-also not an error.
+also not an error. Similar rules apply to `-v`, which must specify a PEM
+private key used for RPC authentication.
 
 A file consisting of initial peers to try can be specified via the `-P`
 argument. This file should contain one peer per line, specified as IPv4[:port]
