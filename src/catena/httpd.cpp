@@ -63,9 +63,17 @@ std::ostream& HTTPDServer::HTMLSysinfo(std::ostream& ss) const {
 		NLOHMANN_JSON_VERSION_PATCH << "</td>";
 	ss << "<tr><td>crypto</td><td>" <<
 		SSLeay_version(SSLEAY_VERSION) << "</td></tr>";
+	ss << "</table>";
+	return ss;
+}
+
+std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
+	ss << "<h3>p2p network</h3><table>";
 	auto port = chain.RPCPort();
 	if(port){
 		ss << "<tr><td>rpc port</td><td>" << port << "</td></tr>";
+		auto xname = chain.RPCName();
+		ss << "<tr><td>rpc name</td><td>" << xname.first << " → " << xname.second << "</td></tr>";
 		int peersDefined, peersActive, peersMax;
 		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
 		ss << "<tr><td>configured peers</td><td>" << peersDefined << "</td></tr>";
@@ -73,6 +81,7 @@ std::ostream& HTTPDServer::HTMLSysinfo(std::ostream& ss) const {
 		ss << "<tr><td>max active peers</td><td>" << peersMax << "</td></tr>";
 	}else{
 		ss << "<tr><td>rpc port</td><td>not configured</td></tr>";
+		ss << "<tr><td>rpc name</td><td>n/a</td></tr>";
 		ss << "<tr><td>configured peers</td><td>n/a</td></tr>";
 		ss << "<tr><td>active peers</td><td>n/a</td></tr>";
 		ss << "<tr><td>max active peers</td><td>n/a</td></tr>";
@@ -136,6 +145,7 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 	HTMLSysinfo(ss);
 	HTMLChaininfo(ss);
+	HTMLNetwork(ss);
 	HTMLMembers(ss);
 	ss << "<h3>other views</h3>";
 	ss << "<span><a href=\"/show\">ledger</a></span>";
