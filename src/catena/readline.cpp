@@ -480,6 +480,9 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 		const auto pinfo = chain.Peers();
 		time_t now = time(NULL);
 		for(auto p : pinfo){
+			if(p.configured){
+				std::cout << "(*) ";
+			}
 			std::cout << p.address << ":" << p.port;
 			if(p.lasttime == -1){
 				std::cout << " (unused) ";
