@@ -80,8 +80,8 @@ BIO* Peer::TLSConnect(int sd) {
 	}
 	try{
 		auto xname = X509NetworkName(x509);
-		lastSubjectCN = xname.first;
-		lastIssuerCN = xname.second;
+		lastIssuerCN = xname.first;
+		lastSubjectCN = xname.second;
 	}catch(...){
 		X509_free(x509);
 		BIO_free_all(ret);
@@ -113,11 +113,11 @@ int Peer::Connect() {
 			continue;
 		}
 		if(connect(fd, info->ai_addr, info->ai_addrlen)){ // blocks
-			std::cerr << "connect failed on sd " << fd << "\n";
 			close(fd);
+			lasttime = time(NULL);
 			continue;
 		}
-		std::cout << "connected " << fd << " to " << address << "\n";
+		std::cout << "connected " << fd << " to " << address << ":" << port << "\n";
 		lasttime = time(NULL);
 		try{
 			TLSConnect(fd);

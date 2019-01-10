@@ -229,7 +229,6 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
 	PrepSSLCTX(sslctx.get(), chainfile.c_str(), keyfile.c_str());
 	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
 	std::tie(issuerCN, subjectCN) = X509NetworkName(x509);
-std::cout << "NAME: " << issuerCN << ":::" << subjectCN << "\n";
 	PrepSSLCTX(clictx.get()->get(), chainfile.c_str(), keyfile.c_str());
 	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, tls_cert_verify);
 	OpenListeners();
