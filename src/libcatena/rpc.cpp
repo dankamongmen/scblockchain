@@ -176,6 +176,19 @@ int RPCService::EpollListeners() {
 	return ret;
 }
 
+void RPCService::PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile) {
+	if(1 != SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION)){
+		throw NetworkException("couldn't force TLSv1.3+");
+	}
+	if(1 != SSL_CTX_use_PrivateKey_file(ctx, keyfile, SSL_FILETYPE_PEM)){
+		throw NetworkException("couldn't load private key");
+	}
+	if(1 != SSL_CTX_use_certificate_chain_file(ctx, chainfile)){
+		throw NetworkException("couldn't load certificate chain");
+	}
+	// FIXME SSL_CTX_check_private_key()?
+}
+
 RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
 			const std::string& keyfile) :
   port(port),
@@ -186,17 +199,10 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
 	}
-	if(1 != SSL_CTX_set_min_proto_version(sslctx.get(), TLS1_3_VERSION)){
-		throw NetworkException("couldn't force server TLSv1.3+");
-	}
-	if(1 != SSL_CTX_use_PrivateKey_file(sslctx.get(), keyfile.c_str(), SSL_FILETYPE_PEM)){
-		throw NetworkException("couldn't load private key");
-	}
-	if(1 != SSL_CTX_use_certificate_chain_file(sslctx.get(), chainfile.c_str())){
+	PrepSSLCTX(sslctx.get(), chainfile.c_str(), keyfile.c_str());
+	PrepSSLCTX(clictx.get()->get(), chainfile.c_str(), keyfile.c_str());
+	if(1 != SSL_CTX_load_verify_locations(clictx.get()->get(), chainfile.c_str(), NULL)){
 		throw NetworkException("couldn't load server certificate chain");
-	}
-	if(1 != SSL_CTX_set_min_proto_version(clictx.get()->get(), TLS1_3_VERSION)){
-		throw NetworkException("couldn't force client TLSv1.3+");
 	}
 	OpenListeners();
 	try{

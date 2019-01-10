@@ -77,6 +77,7 @@ std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
 void Epoller();
 int EpollListeners();
 void OpenListeners();
+void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 };
 
 }
