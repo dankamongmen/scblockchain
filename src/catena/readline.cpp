@@ -495,7 +495,7 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 				std::cout << " (last used " << since << "s ago) ";
 			}
 			if(p.issuer.length()){
-				std::cout << p.issuer << "/";
+				std::cout << p.issuer << " → ";
 			}
 			if(p.subject.length()){
 				std::cout << p.subject;
