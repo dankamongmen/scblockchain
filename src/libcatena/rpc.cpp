@@ -189,7 +189,9 @@ void RPCService::PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* key
 	if(1 != SSL_CTX_load_verify_locations(ctx, chainfile, NULL)){
 		throw NetworkException("couldn't load verification chain");
 	}
-	// FIXME SSL_CTX_check_private_key()?
+	if(1 != SSL_CTX_check_private_key(ctx)){
+		throw NetworkException("key didn't match cert");
+	}
 }
 
 RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
