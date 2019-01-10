@@ -1,5 +1,44 @@
 # Catena P2P networking
 
+Catena will not set up a P2P network unless the `-r` option is given to specify
+a TCP port on which to listen. The standard Catena RPC port is 40404. When
+configured to use P2P RPCs, Catena will accept connections on this port, and
+attempt to establish connections to peers.
+
+Catena P2P uses TLSv1.3, with certificate validation on both sides of each
+connection. All nodes in a Catena network must be configured with a certificate
+and key signed by some CA signed by the distributed network CA (Catena *does
+not* use the host's default CA store). A node's "name" for the purposes of
+Catena P2P networking is the pair of X509v3 Common Names from its Issuer and
+Subject fields, and each node's name should be different.
+
+Thus, a network of:
+* Node 1, IssuerCN: TestCorp CA, SubjectCN: testnode1
+* Node 2, IssuerCN: TestCorp CA, SubjectCN: testnode2
+* Node 3, IssuerCN: TestCorp2 CA, SubjectCN: testnode1
+
+is valid, but a network of:
+* Node 1, IssuerCN: TestCorp CA, SubjectCN: TestCorp
+* Node 2, IssuerCN: TestCorp CA, SubjectCN: TestCorp
+
+is questionable, since a node will not maintain more than one connection to a
+given *name*, even if the addresses are different.
+
+Use of `-r` requires `-C` and `-v`, specifying a certificate chain and private
+key respectively. The chain file ought consist of the node's certificate,
+followed by the signing certificates, up to the network-wide root. On most
+deployments, this implies a total of 4 PEM certificates (see
+[below](#Public-key-infrastructure)).
+
+## Peer configuration and discovery
+
+Catena may be provided a file using the `-P` option. This file should contain
+a peer on each line, specified as an IPv4 or IPv6 address, followed by an
+optional colon and port number. If no port number is provided, the port on
+which Catena is listening for RPCs is assumed (i.e., the port specified via
+`-r`). Peers thus provided are considered "configured peers", and always kept
+in the peer list (as opposed to "discovered peers", which can fall out).
+
 ## Public key infrastructure
 
 Catena nodes employ a 4-level PKI. At the top is the self-signed, long-lived
