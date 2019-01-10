@@ -186,6 +186,9 @@ void RPCService::PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* key
 	if(1 != SSL_CTX_use_certificate_chain_file(ctx, chainfile)){
 		throw NetworkException("couldn't load certificate chain");
 	}
+	if(1 != SSL_CTX_load_verify_locations(ctx, chainfile, NULL)){
+		throw NetworkException("couldn't load verification chain");
+	}
 	// FIXME SSL_CTX_check_private_key()?
 }
 
@@ -201,9 +204,7 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
 	}
 	PrepSSLCTX(sslctx.get(), chainfile.c_str(), keyfile.c_str());
 	PrepSSLCTX(clictx.get()->get(), chainfile.c_str(), keyfile.c_str());
-	if(1 != SSL_CTX_load_verify_locations(clictx.get()->get(), chainfile.c_str(), NULL)){
-		throw NetworkException("couldn't load server certificate chain");
-	}
+	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, tls_cert_verify);
 	OpenListeners();
 	try{
 		epollfd = EpollListeners();
