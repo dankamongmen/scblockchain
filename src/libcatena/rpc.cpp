@@ -323,6 +323,7 @@ int RPCService::Accept(int sd) {
 }
 
 void RPCService::Epoller() {
+	(void)ledger;
 	while(1) {
 		if(cancelled.load()){
 			return;

@@ -37,7 +37,7 @@ WFLAGS:=-Wall -W -Werror
 # WFLAGS+=-Wl,-z,defs
 OFLAGS:=-g -O2
 CPPFLAGS:=-I$(SRC)
-CXXFLAGS:=-pipe -std=c++14 -pthread
+CXXFLAGS:=-pipe -std=c++17 -pthread
 EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
 
