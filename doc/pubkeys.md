@@ -138,11 +138,6 @@ x7J5fzK75fo+GDGAEfKPa6po7x0TuswtctMUiPp7simVBxK1ULy/AQ==
 
 ## P2P / CA certificates
 
-### test/certchain.pem (1819 bytes)
-
-Concatenated PEM certs of "CatenaTest Root CA" and "CatenaTest Intermediate CA",
-used as the trust chain for test clients. All certs are ECDSA, secp384r1.
-
 ### CatenaTest Root CA (1042 bytes)
 
 `test/ca/certs/ca.cert.pem`. Key lives in `test/ca/private/ca.key.pem`.

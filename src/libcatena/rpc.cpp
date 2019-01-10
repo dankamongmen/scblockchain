@@ -62,7 +62,8 @@ class PolledTLSFD : public PolledFD {
 public:
 PolledTLSFD(int sd, SSL* ssl) :
   PolledFD(sd),
-  ssl(ssl) {
+  ssl(ssl),
+  accepting(true) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
@@ -80,38 +81,59 @@ SSL* HackSSL() const {
 
 // FIXME it isn't always an accept! could be established...
 bool Callback(RPCService& rpc) override {
-	auto ra = SSL_accept(ssl);
-	if(ra == 0){
-		std::cerr << "error accepting TLS" << std::endl;
-		return true;
-	}else if(ra < 0){
-		auto oerr = SSL_get_error(ssl, ra);
-		// FIXME handle partial SSL_accept()
-		if(oerr == SSL_ERROR_WANT_READ){
+	if(accepting){
+		auto ra = SSL_accept(ssl);
+		if(ra == 0){
+			std::cerr << "error accepting TLS" << std::endl;
+			return true;
+		}else if(ra < 0){
+			auto oerr = SSL_get_error(ssl, ra);
+			// FIXME handle partial SSL_accept()
+			if(oerr == SSL_ERROR_WANT_READ){
+				struct epoll_event ev = {
+					.events = EPOLLIN | EPOLLRDHUP,
+					.data = { .ptr = &*this, },
+				};
+				rpc.EpollMod(sd, ev);
+			}else if(oerr == SSL_ERROR_WANT_WRITE){
+				struct epoll_event ev = {
+					.events = EPOLLOUT | EPOLLRDHUP,
+					.data = { .ptr = &*this, },
+				};
+				rpc.EpollMod(sd, ev);
+			}else{
+				std::cerr << "error accepting TLS" << std::endl;
+				return true;
+			}
+		}else{
 			struct epoll_event ev = {
 				.events = EPOLLIN | EPOLLRDHUP,
 				.data = { .ptr = &*this, },
 			};
+			accepting = false;
 			rpc.EpollMod(sd, ev);
-		}else if(oerr == SSL_ERROR_WANT_WRITE){
-			struct epoll_event ev = {
-				.events = EPOLLOUT | EPOLLRDHUP,
-				.data = { .ptr = &*this, },
-			};
-			rpc.EpollMod(sd, ev);
-		}else{
-			std::cerr << "error accepting TLS" << std::endl;
+		}
+		return false;
+	}
+	char buf[BUFSIZ]; // FIXME ugh
+	auto r = SSL_read(ssl, buf, sizeof(buf));
+	if(r > 0){
+		std::cout << "read us some crap " << r << "\n";
+	}else{
+		auto ra = SSL_get_error(ssl, r);
+		if(ra == SSL_ERROR_WANT_WRITE){
+			// FIXME else check for SSL_ERROR_WANT_WRITE
+		}else if(ra != SSL_ERROR_WANT_READ){
+			std::cout << "lost ssl connection with error " << ra << std::endl;
 			return true;
 		}
-	}else{
-std::cerr << "HORRIBLE SSL SUCCESS AUGH\n";
-		// FIXME success add back as something else
 	}
 	return false;
 }
 
 private:
 SSL* ssl;
+bool accepting;
 };
 
 void RPCService::OpenListeners() {
