@@ -8,7 +8,7 @@ echo 1000 > serial
 
   generated root key:
 
-openssl ecparam -name secp256k1 -out private/ca.key.pem -genkey
+openssl ecparam -name secp384r1 -out private/ca.key.pem -genkey
 chmod 400 private/ca.key.pem 
 
   generate root cert:
@@ -25,7 +25,7 @@ openssl req -config openssl.cnf -key private/ca.key.pem -new -x509 -days 7305 -s
  generate intermediate CA:
 
 cd intermediate
-openssl ecparam -name secp256k1 -out private/intermediate.key.pem -genkey
+openssl ecparam -name secp384r1 -out private/intermediate.key.pem -genkey
 chmod 400 private/intermediate.key.pem 
 cd ..
 openssl req -config intermediate/openssl.cnf -new -sha256 -key intermediate/private/intermediate.key.pem -out intermediate/csr/intermediate.csr.pem
@@ -52,7 +52,7 @@ openssl verify -CAfile certs/ca.cert.pem intermediate/certs/intermediate.cert.pe
 
 # Third level
 
-* openssl ecparam -name secp256k1 -out test/ca/intermediate/testcorp/private/testcorp-ca.key.pem -genkey
+* openssl ecparam -name secp384r1 -out test/ca/intermediate/testcorp/private/testcorp-ca.key.pem -genkey
 * openssl req -config test/ca/intermediate/testcorp/openssl.cnf -new -sha256 -key test/ca/intermediate/testcorp/private/testcorp-ca.key.pem -out test/ca/intermediate/testcorp/csr/testcorp-ca.csr.pem
 * openssl ca -config test/ca/intermediate/openssl.cnf -extensions v3_consortium_ca -days 7305 -notext -md sha256 -in test/ca/intermediate/testcorp/csr/testcorp-ca.csr.pem -out test/ca/intermediate/testcorp/certs/testcorp-ca.cert.pem
 * openssl verify -CAfile test/certchain.pem test/ca/intermediate/testcorp/certs/testcorp-ca.cert.pem 
@@ -60,8 +60,141 @@ openssl verify -CAfile certs/ca.cert.pem intermediate/certs/intermediate.cert.pe
 
 # Fourth level
 
-* openssl ecparam -name secp256k1 -out test/ca/intermediate/testcorp/private/testnode1.key.pem -genkey
+* openssl ecparam -name secp384r1 -out test/ca/intermediate/testcorp/private/testnode1.key.pem -genkey
 * chmod 440 test/ca/intermediate/testcorp/private/testnode*
 * for i in 1 2 3 4 ; do openssl req -config test/ca/intermediate/testcorp/openssl.cnf -key test/ca/intermediate/testcorp/private/testnode$i.key.pem -new -sha256 -out test/ca/intermediate/testcorp/csr/testnode$i.csr.pem ; done
 * for i in 1 2 3 4 ; do openssl ca -config test/ca/intermediate/testcorp/openssl.cnf -extensions node_cert -days 3652 -notext -md sha256 -in test/ca/intermediate/testcorp/csr/testnode$i.csr.pem -out test/ca/intermediate/testcorp/certs/testnode$i.cert.pem ; done
 * chmod 444 test/ca/intermediate/testcorp/certs/testnode*
+
+# Verifying connection
+
+* cat test/ca/intermediate/testcorp/certs/testcorp-ca.cert.pem test/certchain.pem > certchain.pem
+* openssl s_server -accept 40404 -cert test/ca/intermediate/testcorp/certs/testnode1.cert.pem -key test/ca/intermediate/testcorp/private/testnode1.key.pem -cert_chain certchain.pem
+* openssl s_client -connect localhost:40404 -tls1_3  -CAfile test/ca/certs/ca.cert.pem 
+```
+CONNECTED(00000003)
+depth=3 C = US, ST = Georgia, L = Atlanta, O = CatenaTest, OU = Headway Catena Network, CN = Headway Catena Network Intermediate CA
+verify return:1
+depth=2 C = US, ST = Georgia, O = CatenaTest, OU = CatenaTest Certificate Authority, CN = CatenaTest Intermediate CA
+verify return:1
+depth=1 C = US, ST = Georgia, L = Atlanta, O = TestCorp, OU = TestCorp CA, CN = TestCorp CA
+verify return:1
+depth=0 C = US, ST = Georgia, L = Atlanta, O = TestCorp, OU = testnode1, CN = testnode1
+verify return:1
+---
+Certificate chain
+ 0 s:C = US, ST = Georgia, L = Atlanta, O = TestCorp, OU = testnode1, CN = testnode1
+   i:C = US, ST = Georgia, L = Atlanta, O = TestCorp, OU = TestCorp CA, CN = TestCorp CA
+ 1 s:C = US, ST = Georgia, L = Atlanta, O = TestCorp, OU = TestCorp CA, CN = TestCorp CA
+   i:C = US, ST = Georgia, O = CatenaTest, OU = CatenaTest Certificate Authority, CN = CatenaTest Intermediate CA
+ 2 s:C = US, ST = Georgia, O = CatenaTest, OU = CatenaTest Certificate Authority, CN = CatenaTest Intermediate CA
+   i:C = US, ST = Georgia, L = Atlanta, O = CatenaTest, OU = Headway Catena Network, CN = Headway Catena Network Intermediate CA
+ 3 s:C = US, ST = Georgia, L = Atlanta, O = CatenaTest, OU = Headway Catena Network, CN = Headway Catena Network Intermediate CA
+   i:C = US, ST = Georgia, L = Atlanta, O = CatenaTest, OU = Headway Catena Network, CN = Headway Catena Network Intermediate CA
+---
+Server certificate
+-----BEGIN CERTIFICATE-----
+MIICkjCCAhegAwIBAgICEAAwCgYIKoZIzj0EAwIwcDELMAkGA1UEBhMCVVMxEDAO
+BgNVBAgMB0dlb3JnaWExEDAOBgNVBAcMB0F0bGFudGExETAPBgNVBAoMCFRlc3RD
+b3JwMRQwEgYDVQQLDAtUZXN0Q29ycCBDQTEUMBIGA1UEAwwLVGVzdENvcnAgQ0Ew
+HhcNMTkwMTEwMDA1MjAxWhcNMjkwMTA5MDA1MjAxWjBsMQswCQYDVQQGEwJVUzEQ
+MA4GA1UECAwHR2VvcmdpYTEQMA4GA1UEBwwHQXRsYW50YTERMA8GA1UECgwIVGVz
+dENvcnAxEjAQBgNVBAsMCXRlc3Rub2RlMTESMBAGA1UEAwwJdGVzdG5vZGUxMHYw
+EAYHKoZIzj0CAQYFK4EEACIDYgAEKr2cz7iwSwR5kcsC3K4YTH09l6GOPl2eOLNq
+NhxGXA4VnQG6WMfxqpFt9AIuDSRld2qES/egXHtyWKz+19rnD/b5c2cSYFp5yaJ9
+Zbz4ntvfXNf3MsHFTxbom4DbtHk+o4GHMIGEMAkGA1UdEwQCMAAwHQYDVR0OBBYE
+FGJw9pyROfIWCCF1Bdm7uyiF94D6MB8GA1UdIwQYMBaAFFbSsHCZKQFLBOU7RnFG
+mWRsjTWCMA4GA1UdDwEB/wQEAwIF4DAnBgNVHSUEIDAeBggrBgEFBQcDAgYIKwYB
+BQUHAwEGCCsGAQUFBwMEMAoGCCqGSM49BAMCA2kAMGYCMQDsQT9zONIOpinjF/kE
+Givl/q3TwLBMjWanuNFtlQroauRJDlIJwU6YTLEzkpFR1S8CMQDundsOnNsVl6pz
+YYhi6nqESn7dZI7cevh7VATyt3rtGOYGPEbvCZTmlacj3PBBcU4=
+-----END CERTIFICATE-----
+subject=C = US, ST = Georgia, L = Atlanta, O = TestCorp, OU = testnode1, CN = testnode1
+
+issuer=C = US, ST = Georgia, L = Atlanta, O = TestCorp, OU = TestCorp CA, CN = TestCorp CA
+
+---
+No client certificate CA names sent
+Peer signing digest: SHA384
+Peer signature type: ECDSA
+Server Temp Key: X25519, 253 bits
+---
+SSL handshake has read 3150 bytes and written 313 bytes
+Verification: OK
+---
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Server public key is 384 bit
+Secure Renegotiation IS NOT supported
+Compression: NONE
+Expansion: NONE
+No ALPN negotiated
+Early data was not sent
+Verify return code: 0 (ok)
+---
+---
+Post-Handshake New Session Ticket arrived:
+SSL-Session:
+    Protocol  : TLSv1.3
+    Cipher    : TLS_AES_256_GCM_SHA384
+    Session-ID: BC64239570CBD593C9721F25C42EB317EF3373AF415629F182740E280C82F2C0
+    Session-ID-ctx: 
+    Resumption PSK: D3BADBA5CEFCD020796FA8B102B5EE81CC12B0F7B8A6403AEDA3DA63DBC880F0AE59BD092987A733856823DE50539129
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    TLS session ticket lifetime hint: 7200 (seconds)
+    TLS session ticket:
+    0000 - 0c 97 3e 79 a2 27 0b 36-84 6e df 7d 4d 4e 25 61   ..>y.'.6.n.}MN%a
+    0010 - 8b 89 0c 6f fd 01 8b 21-24 b8 52 7d cf 4a 13 e7   ...o...!$.R}.J..
+    0020 - b4 7e 0d ae 3f 02 3f 01-a1 64 5d 14 31 01 71 62   .~..?.?..d].1.qb
+    0030 - bd 1e 80 3e c4 ec 6a 3c-fd 57 05 00 9e 13 20 0c   ...>..j<.W.... .
+    0040 - 1d e0 6e 4b 84 92 96 10-b6 e1 ab 2d ac 5c 17 87   ..nK.......-.\..
+    0050 - 10 75 58 80 0f f6 91 5e-b4 8a 9e 10 1d 40 ae 25   .uX....^.....@.%
+    0060 - 19 23 96 68 90 f2 94 9b-f6 6e 46 54 0a f8 e0 0e   .#.h.....nFT....
+    0070 - b8 ec b9 c7 eb 59 7c c0-94 40 8a c6 c3 20 c5 25   .....Y|..@... .%
+    0080 - 12 b7 80 c1 16 d4 f9 94-91 9e e5 83 91 cd 3a e4   ..............:.
+    0090 - 1d b9 c4 45 4a ca a2 33-2b 4a dc 40 15 a2 fe 1a   ...EJ..3+J.@....
+    00a0 - 01 ba e0 6d 68 75 61 62-a7 c5 62 91 54 c9 1b c2   ...mhuab..b.T...
+    00b0 - be 95 0c 64 b0 d9 d1 ba-de a6 c7 1b 00 25 36 69   ...d.........%6i
+
+    Start Time: 1547087920
+    Timeout   : 7200 (sec)
+    Verify return code: 0 (ok)
+    Extended master secret: no
+    Max Early Data: 0
+---
+read R BLOCK
+---
+Post-Handshake New Session Ticket arrived:
+SSL-Session:
+    Protocol  : TLSv1.3
+    Cipher    : TLS_AES_256_GCM_SHA384
+    Session-ID: ABDA742B43E8C247E85DFD7C480ABAA8D4DFBECEBF01FB6D4B1654D3484D6131
+    Session-ID-ctx: 
+    Resumption PSK: 6BEC666C2377E34D6766D92112749FBBB07B320D0D90AD874A2E1A857593A8A8F9C2A2A160404DB7C0B360C8F69E80EE
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    TLS session ticket lifetime hint: 7200 (seconds)
+    TLS session ticket:
+    0000 - 0c 97 3e 79 a2 27 0b 36-84 6e df 7d 4d 4e 25 61   ..>y.'.6.n.}MN%a
+    0010 - b0 da 9b 33 ab 5f 64 f4-e3 e5 69 3f b0 66 08 19   ...3._d...i?.f..
+    0020 - 7a ae 89 33 1e 11 53 27-d7 de d4 1d 57 c4 db 2e   z..3..S'....W...
+    0030 - ce d2 57 14 a0 50 fb 11-11 9a fd 6a fe 45 d3 c8   ..W..P.....j.E..
+    0040 - 38 03 64 6e 88 f2 25 95-36 8b 4e 17 a2 c6 e7 b4   8.dn..%.6.N.....
+    0050 - b5 a0 74 43 85 fb 2e d0-65 f5 97 fc 08 08 48 8c   ..tC....e.....H.
+    0060 - 51 1c 65 4f d0 78 0d 75-dd aa f1 4f 10 89 11 ce   Q.eO.x.u...O....
+    0070 - 55 ed e2 f3 67 1a 71 83-34 cb 6b a7 28 40 e2 e0   U...g.q.4.k.(@..
+    0080 - 7d 6e f7 20 96 7a c6 22-f1 0a a0 c1 23 8b 98 4c   }n. .z."....#..L
+    0090 - a2 6d 9e 67 38 cc 96 db-7a b0 de 32 2a 46 49 67   .m.g8...z..2*FIg
+    00a0 - b8 d5 f4 a0 02 fa e8 e6-41 de 78 2b 38 5e 1c 89   ........A.x+8^..
+    00b0 - 95 d7 49 47 b1 b2 e3 32-df aa 18 b4 b8 68 61 a9   ..IG...2.....ha.
+
+    Start Time: 1547087920
+    Timeout   : 7200 (sec)
+    Verify return code: 0 (ok)
+    Extended master secret: no
+    Max Early Data: 0
+---
+read R BLOCK
+```

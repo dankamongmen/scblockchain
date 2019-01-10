@@ -9,17 +9,18 @@
 #include <libcatena/member.h>
 #include <libcatena/chain.h>
 #include <libcatena/block.h>
+#include <libcatena/rpc.h>
 #include <libcatena/tx.h>
 
 namespace Catena {
 
 // Called during Chain() constructor
-void Chain::LoadBuiltinKeys(){
+void Chain::LoadBuiltinKeys() {
 	BuiltinKeys bkeys;
 	bkeys.AddToTrustStore(tstore);
 }
 
-Chain::Chain(const std::string& fname){
+Chain::Chain(const std::string& fname) {
 	LoadBuiltinKeys();
 	if(blocks.LoadFile(fname, lmap, tstore)){
 		throw BlockValidationException();
@@ -286,6 +287,34 @@ void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 nlohmann::json Chain::UserStatus(const TXSpec& uspec, unsigned stype) const {
 	const auto& u = lmap.LookupUser(uspec);
 	return u.Status(stype);
+}
+
+std::vector<PeerInfo> Chain::Peers() const {
+	if(!rpcnet){
+		throw NetworkException("rpc networking has not been enabled");
+	}
+	return rpcnet.get()->Peers();
+}
+
+void Chain::AddPeers(const std::string& peerfile) {
+	if(!rpcnet){
+		throw NetworkException("rpc networking has not been enabled");
+	}
+	rpcnet.get()->AddPeers(peerfile);
+}
+
+void Chain::EnableRPC(int port, const std::string& chainfile, const std::string& keyfile) {
+	if(rpcnet){
+		throw NetworkException("rpc networking was already enabled");
+	}
+	rpcnet = std::make_unique<RPCService>(*this, port, chainfile, keyfile);
+}
+
+int Chain::RPCPort() const {
+	if(!rpcnet){
+		return 0;
+	}
+	return rpcnet.get()->Port();
 }
 
 }

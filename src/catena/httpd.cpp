@@ -93,9 +93,21 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
 	ss << "<tr><td>users</td><td>" << chain.UserCount() << "</td></tr>";
 	ss << "<tr><td>status delegations</td><td>" << chain.StatusDelegationCount() << "</td></tr>";
+	auto port = chain.RPCPort();
+	if(port){
+		ss << "<tr><td>rpc port</td><td>" << port << "</td></tr>";
+	}else{
+		ss << "<tr><td>rpc port</td><td>n/a</td></tr>";
+	}
 	ss << "</table>";
-	ss << "<h3>most recent block</h3>";
-	BlockHTML(ss, chain.MostRecentBlockHash());
+	Catena::CatenaHash mostrecent = chain.MostRecentBlockHash();
+	if(!mostrecent.IsGenesis()){
+		ss << "<h3>most recent block (<a href=\"/showblock?hash=" <<
+			mostrecent << "\">details</a>)</h3>";
+		BlockHTML(ss, chain.MostRecentBlockHash(), false);
+	}else{
+		ss << "<h3>no blocks on ledger</h3>";
+	}
 	return ss;
 }
 
@@ -204,7 +216,8 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 	return ret;
 }
 
-std::stringstream& HTTPDServer::BlockHTML(std::stringstream& ss, const Catena::CatenaHash& hash) const {
+std::stringstream& HTTPDServer::BlockHTML(std::stringstream& ss, const Catena::CatenaHash& hash,
+						bool printbytes) const {
 	const auto blk = chain.Inspect(hash);
 	ss << "<div id=\"block\">";
 	ss << "hash: " << blk.bhdr.hash << "<br/>";
@@ -216,6 +229,21 @@ std::stringstream& HTTPDServer::BlockHTML(std::stringstream& ss, const Catena::C
 	ss << "version: " << blk.bhdr.version << " bytes: " << blk.bhdr.totlen
 		<< " offset: " << blk.offset << " transactions: " << blk.bhdr.txcount
 		<< "<br/>" << timebuf << "<br/>" << std::endl;
+	if(printbytes){
+		ss << "<br/><samp>";
+		// Print 32 bytes at a time as hex-encoded character pairs
+		constexpr auto perline = 32;
+		for(auto i = 0u ; i < blk.bhdr.totlen ; i += perline){
+			auto blen = perline;
+			if(i + perline > blk.bhdr.totlen){
+				blen = blk.bhdr.totlen - i;
+			}
+			ss << std::hex << std::setfill('0') << std::setw(5) << i << " ";
+			Catena::HexOutput(ss, blk.bytes.get() + i, blen);
+			ss << "<br/>";
+		}
+		ss << "</samp>";
+	}
 	ss << "</div>";
 	return ss;
 }
@@ -235,7 +263,7 @@ HTTPDServer::ShowBlockHTML(struct MHD_Connection* conn) const {
 		ss << htmlhdr;
 		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 		ss << "<h3>Block " << hash << "</h3>";
-		BlockHTML(ss, hash);
+		BlockHTML(ss, hash, true);
 		ss << "</body>";
 		auto s = ss.str();
 		resp = MHD_create_response_from_buffer(s.size(), const_cast<char*>(s.c_str()), MHD_RESPMEM_MUST_COPY);

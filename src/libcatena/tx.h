@@ -12,12 +12,6 @@
 
 namespace Catena {
 
-class TransactionException : public std::runtime_error {
-public:
-TransactionException() : std::runtime_error("invalid transaction"){}
-TransactionException(const std::string& s) : std::runtime_error(s){}
-};
-
 enum class TXTypes {
 	NewVersion = 0x0000,
 	ConsortiumMember = 0x0001,

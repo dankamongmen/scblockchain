@@ -138,12 +138,7 @@ x7J5fzK75fo+GDGAEfKPa6po7x0TuswtctMUiPp7simVBxK1ULy/AQ==
 
 ## P2P / CA certificates
 
-### test/certchain.pem (1819 bytes)
-
-Concatenated PEM certs of "CatenaTest Root CA" and "CatenaTest Intermediate CA",
-used as the trust chain for test clients.
-
-### CatenaTest Root CA (928 bytes)
+### CatenaTest Root CA (1042 bytes)
 
 `test/ca/certs/ca.cert.pem`. Key lives in `test/ca/private/ca.key.pem`.
 
@@ -154,7 +149,7 @@ used as the trust chain for test clients.
 * OU = CatenaTest Certificate Authority
 * CN = CatenaTest Root CA
 
-### CatenaTest Intermediate CA (891 bytes)
+### CatenaTest Intermediate CA (989 bytes)
 
 `test/ca/intermediate/certs/intermediate.cert.pem`.
 Key lives in `test/ca/intermediate/private/intermediate.key.pem`.
@@ -165,8 +160,7 @@ Key lives in `test/ca/intermediate/private/intermediate.key.pem`.
 * OU = CatenaTest Certificate Authority
 * CN = CatenaTest Intermediate CA
 
-
-### TestCorp CA (855 bytes)
+### TestCorp CA (940 bytes)
 
 `test/ca/intermediate/testcorp/certs/testcorp-ca.cert.pem`.
 Key lives in `test/ca/intermediate/testcorp/private/testcorp-ca.key.pem`.
@@ -178,7 +172,7 @@ Key lives in `test/ca/intermediate/testcorp/private/testcorp-ca.key.pem`.
 * OU = TestCorp CA
 * CN = TestCorp CA
 
-### testnode1 (863 bytes)
+### testnode1 (952 bytes)
 
 `test/ca/intermediate/testcorp/certs/testnode1.cert.pem`.
 Key lives in `test/ca/intermediate/testcorp/private/testnode1.key.pem`.
@@ -186,6 +180,6 @@ Key lives in `test/ca/intermediate/testcorp/private/testnode1.key.pem`.
 * C = US
 * ST = Georgia
 * L = Atlanta
-* C = US
-* ST = Georgia
-* L = Atlanta
+* O = TestCorp
+* OU = testnode1
+* CN = testnode1

@@ -2,15 +2,56 @@
 #define CATENA_LIBCATENA_TLS
 
 #include <openssl/ssl.h>
+#include <libcatena/exceptions.h>
 
-// RAII wrappers for OpenSSL objects e.g. SSL_CTX
+// RAII wrappers for OpenSSL objects e.g. SSL_CTX, SSL
 
 namespace Catena {
 
-class NetworkException : public std::runtime_error {
+class SSLRAII {
 public:
-NetworkException() : std::runtime_error("network error"){}
-NetworkException(const std::string& s) : std::runtime_error(s){}
+
+SSLRAII() = delete;
+
+// Usually called ala SSLRAII(SSL_new(sslctx))
+SSLRAII(SSL* ssl) :
+  ssl(ssl) {
+	if(ssl == nullptr){
+		throw NetworkException("couldn't get TLS conn");
+	}
+}
+
+SSLRAII(const SSLRAII& s) {
+	SSL_up_ref(s.ssl);
+	ssl = s.ssl;
+}
+
+SSLRAII& operator=(const SSLRAII& other) {
+	if(this != &other){
+		SSL_free(ssl);
+		if( (ssl = other.ssl) ){
+			SSL_up_ref(ssl);
+		}
+	}
+	return *this;
+}
+
+SSL* get() {
+	return ssl;
+}
+
+void SetFD(int sd) {
+	if(1 != SSL_set_fd(ssl, sd)){
+		throw NetworkException("couldn't bind SSL sd");
+	}
+}
+
+~SSLRAII() {
+	SSL_free(ssl);
+}
+
+private:
+SSL* ssl;
 };
 
 class SSLCtxRAII {
@@ -47,6 +88,18 @@ SSL_CTX* get() {
 
 ~SSLCtxRAII() {
 	SSL_CTX_free(sslctx);
+}
+
+SSL* NewSSL() const {
+	SSL* ret = SSL_new(sslctx);
+	if(ret == nullptr){
+		throw NetworkException("couldn't get TLS context");
+	}
+	return ret;
+}
+
+SSLRAII NewSSLRAII() const {
+	return SSLRAII(SSL_new(sslctx));
 }
 
 private:

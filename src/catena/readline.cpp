@@ -107,11 +107,31 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
+	std::cout << "cxx: " << Catena::GetCompilerID() << "\n";
+	std::cout << "libc: " << Catena::GetLibcID() << "\n";
+	std::cout << "json: JSON for Modern C++ " <<
+		NLOHMANN_JSON_VERSION_MAJOR << "." <<
+		NLOHMANN_JSON_VERSION_MINOR << "." <<
+		NLOHMANN_JSON_VERSION_PATCH << "\n";
+	std::cout << "crypto: " << SSLeay_version(SSLEAY_VERSION) << "\n";
+	std::cout << "\n";
 	std::cout << "chain bytes: " << chain.Size() << "\n";
+	std::cout << "blocks: " << chain.GetBlockCount() << "\n";
+	std::cout << "transactions: " << chain.TXCount() << "\n";
+	std::cout << "outstanding TXs: " << chain.OutstandingTXCount() << "\n";
 	std::cout << "consortium members: " << chain.ConsortiumMemberCount() << "\n";
 	std::cout << "lookup requests: " << chain.LookupRequestCount() << "\n";
+	std::cout << "lookup authorizations: " << chain.LookupRequestCount(true) << "\n";
+	std::cout << "external IDs: " << chain.ExternalLookupCount() << "\n";
+	std::cout << "public keys: " << chain.PubkeyCount() << "\n";
 	std::cout << "users: " << chain.UserCount() << "\n";
 	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
+	auto port = chain.RPCPort();
+	if(port){
+		std::cout << "rpc port: " << port << "\n";
+	}else{
+		std::cout << "rpc port: not configured\n";
+	}
 	std::cout << std::flush;
 	return 0;
 }
@@ -442,6 +462,38 @@ int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
 	return -1;
 }
 
+template <typename Iterator>
+int ReadlineUI::Peers(const Iterator start, const Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+	try{
+		const auto pinfo = chain.Peers();
+		time_t now = time(NULL);
+		for(auto p : pinfo){
+			std::cout << p.address << ":" << p.port;
+			if(p.lasttime == -1){
+				std::cout << " (unused) ";
+			}else{
+				int since = difftime(now, p.lasttime);
+				std::cout << " (last used " << since << "s ago) ";
+			}
+			if(p.issuer.length()){
+				std::cout << p.issuer << "/";
+			}
+			if(p.subject.length()){
+				std::cout << p.subject;
+			}
+			std::cout << "\n";
+		}
+	}catch(Catena::NetworkException& e){
+		std::cerr << "couldn't get peers: " << e.what() << std::endl;
+	}
+	std::cout << std::flush;
+	return 0;
+}
+
 #define RL_START "\x01" // RL_PROMPT_START_IGNORE
 #define RL_END "\x02"   // RL_PROMPT_END_IGNORE
 
@@ -469,6 +521,7 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "delustatus", .fxn = &ReadlineUI::NewUserStatusDelegation, .help = "create new UserStatusDelegation transaction", },
 		{ .cmd = "ustatus", .fxn = &ReadlineUI::NewUserStatus, .help = "create new UserStatus transaction", },
 		{ .cmd = "getustatus", .fxn = &ReadlineUI::GetUserStatus, .help = "look up a patient's status", },
+		{ .cmd = "peers", .fxn = &ReadlineUI::Peers, .help = "summarize p2p network peers", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;

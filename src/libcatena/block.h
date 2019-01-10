@@ -12,12 +12,6 @@
 
 namespace Catena {
 
-class BlockHeaderException : public std::runtime_error {
-public:
-BlockHeaderException() : std::runtime_error("invalid block header"){}
-BlockHeaderException(const std::string& s) : std::runtime_error(s){}
-};
-
 // NOT the on-disk packed format
 struct BlockHeader {
 	CatenaHash hash;
@@ -31,14 +25,19 @@ struct BlockHeader {
 
 struct BlockDetail {
 public:
-// FIXME this doesn't look right...ensure we're properly moving
-BlockDetail(const BlockHeader& bhdr, unsigned offset, std::vector<std::unique_ptr<Transaction>> trans) :
+BlockDetail(const BlockHeader& bhdr, unsigned offset,
+		std::unique_ptr<unsigned char[]> bytes,
+		std::vector<std::unique_ptr<Transaction>> trans) :
   bhdr(bhdr),
   offset(offset),
+  bytes(std::move(bytes)),
   transactions(std::move(trans)) {}
+
 BlockHeader bhdr;
 unsigned offset;
+std::unique_ptr<unsigned char[]> bytes;
 std::vector<std::unique_ptr<Transaction>> transactions;
+
 friend std::ostream& operator<<(std::ostream& stream, const BlockDetail& b);
 };
 

@@ -23,6 +23,16 @@ inline friend std::ostream& operator<<(std::ostream& s, const CatenaHash& hash){
 	return s;
 }
 
+// FIXME can surely do this much faster with some precomputed comparison
+bool IsGenesis() const {
+	for(auto i = 0u ; i < size() ; ++i){
+		if(data()[i] != 0xff){
+			return false;
+		}
+	}
+	return true;
+}
+
 };
 
 void catenaHash(const void* in, unsigned len, CatenaHash& hash);

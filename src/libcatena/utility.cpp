@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <libcatena/utility.h>
@@ -141,6 +142,23 @@ void IgnoreSignal(int signum) {
 	if(sigaction(signum, &sa, NULL)){
 		throw std::runtime_error("couldn't ignore signal");
 	}
+}
+
+int tls_cert_verify(int preverify_ok, X509_STORE_CTX* x509_ctx){
+	if(!preverify_ok){
+		int e = X509_STORE_CTX_get_error(x509_ctx);
+		std::cerr << "cert verification error: " << X509_verify_cert_error_string(e) << std::endl;
+	}
+	X509* cert = X509_STORE_CTX_get_current_cert(x509_ctx);
+	if(cert){
+		X509_NAME* certsub = X509_get_subject_name(cert);
+		char *cn = X509_NAME_oneline(certsub, nullptr, 0);
+		if(cn){
+			std::cout << "server cert: " << cn << std::endl;
+			free(cn);
+		}
+	}
+	return preverify_ok;
 }
 
 }

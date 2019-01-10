@@ -234,7 +234,8 @@ std::vector<BlockDetail> Blocks::Inspect(int start, int end) const {
 		}
 		Block b; // FIXME embed these into Blocks
 		auto trans = b.Inspect(mblock.get(), &headers[idx]);
-		ret.emplace_back(headers[idx], offsets[idx], std::move(trans));
+		ret.emplace_back(headers[idx], offsets[idx], std::move(mblock),
+					std::move(trans));
 		++idx;
 	}
 	return ret;

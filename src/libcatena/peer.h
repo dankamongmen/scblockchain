@@ -2,6 +2,8 @@
 #define CATENA_LIBCATENA_PEER
 
 #include <future>
+#include <openssl/bio.h>
+#include <libcatena/tls.h>
 
 namespace Catena {
 
@@ -9,10 +11,19 @@ namespace Catena {
 // inactive (no connection), pending (connection attempted but not yet
 // established), or active (connection established).
 
+// For returning (copied) details about a Peer beyond libcatena
+struct PeerInfo {
+std::string address;
+int port;
+time_t lasttime;
+std::string subject;
+std::string issuer;
+};
+
 class Peer {
 public:
 Peer() = delete;
-Peer(const std::string& addr, int defaultport);
+Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx);
 virtual ~Peer() = default;
 
 int Port() const {
@@ -32,9 +43,21 @@ std::future<int> ConnectAsync() {
 	return std::async(std::launch::async, &Peer::Connect, this);
 }
 
+// FIXME needs lock against Connect() for at least "lasttime" purposes
+PeerInfo Info() const {
+	PeerInfo ret{address, port, lasttime, lastSubjectCN, lastIssuerCN};
+	return ret;
+}
+
 private:
+std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;
 int port;
+time_t lasttime; // last time this was used, successfully or otherwise
+std::string lastSubjectCN; // subject CN from last TLS handshake
+std::string lastIssuerCN; // issuer CN from last TLS handshake
+
+BIO* TLSConnect(int sd);
 };
 
 }
