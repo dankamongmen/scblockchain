@@ -52,6 +52,8 @@ std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;
 int port;
 time_t lasttime; // last time this was used, successfully or otherwise
+std::string lastSubjectCN; // subject CN from last TLS handshake
+std::string lastIssuerCN; // issuer CN from last TLS handshake
 
 BIO* TLSConnect(int sd);
 };
