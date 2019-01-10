@@ -25,7 +25,7 @@
 "-----END PUBLIC KEY-----"
 #define RPC_TEST_PEERS "test/rpc-peers"
 #define ELOOK_TEST_PRIVKEY "test/elook-test1.pem"
-#define TEST_NODEKEY "test/ca/intermediate/testcorp/private/testnode1.pem"
+#define TEST_NODEKEY "test/ca/intermediate/testcorp/private/testnode1.key.pem"
 
 static const char TEST_X509_CHAIN[] = "test/certchain.pem";
 
