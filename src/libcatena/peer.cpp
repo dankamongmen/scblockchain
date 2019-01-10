@@ -121,11 +121,11 @@ int Peer::Connect() {
 		lasttime = time(NULL);
 		try{
 			TLSConnect(fd);
+			FDSetNonblocking(fd);
 		}catch(...){
 			close(fd);
 			throw;
 		}
-		// FIXME add SOCK_NONBLOCK
 		return fd;
 	}while( (info = info->ai_next) );
 	lasttime = time(NULL);

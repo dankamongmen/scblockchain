@@ -73,6 +73,12 @@ TransactionException() : std::runtime_error("invalid transaction"){}
 TransactionException(const std::string& s) : std::runtime_error(s){}
 };
 
+class SystemException : public std::runtime_error {
+public:
+SystemException() : std::runtime_error("system error"){}
+SystemException(const std::string& s) : std::runtime_error(s){}
+};
+
 }
 
 #endif

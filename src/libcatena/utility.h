@@ -132,6 +132,8 @@ X509NetworkName(const X509* cert) {
 	return std::make_pair(isscn, subcn);
 }
 
+void FDSetNonblocking(int fd);
+
 inline std::string GetCompilerID(){
 #if defined(__GNUC__) && !defined(__clang__)
 	return std::string("GNU C++ ") + __VERSION__;

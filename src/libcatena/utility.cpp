@@ -174,4 +174,15 @@ std::string X509CN(X509_NAME* xname) {
 	return ret;
 }
 
+void FDSetNonblocking(int fd) {
+	int flags = fcntl(fd, F_GETFL, 0);
+	if(flags < 0){
+		throw SystemException("couldn't get fd flags");
+	}
+	flags |= O_NONBLOCK;
+	if(0 != fcntl(fd, F_SETFL, flags)){
+		throw SystemException("couldn't set fd flags");
+	}
+}
+
 }
