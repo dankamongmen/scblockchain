@@ -25,9 +25,10 @@ public:
 RPCService() = delete;
 // chainfile must specify a valid X.509 certificate chain. Peers must present a
 // cert trusted by this chain.
-// FIXME probably need to accept our own cert+key files, ugh. might be able to
+// FIXME probably need to accept our own cert files, ugh. might be able to
 //   have our own cert as the last in the cachainfile?
-RPCService(Chain& ledger, int port, const std::string& chainfile);
+RPCService(Chain& ledger, int port, const std::string& chainfile,
+		const std::string& keyfile);
 
 ~RPCService();
 

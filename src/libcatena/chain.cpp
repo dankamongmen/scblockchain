@@ -303,11 +303,11 @@ void Chain::AddPeers(const std::string& peerfile) {
 	rpcnet.get()->AddPeers(peerfile);
 }
 
-void Chain::EnableRPC(int port, const std::string& chainfile) {
+void Chain::EnableRPC(int port, const std::string& chainfile, const std::string& keyfile) {
 	if(rpcnet){
 		throw NetworkException("rpc networking was already enabled");
 	}
-	rpcnet = std::make_unique<RPCService>(*this, port, chainfile);
+	rpcnet = std::make_unique<RPCService>(*this, port, chainfile, keyfile);
 }
 
 int Chain::RPCPort() const {

@@ -176,7 +176,8 @@ int RPCService::EpollListeners() {
 	return ret;
 }
 
-RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
+RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
+			const std::string& keyfile) :
   port(port),
   ledger(ledger),
   sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method()))),
@@ -187,6 +188,9 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile) :
 	}
 	if(1 != SSL_CTX_set_min_proto_version(sslctx.get(), TLS1_3_VERSION)){
 		throw NetworkException("couldn't force server TLSv1.3+");
+	}
+	if(1 != SSL_CTX_use_PrivateKey_file(sslctx.get(), keyfile.c_str(), SSL_FILETYPE_PEM)){
+		throw NetworkException("couldn't load private key");
 	}
 	if(1 != SSL_CTX_use_certificate_chain_file(sslctx.get(), chainfile.c_str())){
 		throw NetworkException("couldn't load server certificate chain");
