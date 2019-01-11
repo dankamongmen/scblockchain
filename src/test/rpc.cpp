@@ -35,6 +35,22 @@ TEST(CatenaRPC, Peerfile){
 	EXPECT_EQ(Catena::MaxActiveRPCPeers, max);
 }
 
+// Duplicates should be filtered, so adding the peerfile twice ought only show
+// the original number of peers.
+TEST(CatenaRPC, DoubleAddPeerfile){
+	Catena::Chain chain;
+	Catena::RPCService rpc(chain, 40404, TEST_X509_CHAIN, TEST_NODEKEY);
+	rpc.AddPeers(RPC_TEST_PEERS);
+	int active, defined, max;
+	rpc.PeerCount(&defined, &active, &max);
+	EXPECT_EQ(4, defined);
+	EXPECT_EQ(0, active);
+	EXPECT_EQ(Catena::MaxActiveRPCPeers, max);
+	rpc.AddPeers(RPC_TEST_PEERS);
+	rpc.PeerCount(&defined, &active, &max);
+	EXPECT_EQ(4, defined);
+}
+
 TEST(CatenaRPC, BadPeerfile){
 	Catena::Chain chain;
 	Catena::RPCService rpc(chain, 40404, TEST_X509_CHAIN, TEST_NODEKEY);
