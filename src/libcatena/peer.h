@@ -10,6 +10,7 @@ namespace Catena {
 // A Peer represents another Catena network node. A given Peer might either be
 // inactive (no connection), pending (connection attempted but not yet
 // established), or active (connection established).
+class Peer;
 
 // For returning (copied) details about a Peer beyond libcatena
 struct PeerInfo {
@@ -19,6 +20,27 @@ time_t lasttime;
 std::string subject;
 std::string issuer;
 bool configured;
+};
+
+// Necessary state to accept and begin using newly-connected Peers. Received
+// under a shared_ptr, since the RPCService that initiated the ConnectAsync
+// might have disappeared while we were connecting.
+class PeerQueue {
+public:
+
+void AddPeer(const std::shared_ptr<Peer>& p) {
+	std::lock_guard<std::mutex> lock(pmutex);
+	peers.push_back(p);
+}
+
+std::vector<std::shared_ptr<Peer>> Peers() {
+	std::lock_guard<std::mutex> lock(pmutex);
+	return std::move(peers);
+}
+
+private:
+std::vector<std::shared_ptr<Peer>> peers;
+std::mutex pmutex;
 };
 
 class Peer {
@@ -40,11 +62,14 @@ std::string Address() const {
 
 int Connect();
 
-// FIXME we'll almost certainly need to take some shared_ptr around a condition
-// variable, then pass a lambda which calls Connect and then signals the
-// condition variable...
-std::future<int> ConnectAsync() {
-	return std::async(std::launch::async, &Peer::Connect, this);
+static std::future<int> ConnectAsync(const std::shared_ptr<Peer>& p,
+			std::shared_ptr<PeerQueue> pq) {
+	return std::async(std::launch::async,
+			[](auto p, auto pq){
+				int ret = p.get()->Connect();
+				pq.get()->AddPeer(p);
+				return ret;
+			}, p, pq);
 }
 
 // FIXME needs lock against Connect() for at least "lasttime" purposes
@@ -52,6 +77,10 @@ PeerInfo Info() const {
 	PeerInfo ret{address, port, lasttime, lastSubjectCN, lastIssuerCN,
 			configured};
 	return ret;
+}
+
+std::pair<std::string, std::string> Name() const {
+	return std::make_pair(lastIssuerCN, lastSubjectCN);
 }
 
 private:
