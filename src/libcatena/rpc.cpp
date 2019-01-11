@@ -330,10 +330,12 @@ int RPCService::Accept(int sd) {
 void RPCService::HandleCompletedConns() {
 	auto conns = connqueue.get()->Peers();
 	for(auto& c : conns){
-		if(c->Name() == rpcName){
-			std::cout << "Connected to ourself, hehehe\n";
+		if(c.first->Name() == rpcName){
+			BIO_free_all(c.second);
+			// FIXME update peer with zee infos
 		}else{
-			std::cout << "A lovely new friend\n";
+			// FIXME add sd from BIO to epoll set
+			active.emplace_back(c.first);
 		}
 	}
 }

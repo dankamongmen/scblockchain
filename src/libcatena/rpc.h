@@ -47,9 +47,9 @@ int Port() const {
 	return port;
 }
 
-void PeerCount(int* defined, int* active, int* maxactive) {
+void PeerCount(int* defined, int* act, int* maxactive) {
 	*defined = peers.size();
-	*active = 0; // FIXME
+	*act = active.size();
 	*maxactive = MaxActiveRPCPeers;
 }
 
@@ -70,6 +70,7 @@ private:
 int port;
 Chain& ledger;
 std::vector<std::shared_ptr<Peer>> peers;
+std::vector<std::shared_ptr<Peer>> active;
 SSLCtxRAII sslctx;
 PolledListenFD* lsd4; // IPv4 and IPv6 listening sockets
 PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
