@@ -385,7 +385,10 @@ void RPCService::AddPeers(const std::string& peerfile) {
 	for(auto const& r : ret){
 		bool dup = false;
 		for(auto const& p : peers){
-			if(*r.get() == *p.get()){
+			// FIXME what about if we discovered the peer, but then
+			// have it added? need mark it as configured
+			if(r.get()->Port() == p.get()->Port() &&
+					r.get()->Address() == p.get()->Address()){
 				dup = true;
 				break;
 			}
