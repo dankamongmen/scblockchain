@@ -62,14 +62,18 @@ std::string Address() const {
 
 int Connect();
 
-static std::future<int> ConnectAsync(const std::shared_ptr<Peer>& p,
+static void ConnectAsync(const std::shared_ptr<Peer>& p,
 			std::shared_ptr<PeerQueue> pq) {
-	return std::async(std::launch::async,
-			[](auto p, auto pq){
-				int ret = p.get()->Connect();
+	// FIXME probably should be a future that gets put on PeerQueue?
+	std::thread t([](auto p, auto pq){
+			try{
+				p.get()->Connect();
 				pq.get()->AddPeer(p);
-				return ret;
+			}catch(...){ // FIXME at most, catch Catena exceptions
+				// FIXME smells
+			}
 			}, p, pq);
+	t.detach();
 }
 
 // FIXME needs lock against Connect() for at least "lasttime" purposes
