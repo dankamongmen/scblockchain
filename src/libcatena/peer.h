@@ -95,6 +95,10 @@ bool configured; // were we provided during initial configuration?
 BIO* TLSConnect(int sd);
 };
 
+inline bool operator==(const Peer& lhs, const Peer& rhs) {
+	return lhs.Port() == rhs.Port() && lhs.Address() == rhs.Address();
+}
+
 }
 
 #endif
