@@ -222,13 +222,14 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
   ledger(ledger),
   sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method()))),
   cancelled(false),
-  clictx(std::make_shared<SSLCtxRAII>(SSLCtxRAII(SSL_CTX_new(TLS_method())))) {
+  clictx(std::make_shared<SSLCtxRAII>(SSLCtxRAII(SSL_CTX_new(TLS_method())))),
+  connqueue(std::make_shared<PeerQueue>()) {
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
 	}
 	PrepSSLCTX(sslctx.get(), chainfile.c_str(), keyfile.c_str());
 	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
-	std::tie(issuerCN, subjectCN) = X509NetworkName(x509);
+	rpcName = X509NetworkName(x509);
 	PrepSSLCTX(clictx.get()->get(), chainfile.c_str(), keyfile.c_str());
 	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, tls_cert_verify);
 	OpenListeners();
@@ -324,12 +325,26 @@ int RPCService::Accept(int sd) {
 	}
 }
 
+// Crap that we have to go checking a locked strucutre each epoll(), especially
+// when those epoll()s are on a period. FIXME kill this off, rigourize.
+void RPCService::HandleCompletedConns() {
+	auto conns = connqueue.get()->Peers();
+	for(auto& c : conns){
+		if(c->Name() == rpcName){
+			std::cout << "Connected to ourself, hehehe\n";
+		}else{
+			std::cout << "A lovely new friend\n";
+		}
+	}
+}
+
 void RPCService::Epoller() {
 	(void)ledger;
 	while(1) {
 		if(cancelled.load()){
 			return;
 		}
+		HandleCompletedConns();
 		struct epoll_event ev; // FIXME accept multiple events
 		auto eret = epoll_wait(epollfd, &ev, 1, 100); // FIXME kill timeout
 		if(eret < 0 && errno != EINTR){
@@ -356,21 +371,21 @@ void RPCService::AddPeers(const std::string& peerfile) {
 	if(!in.is_open()){
 		throw std::ifstream::failure("couldn't open " + peerfile);
 	}
-	std::vector<Peer> ret;
+	std::vector<std::shared_ptr<Peer>> ret;
 	std::string line;
 	while(std::getline(in, line)){
 		if(line.length() == 0 || line[0] == '#'){
 			continue;
 		}
-		ret.emplace_back(line, port, clictx, true);
+		ret.emplace_back(std::make_shared<Peer>(line, port, clictx, true));
 	}
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");
 	}
 	for(auto const& r : ret){
 		// FIXME filter out duplicates?
-		peers.insert(peers.end(), r);
-		peers.back().ConnectAsync();
+		peers.emplace_back(r);
+		Peer::ConnectAsync(r, connqueue);
 	}
 }
 

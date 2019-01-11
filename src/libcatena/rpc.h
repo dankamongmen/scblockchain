@@ -33,7 +33,7 @@ RPCService(Chain& ledger, int port, const std::string& chainfile,
 ~RPCService();
 
 std::pair<std::string, std::string> Name() const {
-	return std::make_pair(issuerCN, subjectCN);
+	return rpcName;
 }
 
 // peerfile must contain one peer per line, specified as an IPv4 or IPv6
@@ -56,7 +56,7 @@ void PeerCount(int* defined, int* active, int* maxactive) {
 std::vector<PeerInfo> Peers() const {
 	std::vector<PeerInfo> ret;
 	for(auto p : peers){
-		ret.push_back(p.Info()); // FIXME ideally construct in place
+		ret.push_back(p->Info()); // FIXME ideally construct in place
 	}
 	return ret;
 }
@@ -69,7 +69,7 @@ int EpollMod(int sd, struct epoll_event& ev);
 private:
 int port;
 Chain& ledger;
-std::vector<Peer> peers;
+std::vector<std::shared_ptr<Peer>> peers;
 SSLCtxRAII sslctx;
 PolledListenFD* lsd4; // IPv4 and IPv6 listening sockets
 PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
@@ -79,11 +79,14 @@ std::atomic<bool> cancelled; // lame signal to Epoller
 std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
 std::string issuerCN; // taken from our X509 certificate
 std::string subjectCN;
+std::shared_ptr<PeerQueue> connqueue;
+std::pair<std::string, std::string> rpcName;
 
 void Epoller();
 int EpollListeners();
 void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
+void HandleCompletedConns();
 };
 
 }
