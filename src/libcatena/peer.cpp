@@ -91,7 +91,7 @@ BIO* Peer::TLSConnect(int sd) {
 	return ret;
 }
 
-int Peer::Connect() {
+BIO* Peer::Connect() {
 	lasttime = time(NULL);
 	struct addrinfo hints{};
 	hints.ai_flags = AI_NUMERICHOST;
@@ -120,13 +120,13 @@ int Peer::Connect() {
 		std::cout << "connected " << fd << " to " << address << ":" << port << "\n";
 		lasttime = time(NULL);
 		try{
-			TLSConnect(fd);
+			BIO* bio = TLSConnect(fd); // FIXME RAII that fucker
 			FDSetNonblocking(fd);
+			return bio;
 		}catch(...){
 			close(fd);
 			throw;
 		}
-		return fd;
 	}while( (info = info->ai_next) );
 	lasttime = time(NULL);
 	throw NetworkException("couldn't connect to " + address);

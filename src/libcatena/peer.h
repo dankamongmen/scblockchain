@@ -28,18 +28,18 @@ bool configured;
 class PeerQueue {
 public:
 
-void AddPeer(const std::shared_ptr<Peer>& p) {
+void AddPeer(const std::shared_ptr<Peer>& p, BIO* bio) {
 	std::lock_guard<std::mutex> lock(pmutex);
-	peers.push_back(p);
+	peers.emplace_back(p, bio);
 }
 
-std::vector<std::shared_ptr<Peer>> Peers() {
+std::vector<std::pair<std::shared_ptr<Peer>, BIO*>> Peers() {
 	std::lock_guard<std::mutex> lock(pmutex);
 	return std::move(peers);
 }
 
 private:
-std::vector<std::shared_ptr<Peer>> peers;
+std::vector<std::pair<std::shared_ptr<Peer>, BIO*>> peers;
 std::mutex pmutex;
 };
 
@@ -60,15 +60,15 @@ std::string Address() const {
 	return address;
 }
 
-int Connect();
+BIO* Connect();
 
 static void ConnectAsync(const std::shared_ptr<Peer>& p,
 			std::shared_ptr<PeerQueue> pq) {
 	// FIXME probably should be a future that gets put on PeerQueue?
 	std::thread t([](auto p, auto pq){
 			try{
-				p.get()->Connect();
-				pq.get()->AddPeer(p);
+				auto bio = p.get()->Connect();
+				pq.get()->AddPeer(p, bio);
 			}catch(...){ // FIXME at most, catch Catena exceptions
 				// FIXME smells
 			}
