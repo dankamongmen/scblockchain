@@ -20,11 +20,12 @@ might or might not work.
     * Tested with `clang++` 7.0.1 and `g++` 8.2.0
 * GNU Make 4.2.1+
 * Google Test 1.8.1+ (libgtest-dev)
-* OpenSSL 1.1.1+ (libopenssl-dev) (1.1.1 is required for TLSv1.3)
+* OpenSSL 1.1.1+ (libssl-dev) (earlier versions *will not work*)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
-    * NB: `clang++` 7.0.1 seemed to have problems with v3.5.0
+* pkg-config
+* exuberant-ctags
 
 ## Running the catena daemon
 

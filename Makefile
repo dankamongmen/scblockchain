@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test clean
+.PHONY: all bin valgrind check test docker clean
 .DEFAULT_GOAL:=all
 
 SRC:=src
@@ -31,6 +31,7 @@ LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC)))
 
 LEDGER:=genesisblock
 TESTDATA:=$(wildcard test/*) $(LEDGER)
+DOCKERFILE:=Dockerfile
 
 WFLAGS:=-Wall -W -Werror
 # clang doesn't like this
@@ -79,6 +80,9 @@ test: $(TAGS) $(TESTBIN) $(TESTDATA)
 
 valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
+
+docker: $(DOCKERFILE)
+	docker build -f $< .
 
 clean:
 	rm -rf $(OUT) $(TAGS)
