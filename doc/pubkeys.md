@@ -138,6 +138,9 @@ x7J5fzK75fo+GDGAEfKPa6po7x0TuswtctMUiPp7simVBxK1ULy/AQ==
 
 ## P2P / CA certificates
 
+### Headway Catena Network CA+Intermediate CA chain (1811 bytes)
+`doc/hcn-ca-chain.pem`. 2 levels of the Headway Catena Network PKI.
+
 ### CatenaTest Root CA (1042 bytes)
 
 `test/ca/certs/ca.cert.pem`. Key lives in `test/ca/private/ca.key.pem`.
