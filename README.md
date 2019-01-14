@@ -91,6 +91,10 @@ Catena might choose newly-discovered peers, even if specified peers are
 available. It is not meaningful to provide `-P` without enabling RPC service
 via `-r`, but it is also not an error.
 
+Addresses to advertise may be specified with the `-A` argument. `-A` accepts
+a comma-delimited list of addresses using peerfile syntax, and can be provided
+multiple times. It is an error to provide `-A` without `-r`.
+
 The services provided via HTTP and those provided by RPC are mutually exclusive.
 The console client implements a superset of the union of these two services.
 

@@ -30,14 +30,39 @@ followed by the signing certificates, up to the network-wide root. On most
 deployments, this implies a total of 4 PEM certificates (see
 [below](#Public-key-infrastructure)).
 
+A node is uniquely identified by its name. Names are strongly decoupled from
+addresses and hostnames: a node connecting to an address, and finding an
+unexpected name there, must not consider this an error. The address from which
+a node receives a connection must not be interpreted as a connectable address
+for the peer. Peer rejection must not be based off whether the peer address has
+been advertised. This allows for maximum flexibility in node addressing and
+advertising.
+
 ## Peer configuration and discovery
 
+Catena nodes are advertised as collections of endpoints. Endpoints are IPv4
+addresses, IPv6 addresses, or DNS names which ought resolve to collections of
+IP addresses, and a port. When connecting to an advertised node, the order in
+which endpoints will be tried is undefined, but all endpoints will be tried
+unless one succeeds. Whether they will be tried serially or in parallel is
+undefined. It is expected that all the endpoints in an advertisement reach the
+same node.
+
+When interacting with Catena, an advertisement is a comma-delimited set of
+one or more endpoints. If an address/name is followed by a colon and port
+number, that port number is used. The default port is otherwise used. Note that
+ports are per-endpoint.
+
 Catena may be provided a file using the `-P` option. This file should contain
-a peer on each line, specified as an IPv4 or IPv6 address, followed by an
-optional colon and port number. If no port number is provided, the port on
-which Catena is listening for RPCs is assumed (i.e., the port specified via
-`-r`). Peers thus provided are considered "configured peers", and always kept
-in the peer list (as opposed to "discovered peers", which can fall out).
+an advertisement on each line. Peers thus provided are considered "configured
+peers", and always kept in the peer list (as opposed to "discovered peers",
+which can fall out).
+
+If the node wishes to be discoverable, it must advertise addresses by which it
+can be reached. This advertisment is provided with the `-A` option. Multiple
+`-A` arguments will be grouped into a single advertisement. If `-A` is not
+provided with `-r`, the node can still be connected to, but will not be
+advertised.
 
 ## Public key infrastructure
 
