@@ -46,7 +46,7 @@ IP addresses, and a port. When connecting to an advertised node, the order in
 which endpoints will be tried is undefined, but all endpoints will be tried
 unless one succeeds. Whether they will be tried serially or in parallel is
 undefined. It is expected that all the endpoints in an advertisement reach the
-same node.
+same node. Such a collection corresponds to the NodeAdvertisement protobuf.
 
 When interacting with Catena, an advertisement is a comma-delimited set of
 one or more endpoints. If an address/name is followed by a colon and port
@@ -63,6 +63,15 @@ can be reached. This advertisment is provided with the `-A` option. Multiple
 `-A` arguments will be grouped into a single advertisement. If `-A` is not
 provided with `-r`, the node can still be connected to, but will not be
 advertised.
+
+When responding to PeerDiscovery RPCs, the node can include an advertisement
+for itself. Likewise, the node can send a NodeAdvertisement one-way RPC to
+advertise itself to a connected peer. Peers may do whatever they like with an
+advertisement. It is considered bad form to send the same NodeAdvertisement
+more than once on a connection.
+
+NodeAdvertisements are currently timestamped with the node startup time, and it
+is thought that they might one day be named and signed.
 
 ## Public key infrastructure
 
