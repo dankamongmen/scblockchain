@@ -227,6 +227,9 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
 	}
+  if(port == 0){
+    port = DefaultRPCPort;
+  }
 	PrepSSLCTX(sslctx.get(), chainfile.c_str(), keyfile.c_str());
 	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
 	rpcName = X509NetworkName(x509);
@@ -379,7 +382,7 @@ void RPCService::AddPeers(const std::string& peerfile) {
 		if(line.length() == 0 || line[0] == '#'){
 			continue;
 		}
-		ret.emplace_back(std::make_shared<Peer>(line, port, clictx, true));
+		ret.emplace_back(std::make_shared<Peer>(line, DefaultRPCPort, clictx, true));
 	}
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");

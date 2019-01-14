@@ -16,6 +16,7 @@
 namespace Catena {
 
 constexpr int MaxActiveRPCPeers = 8;
+constexpr int DefaultRPCPort = 40404;
 
 class Chain;
 class PolledListenFD;

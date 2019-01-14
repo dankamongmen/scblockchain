@@ -26,7 +26,7 @@ TEST(CatenaRPC, BadRPCPort){
 
 TEST(CatenaRPC, Peerfile){
 	Catena::Chain chain;
-	Catena::RPCService rpc(chain, 40404, TEST_X509_CHAIN, TEST_NODEKEY);
+	Catena::RPCService rpc(chain, Catena::DefaultRPCPort, TEST_X509_CHAIN, TEST_NODEKEY);
 	rpc.AddPeers(RPC_TEST_PEERS);
 	int active, defined, max;
 	rpc.PeerCount(&defined, &active, &max);
@@ -39,7 +39,7 @@ TEST(CatenaRPC, Peerfile){
 // the original number of peers.
 TEST(CatenaRPC, DoubleAddPeerfile){
 	Catena::Chain chain;
-	Catena::RPCService rpc(chain, 40404, TEST_X509_CHAIN, TEST_NODEKEY);
+	Catena::RPCService rpc(chain, Catena::DefaultRPCPort, TEST_X509_CHAIN, TEST_NODEKEY);
 	rpc.AddPeers(RPC_TEST_PEERS);
 	int active, defined, max;
 	rpc.PeerCount(&defined, &active, &max);
@@ -53,7 +53,7 @@ TEST(CatenaRPC, DoubleAddPeerfile){
 
 TEST(CatenaRPC, BadPeerfile){
 	Catena::Chain chain;
-	Catena::RPCService rpc(chain, 40404, TEST_X509_CHAIN, TEST_NODEKEY);
+	Catena::RPCService rpc(chain, Catena::DefaultRPCPort, TEST_X509_CHAIN, TEST_NODEKEY);
 	// Throw it a nonexistant file
 	EXPECT_THROW(rpc.AddPeers(""), std::ifstream::failure);
 	EXPECT_THROW(rpc.AddPeers("ghrampogfkjl"), std::ifstream::failure);
