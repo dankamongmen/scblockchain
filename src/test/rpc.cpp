@@ -7,6 +7,19 @@
 
 TEST(CatenaRPC, TestChainfile){
   const Catena::RPCServiceOptions opts = {
+    .port = Catena::DefaultRPCPort,
+    .chainfile = TEST_X509_CHAIN,
+    .keyfile = TEST_NODEKEY,
+    .addresses = {},
+  };
+	Catena::Chain chain;
+	Catena::RPCService rpc(chain, opts);
+	EXPECT_EQ(rpc.Port(), 40404);
+	// FIXME check for expected length of chain
+}
+
+TEST(CatenaRPC, TestPortOptions){
+  const Catena::RPCServiceOptions opts = {
     .port = 20202,
     .chainfile = TEST_X509_CHAIN,
     .keyfile = TEST_NODEKEY,
@@ -15,7 +28,21 @@ TEST(CatenaRPC, TestChainfile){
 	Catena::Chain chain;
 	Catena::RPCService rpc(chain, opts);
 	EXPECT_EQ(rpc.Port(), 20202);
-	// FIXME check for expected length of chain
+}
+
+TEST(CatenaRPC, TestAdvertisementOptions){
+  const std::vector<std::string> addrs = {
+    "127.0.0.1:40404", "127.0.0.1", "localhost",
+  };
+  const Catena::RPCServiceOptions opts = {
+    .port = Catena::DefaultRPCPort,
+    .chainfile = TEST_X509_CHAIN,
+    .keyfile = TEST_NODEKEY,
+    .addresses = addrs,
+  };
+	Catena::Chain chain;
+	Catena::RPCService rpc(chain, opts);
+  EXPECT_EQ(rpc.Advertisement(), addrs);
 }
 
 TEST(CatenaRPC, TestNoListeners){
