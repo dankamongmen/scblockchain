@@ -10,6 +10,7 @@ Detailed subdocumentation:
 
 The default target is `all`, which will build all binaries and docs. To run
 unit tests, use the `test` target, which will build any necessary dependencies.
+Docker images can also be built with the `docker` target, [see below](#docker).
 
 ### Build requirements
 
@@ -26,6 +27,24 @@ might or might not work.
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
 * pkg-config
 * exuberant-ctags
+
+If Docker images are to be built, extra packages are required:
+
+* Docker 18.06+ (docker.io)
+
+### Docker
+
+Among other formats, Catena is distributed as a Debian-based Docker image.
+The `docker` target will make use of the `dockerbuild` target to:
+
+1. Create a Debian container with build dependencies
+2. Build catena within that container, and run unit tests
+3. Extract the catena and catenatest binaries
+4. Create a new Debian container, and install catena directly to it.
+5. Serialize this second container to a local tarball.
+
+The resulting container can be run on any Docker node. A persistent, per-node
+volume ought be attached for the ledger and node PKI.
 
 ## Running the catena daemon
 
