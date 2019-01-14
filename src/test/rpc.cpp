@@ -15,6 +15,7 @@ TEST(CatenaRPC, TestChainfile){
 	Catena::Chain chain;
 	Catena::RPCService rpc(chain, opts);
 	EXPECT_EQ(rpc.Port(), 40404);
+  EXPECT_EQ(rpc.Advertisement().size(), 0);
 	// FIXME check for expected length of chain
 }
 

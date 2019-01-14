@@ -51,6 +51,10 @@ int Port() const {
 	return port;
 }
 
+std::vector<std::string> Advertisement() const {
+  return advertised;
+}
+
 void PeerCount(int* defined, int* act, int* maxactive) {
 	*defined = peers.size();
 	*act = active.size();
@@ -86,6 +90,7 @@ std::string issuerCN; // taken from our X509 certificate
 std::string subjectCN;
 std::shared_ptr<PeerQueue> connqueue;
 std::pair<std::string, std::string> rpcName;
+std::vector<std::string> advertised;
 
 void Epoller();
 int EpollListeners();

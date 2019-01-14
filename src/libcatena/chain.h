@@ -172,6 +172,13 @@ void AddPeers(const std::string& peerfile);
 // Returns 0 if RPC networking has not been enabled
 int RPCPort() const;
 
+std::vector<std::string> AdvertisedAddresses() const {
+  if(rpcnet){
+    return rpcnet.get()->Advertisement();
+  }
+  return std::vector<std::string>{};
+}
+
 // Safe to call only if RPC networking has been enabled (RPCPort() != 0)
 void PeerCount(int* defined, int* active, int* maxactive) const {
 	return rpcnet.get()->PeerCount(defined, active, maxactive);

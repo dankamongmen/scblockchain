@@ -224,7 +224,8 @@ RPCService::RPCService(Chain& ledger, const RPCServiceOptions& opts) :
   sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method()))),
   cancelled(false),
   clictx(std::make_shared<SSLCtxRAII>(SSLCtxRAII(SSL_CTX_new(TLS_method())))),
-  connqueue(std::make_shared<PeerQueue>()) {
+  connqueue(std::make_shared<PeerQueue>()),
+  advertised(opts.addresses) {
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
   }
