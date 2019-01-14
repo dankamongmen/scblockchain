@@ -86,6 +86,14 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
 		ss << "<tr><td>active peers</td><td>n/a</td></tr>";
 		ss << "<tr><td>max active peers</td><td>n/a</td></tr>";
 	}
+  auto ads = chain.AdvertisedAddresses();
+  ss << "<tr><td>advertisements</td><td>" << ads.size();
+  if(ads.size()){
+    for(auto i = 0u ; i < ads.size() ; ++i){
+      ss << " " << ads[i];
+    }
+  }
+  ss << "</td></tr>";
 	ss << "</table>";
 	return ss;
 }

@@ -145,9 +145,9 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		std::cout << "max active peers: n/a\n";
 	}
   auto ads = chain.AdvertisedAddresses();
-  std::cout << "advertisements: ";
+  std::cout << "advertisements: " << ads.size();
   for(auto i = 0u ; i < ads.size() ; ++i){
-    std::cout << ads[i] << (i + 1 < ads.size() ? "," : "");
+    std::cout << ' ' << ads[i];
   }
   std::cout << "\n";
 	std::cout << std::flush;
