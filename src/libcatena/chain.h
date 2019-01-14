@@ -160,7 +160,7 @@ BlockDetail Inspect(const CatenaHash& hash) const;
 
 // Enable p2p rpc networking. Throws NetworkException if already enabled for
 // this ledger, or a variety of other possible problems.
-void EnableRPC(int port, const std::string& chainfile, const std::string& keyfile);
+void EnableRPC(const RPCServiceOptions& opts);
 
 // Return details about the RPC p2p network peers. Throws NetworkException if
 // p2p networking has not been enabled.

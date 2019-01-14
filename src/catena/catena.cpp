@@ -157,7 +157,13 @@ int main(int argc, char **argv){
 		std::unique_ptr<Catena::RPCService> rpcd;
 		if(rpc_port){
 			std::cout << "Enabling RPC on port " << rpc_port << std::endl;
-			chain.EnableRPC(rpc_port, chain_file, key_file);
+      const Catena::RPCServiceOptions opts = {
+        .port = rpc_port,
+        .chainfile = chain_file,
+        .keyfile = key_file,
+        .addresses = addresses,
+      };
+			chain.EnableRPC(opts);
 			if(peer_file){
 				chain.AddPeers(peer_file);
 			}

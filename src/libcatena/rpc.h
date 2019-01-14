@@ -21,15 +21,18 @@ constexpr int DefaultRPCPort = 40404;
 class Chain;
 class PolledListenFD;
 
+struct RPCServiceOptions {
+  int port; // port on which to listen, may be 0 for no listening service
+  std::string chainfile; // chain of PEM-encoded certs, from node to root CA
+  std::string keyfile; // PEM-encoded key for node cert (first in chainfile)
+  std::vector<std::string> addresses; // addresses to advertise, may be empty
+};
+
 class RPCService {
 public:
 RPCService() = delete;
-// chainfile must specify a valid X.509 certificate chain. Peers must present a
-// cert trusted by this chain.
-// FIXME probably need to accept our own cert files, ugh. might be able to
-//   have our own cert as the last in the cachainfile?
-RPCService(Chain& ledger, int port, const std::string& chainfile,
-		const std::string& keyfile);
+// chainfile and keyfile in opts must be valid files
+RPCService(Chain& ledger, const RPCServiceOptions& opts);
 
 ~RPCService();
 

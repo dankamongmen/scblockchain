@@ -179,22 +179,24 @@ int RPCService::EpollListeners() {
 	if(ret < 0){
 		throw NetworkException("couldn't get an epoll");
 	}
-	try{
-		struct epoll_event ev = {
-			.events = EPOLLIN,
-			.data = { .ptr = lsd4, },
-		};
-		if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd4->FD(), &ev)){
-			throw NetworkException("couldn't epoll on sd4");
-		}
-		ev.data.ptr = lsd6;
-		if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd6->FD(), &ev)){
-			throw NetworkException("couldn't epoll on sd6");
-		}
-	}catch(...){
-		close(ret);
-		throw;
-	}
+  if(lsd4 && lsd6){
+    try{
+      struct epoll_event ev = {
+        .events = EPOLLIN,
+        .data = { .ptr = lsd4, },
+      };
+      if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd4->FD(), &ev)){
+        throw NetworkException("couldn't epoll on sd4");
+      }
+      ev.data.ptr = lsd6;
+      if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd6->FD(), &ev)){
+        throw NetworkException("couldn't epoll on sd6");
+      }
+    }catch(...){
+      close(ret);
+      throw;
+    }
+  }
 	return ret;
 }
 
@@ -216,9 +218,8 @@ void RPCService::PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* key
 	}
 }
 
-RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
-			const std::string& keyfile) :
-  port(port),
+RPCService::RPCService(Chain& ledger, const RPCServiceOptions& opts) :
+  port(opts.port),
   ledger(ledger),
   sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method()))),
   cancelled(false),
@@ -226,16 +227,18 @@ RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
   connqueue(std::make_shared<PeerQueue>()) {
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
-	}
-  if(port == 0){
-    port = DefaultRPCPort;
   }
-	PrepSSLCTX(sslctx.get(), chainfile.c_str(), keyfile.c_str());
+	PrepSSLCTX(sslctx.get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
 	rpcName = X509NetworkName(x509);
-	PrepSSLCTX(clictx.get()->get(), chainfile.c_str(), keyfile.c_str());
+	PrepSSLCTX(clictx.get()->get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, tls_cert_verify);
-	OpenListeners();
+	if(port != 0){
+	  OpenListeners();
+  }else{
+    lsd4 = nullptr;
+    lsd6 = nullptr;
+  }
 	try{
 		epollfd = EpollListeners();
 		try{
