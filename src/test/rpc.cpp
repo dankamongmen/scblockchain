@@ -18,6 +18,18 @@ TEST(CatenaRPC, TestChainfile){
 	// FIXME check for expected length of chain
 }
 
+TEST(CatenaRPC, TestNoListeners){
+  const Catena::RPCServiceOptions opts = {
+    .port = 0,
+    .chainfile = TEST_X509_CHAIN,
+    .keyfile = TEST_NODEKEY,
+    .addresses = {},
+  };
+	Catena::Chain chain;
+	Catena::RPCService rpc(chain, opts);
+	EXPECT_EQ(rpc.Port(), 0);
+}
+
 TEST(CatenaRPC, BadChainfile){
 	Catena::Chain chain;
   Catena::RPCServiceOptions opts;
