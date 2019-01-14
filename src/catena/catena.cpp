@@ -12,7 +12,7 @@
 using namespace CatenaAgent;
 
 static constexpr auto DEFAULT_HTTP_PORT = 8080;
-static constexpr auto DEFAULT_RPC_PORT = 0;
+static constexpr auto DEFAULT_RPC_PORT = 0; // default to no incoming RPC
 
 static void usage(std::ostream& os, const char* name, int exitcode)
 	__attribute__ ((noreturn));
@@ -35,11 +35,11 @@ static void usage(std::ostream& os, const char* name, int exitcode){
 int main(int argc, char **argv){
 	std::vector<std::pair<std::string, Catena::TXSpec>> keys;
 	unsigned short httpd_port = DEFAULT_HTTP_PORT;
-	auto rpc_port = DEFAULT_RPC_PORT;
 	const char* ledger_file = nullptr;
 	const char* chain_file = nullptr;
 	const char* peer_file = nullptr;
 	const char* key_file = nullptr;
+	auto rpc_port = DEFAULT_RPC_PORT;
 	bool daemonize = false;
 	int c;
 	while(-1 != (c = getopt(argc, argv, "P:C:k:l:p:r:v:hd"))){
