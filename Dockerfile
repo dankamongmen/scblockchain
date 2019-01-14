@@ -1,13 +1,9 @@
 FROM debian:buster
 RUN apt-get update
-RUN apt-get install --assume-yes --no-install-recommends build-essential \
-  nlohmann-json3-dev libreadline-dev libmicrohttpd-dev libssl-dev libgtest-dev \
-  exuberant-ctags pkg-config
-WORKDIR /catena
+RUN apt-get install --assume-yes --no-install-recommends \
+  libreadline7 libmicrohttpd12 libssl1.1 libgtest-dev
 
 # Send requisite building materials to $WORKDIR
-COPY Makefile genesisblock ./
-COPY src ./src
-COPY test ./test
-
-RUN make -j all test
+COPY catena catenatest /usr/bin/
+COPY genesisblock /usr/share/catena/
+COPY hcn-ca-chain.pem /usr/share/catena/
