@@ -11,9 +11,11 @@
 
 namespace Catena {
 
-Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx) :
+Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx,
+		bool configured) :
   sslctx(sctx),
-  lasttime(time(NULL)) {
+  lasttime(time(NULL)),
+  configured(configured) {
 	// If there's a colon, the remainder must be a valid port. If there is
 	// no colon, assume the entirety to be the address.
 	auto colon = addr.find(':');
@@ -51,29 +53,6 @@ Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII>
 	freeaddrinfo(res);
 }
 
-static std::string X509CN(X509_NAME* xname) {
-	int lastpos = -1;
-	lastpos = X509_NAME_get_index_by_NID(xname, NID_commonName, lastpos);
-	if(lastpos == -1){
-		throw NetworkException("no subject common name in cert");
-	}
-	X509_NAME_ENTRY* e = X509_NAME_get_entry(xname, lastpos);
-	auto asn1 = X509_NAME_ENTRY_get_data(e);
-	auto str = ASN1_STRING_get0_data(asn1);
-	std::string ret(reinterpret_cast<const char*>(str));
-	return ret;
-}
-
-static std::string X509SubjectCN(const X509* cert) {
-	auto xname = X509_get_subject_name(cert);
-	return X509CN(xname);
-}
-
-static std::string X509IssuerCN(const X509* cert) {
-	auto xname = X509_get_issuer_name(cert);
-	return X509CN(xname);
-}
-
 BIO* Peer::TLSConnect(int sd) {
 	auto ret = BIO_new_ssl_connect(sslctx.get()->get());
 	if(ret == nullptr){
@@ -100,10 +79,9 @@ BIO* Peer::TLSConnect(int sd) {
 		return nullptr; // FIXME throw
 	}
 	try{
-		auto subcn = X509SubjectCN(x509);
-		auto isscn = X509IssuerCN(x509);
-		lastSubjectCN = subcn;
-		lastIssuerCN = isscn;
+		auto xname = X509NetworkName(x509);
+		lastIssuerCN = xname.first;
+		lastSubjectCN = xname.second;
 	}catch(...){
 		X509_free(x509);
 		BIO_free_all(ret);
@@ -113,7 +91,7 @@ BIO* Peer::TLSConnect(int sd) {
 	return ret;
 }
 
-int Peer::Connect() {
+BIO* Peer::Connect() {
 	lasttime = time(NULL);
 	struct addrinfo hints{};
 	hints.ai_flags = AI_NUMERICHOST;
@@ -135,20 +113,20 @@ int Peer::Connect() {
 			continue;
 		}
 		if(connect(fd, info->ai_addr, info->ai_addrlen)){ // blocks
-			std::cerr << "connect failed on sd " << fd << "\n";
 			close(fd);
+			lasttime = time(NULL);
 			continue;
 		}
-		std::cout << "connected " << fd << " to " << address << "\n";
+		std::cout << "connected " << fd << " to " << address << ":" << port << "\n";
 		lasttime = time(NULL);
 		try{
-			TLSConnect(fd);
+			BIO* bio = TLSConnect(fd); // FIXME RAII that fucker
+			FDSetNonblocking(fd);
+			return bio;
 		}catch(...){
 			close(fd);
 			throw;
 		}
-		// FIXME add SOCK_NONBLOCK
-		return fd;
 	}while( (info = info->ai_next) );
 	lasttime = time(NULL);
 	throw NetworkException("couldn't connect to " + address);

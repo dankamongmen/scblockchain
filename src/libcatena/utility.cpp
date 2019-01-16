@@ -161,4 +161,28 @@ int tls_cert_verify(int preverify_ok, X509_STORE_CTX* x509_ctx){
 	return preverify_ok;
 }
 
+std::string X509CN(X509_NAME* xname) {
+	int lastpos = -1;
+	lastpos = X509_NAME_get_index_by_NID(xname, NID_commonName, lastpos);
+	if(lastpos == -1){
+		throw NetworkException("no subject common name in cert");
+	}
+	X509_NAME_ENTRY* e = X509_NAME_get_entry(xname, lastpos);
+	auto asn1 = X509_NAME_ENTRY_get_data(e);
+	auto str = ASN1_STRING_get0_data(asn1);
+	std::string ret(reinterpret_cast<const char*>(str));
+	return ret;
+}
+
+void FDSetNonblocking(int fd) {
+	int flags = fcntl(fd, F_GETFL, 0);
+	if(flags < 0){
+		throw SystemException("couldn't get fd flags");
+	}
+	flags |= O_NONBLOCK;
+	if(0 != fcntl(fd, F_SETFL, flags)){
+		throw SystemException("couldn't set fd flags");
+	}
+}
+
 }

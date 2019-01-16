@@ -126,12 +126,30 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 	std::cout << "public keys: " << chain.PubkeyCount() << "\n";
 	std::cout << "users: " << chain.UserCount() << "\n";
 	std::cout << "status delegations: " << chain.StatusDelegationCount() << "\n";
+	std::cout << "\n";
 	auto port = chain.RPCPort();
 	if(port){
 		std::cout << "rpc port: " << port << "\n";
+		auto rname = chain.RPCName();
+		std::cout << "rpc name: " << rname.first << " → " << rname.second << "\n";
+		int peersDefined, peersActive, peersMax;
+		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
+		std::cout << "configured peers: " << peersDefined << "\n";
+		std::cout << "active peers: " << peersActive << "\n";
+		std::cout << "max active peers: " << peersMax << "\n";
 	}else{
 		std::cout << "rpc port: not configured\n";
+		std::cout << "rpc name: n/a\n";
+		std::cout << "configured peers: n/a\n";
+		std::cout << "active peers: n/a\n";
+		std::cout << "max active peers: n/a\n";
 	}
+  auto ads = chain.AdvertisedAddresses();
+  std::cout << "advertisements: " << ads.size();
+  for(auto i = 0u ; i < ads.size() ; ++i){
+    std::cout << ' ' << ads[i];
+  }
+  std::cout << "\n";
 	std::cout << std::flush;
 	return 0;
 }
@@ -472,6 +490,9 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 		const auto pinfo = chain.Peers();
 		time_t now = time(NULL);
 		for(auto p : pinfo){
+			if(p.configured){
+				std::cout << "(*) ";
+			}
 			std::cout << p.address << ":" << p.port;
 			if(p.lasttime == -1){
 				std::cout << " (unused) ";
@@ -480,7 +501,7 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 				std::cout << " (last used " << since << "s ago) ";
 			}
 			if(p.issuer.length()){
-				std::cout << p.issuer << "/";
+				std::cout << p.issuer << " → ";
 			}
 			if(p.subject.length()){
 				std::cout << p.subject;

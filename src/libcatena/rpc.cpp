@@ -179,22 +179,24 @@ int RPCService::EpollListeners() {
 	if(ret < 0){
 		throw NetworkException("couldn't get an epoll");
 	}
-	try{
-		struct epoll_event ev = {
-			.events = EPOLLIN,
-			.data = { .ptr = lsd4, },
-		};
-		if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd4->FD(), &ev)){
-			throw NetworkException("couldn't epoll on sd4");
-		}
-		ev.data.ptr = lsd6;
-		if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd6->FD(), &ev)){
-			throw NetworkException("couldn't epoll on sd6");
-		}
-	}catch(...){
-		close(ret);
-		throw;
-	}
+  if(lsd4 && lsd6){
+    try{
+      struct epoll_event ev = {
+        .events = EPOLLIN,
+        .data = { .ptr = lsd4, },
+      };
+      if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd4->FD(), &ev)){
+        throw NetworkException("couldn't epoll on sd4");
+      }
+      ev.data.ptr = lsd6;
+      if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd6->FD(), &ev)){
+        throw NetworkException("couldn't epoll on sd6");
+      }
+    }catch(...){
+      close(ret);
+      throw;
+    }
+  }
 	return ret;
 }
 
@@ -216,20 +218,28 @@ void RPCService::PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* key
 	}
 }
 
-RPCService::RPCService(Chain& ledger, int port, const std::string& chainfile,
-			const std::string& keyfile) :
-  port(port),
+RPCService::RPCService(Chain& ledger, const RPCServiceOptions& opts) :
+  port(opts.port),
   ledger(ledger),
   sslctx(SSLCtxRAII(SSL_CTX_new(TLS_method()))),
   cancelled(false),
-  clictx(std::make_shared<SSLCtxRAII>(SSLCtxRAII(SSL_CTX_new(TLS_method())))) {
+  clictx(std::make_shared<SSLCtxRAII>(SSLCtxRAII(SSL_CTX_new(TLS_method())))),
+  connqueue(std::make_shared<PeerQueue>()),
+  advertised(opts.addresses) {
 	if(port < 0 || port > 65535){
 		throw NetworkException("invalid port " + std::to_string(port));
-	}
-	PrepSSLCTX(sslctx.get(), chainfile.c_str(), keyfile.c_str());
-	PrepSSLCTX(clictx.get()->get(), chainfile.c_str(), keyfile.c_str());
+  }
+	PrepSSLCTX(sslctx.get(), opts.chainfile.c_str(), opts.keyfile.c_str());
+	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
+	rpcName = X509NetworkName(x509);
+	PrepSSLCTX(clictx.get()->get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, tls_cert_verify);
-	OpenListeners();
+	if(port != 0){
+	  OpenListeners();
+  }else{
+    lsd4 = nullptr;
+    lsd6 = nullptr;
+  }
 	try{
 		epollfd = EpollListeners();
 		try{
@@ -322,11 +332,28 @@ int RPCService::Accept(int sd) {
 	}
 }
 
+// Crap that we have to go checking a locked strucutre each epoll(), especially
+// when those epoll()s are on a period. FIXME kill this off, rigourize.
+void RPCService::HandleCompletedConns() {
+	auto conns = connqueue.get()->Peers();
+	for(auto& c : conns){
+		if(c.first->Name() == rpcName){
+			BIO_free_all(c.second);
+			// FIXME update peer with zee infos
+		}else{
+			// FIXME add sd from BIO to epoll set
+			active.emplace_back(c.first);
+		}
+	}
+}
+
 void RPCService::Epoller() {
+	(void)ledger;
 	while(1) {
 		if(cancelled.load()){
 			return;
 		}
+		HandleCompletedConns();
 		struct epoll_event ev; // FIXME accept multiple events
 		auto eret = epoll_wait(epollfd, &ev, 1, 100); // FIXME kill timeout
 		if(eret < 0 && errno != EINTR){
@@ -353,21 +380,32 @@ void RPCService::AddPeers(const std::string& peerfile) {
 	if(!in.is_open()){
 		throw std::ifstream::failure("couldn't open " + peerfile);
 	}
-	std::vector<Peer> ret;
+	std::vector<std::shared_ptr<Peer>> ret;
 	std::string line;
 	while(std::getline(in, line)){
 		if(line.length() == 0 || line[0] == '#'){
 			continue;
 		}
-		ret.emplace_back(line, port, clictx);
+		ret.emplace_back(std::make_shared<Peer>(line, DefaultRPCPort, clictx, true));
 	}
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");
 	}
 	for(auto const& r : ret){
-		// FIXME filter out duplicates?
-		peers.insert(peers.end(), r);
-		peers.back().ConnectAsync();
+		bool dup = false;
+		for(auto const& p : peers){
+			// FIXME what about if we discovered the peer, but then
+			// have it added? need mark it as configured
+			if(r.get()->Port() == p.get()->Port() &&
+					r.get()->Address() == p.get()->Address()){
+				dup = true;
+				break;
+			}
+		}
+		if(!dup){
+			peers.emplace_back(r);
+			Peer::ConnectAsync(r, connqueue);
+		}
 	}
 }
 

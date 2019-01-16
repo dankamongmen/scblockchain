@@ -10,6 +10,7 @@ Detailed subdocumentation:
 
 The default target is `all`, which will build all binaries and docs. To run
 unit tests, use the `test` target, which will build any necessary dependencies.
+Docker images can also be built with the `docker` target, [see below](#docker).
 
 ### Build requirements
 
@@ -20,11 +21,30 @@ might or might not work.
     * Tested with `clang++` 7.0.1 and `g++` 8.2.0
 * GNU Make 4.2.1+
 * Google Test 1.8.1+ (libgtest-dev)
-* OpenSSL 1.1.1+ (libopenssl-dev) (1.1.1 is required for TLSv1.3)
+* OpenSSL 1.1.1+ (libssl-dev) (earlier versions *will not work*)
 * GNU Libmicrohttpd 0.9.62+ (libmicrohttpd-dev)
 * GNU Readline 6.3+ (libreadline-dev)
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
-    * NB: `clang++` 7.0.1 seemed to have problems with v3.5.0
+* pkg-config
+* exuberant-ctags
+
+If Docker images are to be built, extra packages are required:
+
+* Docker 18.06+ (docker.io)
+
+### Docker
+
+Among other formats, Catena is distributed as a Debian-based Docker image.
+The `docker` target will make use of the `dockerbuild` target to:
+
+1. Create a Debian container with build dependencies
+2. Build catena within that container, and run unit tests
+3. Extract the catena and catenatest binaries
+4. Create a new Debian container, and install catena directly to it.
+5. Serialize this second container to a local tarball.
+
+The resulting container can be run on any Docker node. A persistent, per-node
+volume ought be attached for the ledger and node PKI.
 
 ## Running the catena daemon
 
@@ -70,6 +90,10 @@ following a connection *from* another peer. Likewise, once connected to peers,
 Catena might choose newly-discovered peers, even if specified peers are
 available. It is not meaningful to provide `-P` without enabling RPC service
 via `-r`, but it is also not an error.
+
+Addresses to advertise may be specified with the `-A` argument. `-A` accepts
+a comma-delimited list of addresses using peerfile syntax, and can be provided
+multiple times. It is an error to provide `-A` without `-r`.
 
 The services provided via HTTP and those provided by RPC are mutually exclusive.
 The console client implements a superset of the union of these two services.

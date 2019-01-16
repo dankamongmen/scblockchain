@@ -12,7 +12,7 @@
 using namespace CatenaAgent;
 
 static constexpr auto DEFAULT_HTTP_PORT = 8080;
-static constexpr auto DEFAULT_RPC_PORT = 0;
+static constexpr auto DEFAULT_RPC_PORT = 0; // default to no incoming RPC
 
 static void usage(std::ostream& os, const char* name, int exitcode)
 	__attribute__ ((noreturn));
@@ -25,6 +25,7 @@ static void usage(std::ostream& os, const char* name, int exitcode){
 	os << " -r port: RPC service port, 0 to disable, default: " << DEFAULT_RPC_PORT << "\n";
 	os << " -C certchain: certificate chain for RPC authentication\n";
 	os << " -P peerfile: file containing initial RPC peers\n";
+  os << " -A addrs: comma-delimited list of addresses to advertise\n";
 	os << " -v keyfile: file containing PEM key for RPC authentication\n";
 	os << " -h: print usage information\n";
 	os << " -d: daemonize\n";
@@ -35,14 +36,15 @@ static void usage(std::ostream& os, const char* name, int exitcode){
 int main(int argc, char **argv){
 	std::vector<std::pair<std::string, Catena::TXSpec>> keys;
 	unsigned short httpd_port = DEFAULT_HTTP_PORT;
-	auto rpc_port = DEFAULT_RPC_PORT;
+  std::vector<std::string> addresses;
 	const char* ledger_file = nullptr;
 	const char* chain_file = nullptr;
 	const char* peer_file = nullptr;
 	const char* key_file = nullptr;
+	auto rpc_port = DEFAULT_RPC_PORT;
 	bool daemonize = false;
 	int c;
-	while(-1 != (c = getopt(argc, argv, "P:C:k:l:p:r:v:hd"))){
+	while(-1 != (c = getopt(argc, argv, "A:P:C:k:l:p:r:v:hd"))){
 		switch(c){
 		case 'd':
 			daemonize = true;
@@ -63,6 +65,14 @@ int main(int argc, char **argv){
 				usage(std::cerr, argv[0], EXIT_FAILURE);
 			}
 			break;
+    }case 'A':{ // may be provided multiple times
+      std::stringstream ss(optarg);
+      while(ss.good()){
+        std::string substr;
+        getline(ss, substr, ',');
+        addresses.push_back(substr);
+      }
+      break;
 		}case 'v':{
 			if(key_file){
 				std::cerr << "key file may only be specified once" << std::endl;
@@ -123,7 +133,9 @@ int main(int argc, char **argv){
 	}else if(rpc_port == 0 && (chain_file || peer_file || key_file)){
 		std::cerr << "warning: -C/-P/-v have no meaning without -r" << std::endl;
 		// not a fatal error
-	}
+	}else if(rpc_port == 0 && addresses.size()){
+    std::cerr << "error: -A cannot be used without -r" << std::endl;
+  }
 	try{
 		std::cout << "Loading ledger from " << ledger_file << std::endl;
 		// FIXME we'll want to provide privkey prior to loading the
@@ -145,7 +157,13 @@ int main(int argc, char **argv){
 		std::unique_ptr<Catena::RPCService> rpcd;
 		if(rpc_port){
 			std::cout << "Enabling RPC on port " << rpc_port << std::endl;
-			chain.EnableRPC(rpc_port, chain_file, key_file);
+      const Catena::RPCServiceOptions opts = {
+        .port = rpc_port,
+        .chainfile = chain_file,
+        .keyfile = key_file,
+        .addresses = addresses,
+      };
+			chain.EnableRPC(opts);
 			if(peer_file){
 				chain.AddPeers(peer_file);
 			}

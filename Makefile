@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test clean
+.PHONY: all bin valgrind check test docker dockerbuild clean
 .DEFAULT_GOAL:=all
 
 SRC:=src
@@ -21,23 +21,25 @@ CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
 CPPINC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.h -print)
 
 CATENASRC:=$(foreach dir, $(SRC)/catena $(SRC)/libcatena, $(filter $(dir)/%, $(CPPSRC)))
-CATENAOBJ:=$(addprefix $(OUT)/,$(CATENASRC:%.cpp=%.o))
+CATENAOBJ:=$(addprefix $(OUT)/, $(CATENASRC:%.cpp=%.o))
 CATENAINC:=$(foreach dir, $(SRC)/catena $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC)))
 CATENATESTSRC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena, $(filter $(dir)/%, $(CPPSRC)))
-CATENATESTOBJ:=$(addprefix $(OUT)/,$(CATENATESTSRC:%.cpp=%.o))
+CATENATESTOBJ:=$(addprefix $(OUT)/, $(CATENATESTSRC:%.cpp=%.o))
 CATENATESTINC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC)))
 # libcatena is not its own binary, just a namespace; no src/obj rules necessary
 LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC)))
 
 LEDGER:=genesisblock
 TESTDATA:=$(wildcard test/*) $(LEDGER)
+DOCKERFILE:=Dockerfile
+DOCKERBUILDFILE:=doc/Dockerfile.build
 
-WFLAGS:=-Wall -W -Werror
+WFLAGS:=-Wall -W -Werror -Werror=vla
 # clang doesn't like this
 # WFLAGS+=-Wl,-z,defs
 OFLAGS:=-g -O2
 CPPFLAGS:=-I$(SRC)
-CXXFLAGS:=-pipe -std=c++14 -pthread
+CXXFLAGS:=-pipe -std=c++17 -pthread
 EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
 
@@ -79,6 +81,26 @@ test: $(TAGS) $(TESTBIN) $(TESTDATA)
 
 valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
+
+DOCKEROUT:=$(OUT)/dockerbuilt
+DOCKERINPUTS:=$(addprefix $(DOCKEROUT)/, catena catenatest hcn-ca-chain.pem genesisblock)
+docker: $(DOCKERFILE) $(DOCKERINPUTS)
+	docker build -f $< $(DOCKEROUT)
+
+$(DOCKEROUT)/hcn-ca-chain.pem: doc/hcn-ca-chain.pem
+	@mkdir -p $(@D)
+	cp $< $@
+
+$(DOCKEROUT)/genesisblock: genesisblock
+	@mkdir -p $(@D)
+	cp $< $@
+
+dockerbuild: $(DOCKERBUILDFILE)
+	docker build -f $< .
+	# need to get container from above with -q
+	@mkdir -p $(DOCKEROUT)/
+	# will copy catena, catenatest
+	docker cp $(CONTAINER):catena/.out/catena* $(DOCKEROUT)
 
 clean:
 	rm -rf $(OUT) $(TAGS)

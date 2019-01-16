@@ -1,0 +1,16 @@
+Source: catena
+Section: utils
+Priority: optional
+Maintainer: nick black <nick@headwayplatform.com>
+Build-Depends: debhelper (>= 11), nlohmann-json3-dev, libreadline-dev, libmicrohttpd-dev, libssl-dev, libgtest-dev
+Standards-Version: 4.1.3
+Homepage: https://github.com/headwayplatform/scblockchain
+Vcs-Browser: https://github.com/headwayplatform/scblockchain
+Vcs-Git: git@github.com:headwayplatform/scblockchain.git
+
+Package: catena
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Distributed ledger for health records
+ Catena node software, necessary for running a node on the distributed
+ Catena health records ledger.

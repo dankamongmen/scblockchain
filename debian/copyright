@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: catena
+Source: https://github.com/headwayplatform/scblockchain
+
+Files: *
+Copyright: 2018-2019 Nick Black <nick@headwayplatform.com>
+License: Apache-2.0

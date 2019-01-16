@@ -18,7 +18,8 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 		std::cerr << "no room for " << chdr->txcount << "-offset table in " << len << " bytes" << std::endl;
 		return true;
 	}
-	uint32_t offsets[chdr->txcount];
+  std::vector<uint32_t> offsets;
+  offsets.reserve(chdr->txcount);
 	for(unsigned i = 0 ; i < chdr->txcount ; ++i){
 		uint32_t offset = nbo_to_ulong(data, sizeof(offset));
 		data += sizeof(offset);
@@ -26,7 +27,7 @@ bool Block::ExtractBody(const BlockHeader* chdr, const unsigned char* data,
 			std::cerr << "no room for offset " << offset << std::endl;
 			return true;
 		}
-		offsets[i] = offset;
+    offsets.push_back(offset);
 	}
 	len -= chdr->txcount * 4;
 	for(unsigned i = 0 ; i < chdr->txcount ; ++i){

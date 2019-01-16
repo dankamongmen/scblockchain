@@ -27,12 +27,16 @@ Catena::Chain& chain;
 
 nlohmann::json InspectJSON(int start, int end) const;
 
-std::stringstream& HTMLSysinfo(std::stringstream& ss) const;
-std::stringstream& HTMLChaininfo(std::stringstream& ss) const;
-std::stringstream& HTMLMembers(std::stringstream& ss) const;
-std::stringstream& BlockHTML(std::stringstream& ss, const Catena::CatenaHash& hash,
+std::ostream& HTMLSysinfo(std::ostream& ss) const;
+std::ostream& HTMLNetwork(std::ostream& ss) const;
+std::ostream& HTMLChaininfo(std::ostream& ss) const;
+std::ostream& HTMLMembers(std::ostream& ss) const;
+std::ostream& BlockHTML(std::ostream& ss, const Catena::CatenaHash& hash,
 				bool printbytes) const;
-std::stringstream& JSONtoHTML(std::stringstream& ss, const nlohmann::json& json) const;
+std::ostream& JSONtoHTML(std::ostream& ss, const nlohmann::json& json) const;
+
+template <typename Iterator> std::ostream&
+TXListHTML(std::ostream& ss, const Iterator begin, const Iterator end) const;
 
 // GET handlers
 struct MHD_Response* Summary(struct MHD_Connection*) const;

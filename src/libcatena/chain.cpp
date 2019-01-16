@@ -72,24 +72,26 @@ void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey
 	// FIXME verify that pkey is a valid public key
 	auto serialjson = payload.dump();
 	size_t len = plen + 2 + serialjson.length();
-	unsigned char buf[len];
-	unsigned char *targ = buf;
+  std::vector<unsigned char> buf;
+  buf.reserve(len);
+	unsigned char *targ = buf.data();
 	targ = ulong_to_nbo(plen, targ, 2);
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf, len, keyspec);
+	auto sig = tstore.Sign(buf.data(), len, keyspec);
 	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 2;
-	unsigned char txbuf[totlen];
-	targ = ulong_to_nbo(sig.second, txbuf, 2);
+  std::vector<unsigned char> txbuf;
+  txbuf.reserve(totlen);
+	targ = ulong_to_nbo(sig.second, txbuf.data(), 2);
 	memcpy(targ, keyspec.first.data(), keyspec.first.size());
 	targ += keyspec.first.size();
 	targ = ulong_to_nbo(keyspec.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
-	memcpy(targ, buf, len);
+	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<ConsortiumMemberTX>(new ConsortiumMemberTX());
-	if(tx.get()->Extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf.data(), totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
@@ -111,24 +113,26 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	auto serialjson = payload.dump();
 	// Signed payload is ExternalLookup TXSpec + JSON
 	size_t len = elspec.first.size() + 4 + serialjson.length();
-	unsigned char buf[len];
-	unsigned char *targ = buf;
+  std::vector<unsigned char> buf;
+  buf.reserve(len);
+	unsigned char *targ = buf.data();
 	memcpy(targ, elspec.first.data(), elspec.first.size());
 	targ += elspec.first.size();
 	targ = ulong_to_nbo(elspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf, len, cmspec);
+	auto sig = tstore.Sign(buf.data(), len, cmspec);
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
-	unsigned char txbuf[totlen];
-	targ = ulong_to_nbo(sig.second, txbuf, 2);
+  std::vector<unsigned char> txbuf;
+  txbuf.reserve(totlen);
+	targ = ulong_to_nbo(sig.second, txbuf.data(), 2);
 	memcpy(targ, cmspec.first.data(), cmspec.first.size());
 	targ += cmspec.first.size();
 	targ = ulong_to_nbo(cmspec.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
-	memcpy(targ, buf, len);
+	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<LookupAuthReqTX>(new LookupAuthReqTX());
-	if(tx.get()->Extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf.data(), totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
@@ -138,25 +142,27 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 		size_t plen, const std::string& extid, unsigned lookuptype){
 	// FIXME verify that pkey is a valid public key
 	size_t len = plen + 2 + extid.size();
-	unsigned char buf[len];
-	unsigned char *targ = buf;
+  std::vector<unsigned char> buf;
+  buf.reserve(len);
+	unsigned char *targ = buf.data();
 	targ = ulong_to_nbo(plen, targ, 2);
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, extid.c_str(), extid.size());
-	auto sig = tstore.Sign(buf, len, keyspec);
+	auto sig = tstore.Sign(buf.data(), len, keyspec);
 	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 4;
-	unsigned char txbuf[totlen];
-	targ = ulong_to_nbo(lookuptype, txbuf, 2);
+  std::vector<unsigned char> txbuf;
+  txbuf.reserve(totlen);
+	targ = ulong_to_nbo(lookuptype, txbuf.data(), 2);
 	memcpy(targ, keyspec.first.data(), keyspec.first.size());
 	targ += keyspec.first.size();
 	targ = ulong_to_nbo(keyspec.second, targ, 4);
 	targ = ulong_to_nbo(sig.second, targ, 2);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
-	memcpy(targ, buf, len);
+	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<ExternalLookupTX>(new ExternalLookupTX());
-	if(tx.get()->Extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf.data(), totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
@@ -171,24 +177,26 @@ void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
 	// etext.second is encrypted length, etext.first is ciphertext + IV
 	// The public key, keylen, IV, and encrypted payload are all signed
 	size_t len = plen + 2 + etext.second;
-	unsigned char buf[len];
-	unsigned char *targ = buf;
+  std::vector<unsigned char> buf;
+  buf.reserve(len);
+	unsigned char *targ = buf.data();
 	targ = ulong_to_nbo(plen, targ, 2);
 	memcpy(targ, pkey, plen);
 	targ += plen;
 	memcpy(targ, etext.first.get(), etext.second);
-	auto sig = tstore.Sign(buf, len, cmspec);
+	auto sig = tstore.Sign(buf.data(), len, cmspec);
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
-	unsigned char txbuf[totlen];
-	targ = ulong_to_nbo(sig.second, txbuf, 2); // siglen
+  std::vector<unsigned char> txbuf;
+  txbuf.reserve(totlen);
+	targ = ulong_to_nbo(sig.second, txbuf.data(), 2); // siglen
 	memcpy(targ, cmspec.first.data(), cmspec.first.size()); // sighash
 	targ += cmspec.first.size();
 	targ = ulong_to_nbo(cmspec.second, targ, 4); // sigidx
 	memcpy(targ, sig.first.get(), sig.second); // signature
 	targ += sig.second;
-	memcpy(targ, buf, len); // signed payload (pkeylen, pkey, ciphertext)
+	memcpy(targ, buf.data(), len); // signed payload (pkeylen, pkey, ciphertext)
 	auto tx = std::unique_ptr<UserTX>(new UserTX());
-	if(tx.get()->Extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf.data(), totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
@@ -202,17 +210,20 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
 	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(elspec, cmspec);
 	// Encrypted payload is User TXSpec, 16-bit keytype, key
 	auto plainlen = symkey.size() + 2 + uspec.first.size() + 4;
-	unsigned char plaintext[plainlen], *targ;
-	memcpy(plaintext, uspec.first.data(), uspec.first.size());
-	targ = plaintext + uspec.first.size();
+  std::vector<unsigned char> plaintext;
+  plaintext.reserve(plainlen);
+	unsigned char* targ;
+	memcpy(plaintext.data(), uspec.first.data(), uspec.first.size());
+	targ = plaintext.data() + uspec.first.size();
 	targ = ulong_to_nbo(uspec.second, targ, 4);
 	targ = ulong_to_nbo(static_cast<unsigned>(LookupAuthTX::Keytype::AES256), targ, 2);
 	memcpy(targ, symkey.data(), symkey.size());
-	auto etext = tstore.Encrypt(plaintext, plainlen, derivedkey);
+	auto etext = tstore.Encrypt(plaintext.data(), plainlen, derivedkey);
 	auto sig = tstore.Sign(etext.first.get(), etext.second, elspec);
 	size_t totlen = etext.second + sig.second + 4 + larspec.first.size() + 2;
-	unsigned char txbuf[totlen];
-	targ = ulong_to_nbo(sig.second, txbuf, 2); // siglen
+  std::vector<unsigned char> txbuf;
+  txbuf.reserve(totlen);
+	targ = ulong_to_nbo(sig.second, txbuf.data(), 2); // siglen
 	memcpy(targ, larspec.first.data(), larspec.first.size()); // sighash
 	targ += larspec.first.size();
 	targ = ulong_to_nbo(larspec.second, targ, 4); // sigidx
@@ -220,7 +231,7 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
 	targ += sig.second;
 	memcpy(targ, etext.first.get(), etext.second); // signed, encrypted payload
 	auto tx = std::unique_ptr<LookupAuthTX>(new LookupAuthTX());
-	if(tx.get()->Extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf.data(), totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
@@ -232,24 +243,26 @@ void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload){
 	auto serialjson = payload.dump();
 	// Signed payload is UserStatusDelegation TXSpec + JSON
 	size_t len = usdspec.first.size() + 4 + serialjson.length();
-	unsigned char buf[len];
-	unsigned char *targ = buf;
+  std::vector<unsigned char> buf;
+  buf.reserve(len);
+	unsigned char *targ = buf.data();
 	memcpy(targ, usdspec.first.data(), usdspec.first.size());
 	targ += usdspec.first.size();
 	targ = ulong_to_nbo(usdspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf, len, cmspec);
+	auto sig = tstore.Sign(buf.data(), len, cmspec);
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
-	unsigned char txbuf[totlen];
-	targ = ulong_to_nbo(sig.second, txbuf, 2);
+  std::vector<unsigned char> txbuf;
+  txbuf.reserve(totlen);
+	targ = ulong_to_nbo(sig.second, txbuf.data(), 2);
 	memcpy(targ, cmspec.first.data(), cmspec.first.size());
 	targ += cmspec.first.size();
 	targ = ulong_to_nbo(cmspec.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
-	memcpy(targ, buf, len);
+	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<UserStatusTX>(new UserStatusTX());
-	if(tx.get()->Extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf.data(), totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
@@ -260,25 +273,27 @@ void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 	auto serialjson = payload.dump();
 	// FIXME verify that uspec and cmspec are appropriate
 	size_t len = serialjson.length() + 4 + 4 + cmspec.first.size();
-	unsigned char buf[len];
-	unsigned char *targ = buf;
+  std::vector<unsigned char> buf;
+  buf.reserve(len);
+	unsigned char *targ = buf.data();
 	memcpy(targ, cmspec.first.data(), cmspec.first.size());
 	targ += cmspec.first.size();
 	targ = ulong_to_nbo(cmspec.second, targ, 4);
 	targ = ulong_to_nbo(stype, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf, len, uspec);
+	auto sig = tstore.Sign(buf.data(), len, uspec);
 	size_t totlen = len + sig.second + 4 + uspec.first.size() + 2;
-	unsigned char txbuf[totlen];
-	targ = ulong_to_nbo(sig.second, txbuf, 2);
+  std::vector<unsigned char> txbuf;
+  txbuf.reserve(totlen);
+	targ = ulong_to_nbo(sig.second, txbuf.data(), 2);
 	memcpy(targ, uspec.first.data(), uspec.first.size());
 	targ += uspec.first.size();
 	targ = ulong_to_nbo(uspec.second, targ, 4);
 	memcpy(targ, sig.first.get(), sig.second);
 	targ += sig.second;
-	memcpy(targ, buf, len);
+	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<UserStatusDelegationTX>(new UserStatusDelegationTX());
-	if(tx.get()->Extract(txbuf, totlen)){
+	if(tx.get()->Extract(txbuf.data(), totlen)){
 		throw BlockValidationException("couldn't unpack transaction");
 	}
 	outstanding.AddTransaction(std::move(tx));
@@ -303,11 +318,11 @@ void Chain::AddPeers(const std::string& peerfile) {
 	rpcnet.get()->AddPeers(peerfile);
 }
 
-void Chain::EnableRPC(int port, const std::string& chainfile, const std::string& keyfile) {
+void Chain::EnableRPC(const RPCServiceOptions& opts) {
 	if(rpcnet){
 		throw NetworkException("rpc networking was already enabled");
 	}
-	rpcnet = std::make_unique<RPCService>(*this, port, chainfile, keyfile);
+	rpcnet = std::make_unique<RPCService>(*this, opts);
 }
 
 int Chain::RPCPort() const {

@@ -31,13 +31,14 @@ constexpr char htmlhdr[] =
  "tr:nth-child(even) td { background: #f1f1f1; }"
  "tr:nth-child(odd) td { background: #fefefe; }"
  "tr td:hover { background: #00dddd; }"
- "div { margin: 1em; }"
+ "div { padding: 1em; }"
  "span { margin: 1em; }"
+ "#block { background: #fefefe; display: inline-block; border-radius: 1em; }"
  "</style>"
  "</head>";
 
 // simple little HTML escaping for '&', '<', and '>'. might want a real one?
-std::stringstream& HTTPDServer::JSONtoHTML(std::stringstream& ss, const nlohmann::json& json) const {
+std::ostream& HTTPDServer::JSONtoHTML(std::ostream& ss, const nlohmann::json& json) const {
 	std::stringstream inter;
 	inter << std::setw(1) << json;
 	const std::string& s = inter.str();
@@ -52,7 +53,7 @@ std::stringstream& HTTPDServer::JSONtoHTML(std::stringstream& ss, const nlohmann
 	return ss;
 }
 
-std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
+std::ostream& HTTPDServer::HTMLSysinfo(std::ostream& ss) const {
 	ss << "<h3>system</h3><table>";
 	ss << "<tr><td>cxx</td><td>" << Catena::GetCompilerID() << "</td></tr>";
 	ss << "<tr><td>libc</td><td>" << Catena::GetLibcID() << "</td></tr>";
@@ -66,8 +67,39 @@ std::stringstream& HTTPDServer::HTMLSysinfo(std::stringstream& ss) const {
 	return ss;
 }
 
-std::stringstream& HTTPDServer::HTMLMembers(std::stringstream& ss) const {
-	ss << "<h3>consortium members</h3><div>";
+std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
+	ss << "<h3>p2p network</h3><table>";
+	auto port = chain.RPCPort();
+	if(port){
+		ss << "<tr><td>rpc port</td><td>" << port << "</td></tr>";
+		auto xname = chain.RPCName();
+		ss << "<tr><td>rpc name</td><td>" << xname.first << " → " << xname.second << "</td></tr>";
+		int peersDefined, peersActive, peersMax;
+		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
+		ss << "<tr><td>configured peers</td><td>" << peersDefined << "</td></tr>";
+		ss << "<tr><td>active peers</td><td>" << peersActive << "</td></tr>";
+		ss << "<tr><td>max active peers</td><td>" << peersMax << "</td></tr>";
+	}else{
+		ss << "<tr><td>rpc port</td><td>not configured</td></tr>";
+		ss << "<tr><td>rpc name</td><td>n/a</td></tr>";
+		ss << "<tr><td>configured peers</td><td>n/a</td></tr>";
+		ss << "<tr><td>active peers</td><td>n/a</td></tr>";
+		ss << "<tr><td>max active peers</td><td>n/a</td></tr>";
+	}
+  auto ads = chain.AdvertisedAddresses();
+  ss << "<tr><td>advertisements</td><td>" << ads.size();
+  if(ads.size()){
+    for(auto i = 0u ; i < ads.size() ; ++i){
+      ss << " " << ads[i];
+    }
+  }
+  ss << "</td></tr>";
+	ss << "</table>";
+	return ss;
+}
+
+std::ostream& HTTPDServer::HTMLMembers(std::ostream& ss) const {
+	ss << "<h3>consortium members</h3>";
 	const auto& cmembers = chain.ConsortiumMembers();
 	for(const auto& cm : cmembers){
 		ss << "<a href=\"/showmember?member=" << cm.cmspec
@@ -75,11 +107,10 @@ std::stringstream& HTTPDServer::HTMLMembers(std::stringstream& ss) const {
 		   << ")<pre>";
 		JSONtoHTML(ss, cm.payload) << "</pre>";
 	}
-	ss << "</div>";
 	return ss;
 }
 
-std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
+std::ostream& HTTPDServer::HTMLChaininfo(std::ostream& ss) const {
 	ss << "<h3>chain</h3>";
 	ss << "<table>";
 	ss << "<tr><td>chain bytes</td><td>" << chain.Size() << "</td></tr>";
@@ -93,21 +124,7 @@ std::stringstream& HTTPDServer::HTMLChaininfo(std::stringstream& ss) const {
 	ss << "<tr><td>public keys</td><td>" << chain.PubkeyCount() << "</td></tr>";
 	ss << "<tr><td>users</td><td>" << chain.UserCount() << "</td></tr>";
 	ss << "<tr><td>status delegations</td><td>" << chain.StatusDelegationCount() << "</td></tr>";
-	auto port = chain.RPCPort();
-	if(port){
-		ss << "<tr><td>rpc port</td><td>" << port << "</td></tr>";
-	}else{
-		ss << "<tr><td>rpc port</td><td>n/a</td></tr>";
-	}
 	ss << "</table>";
-	Catena::CatenaHash mostrecent = chain.MostRecentBlockHash();
-	if(!mostrecent.IsGenesis()){
-		ss << "<h3>most recent block (<a href=\"/showblock?hash=" <<
-			mostrecent << "\">details</a>)</h3>";
-		BlockHTML(ss, chain.MostRecentBlockHash(), false);
-	}else{
-		ss << "<h3>no blocks on ledger</h3>";
-	}
 	return ss;
 }
 
@@ -136,10 +153,19 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
 	HTMLSysinfo(ss);
 	HTMLChaininfo(ss);
+	HTMLNetwork(ss);
 	HTMLMembers(ss);
 	ss << "<h3>other views</h3>";
-	ss << "<div><span><a href=\"/show\">ledger</a></span>";
-	ss << "<span><a href=\"/tstore\">truststore</a></span></div>";
+	ss << "<span><a href=\"/show\">ledger</a></span>";
+	ss << "<span><a href=\"/tstore\">truststore</a></span>";
+	Catena::CatenaHash mostrecent = chain.MostRecentBlockHash();
+	if(!mostrecent.IsGenesis()){
+		ss << "<h3>most recent block (<a href=\"/showblock?hash=" <<
+			mostrecent << "\">details</a>)</h3>";
+		BlockHTML(ss, chain.MostRecentBlockHash(), false);
+	}else{
+		ss << "<h3>no blocks on ledger</h3>";
+	}
 	ss << "</body>";
 	std::string s = ss.str();
 	auto resp = MHD_create_response_from_buffer(s.size(),
@@ -216,21 +242,45 @@ nlohmann::json HTTPDServer::InspectJSON(int start, int end) const {
 	return ret;
 }
 
-std::stringstream& HTTPDServer::BlockHTML(std::stringstream& ss, const Catena::CatenaHash& hash,
+// FIXME basically duplicates ReadlineUI::DumpTransactions
+template <typename Iterator>
+std::ostream& HTTPDServer::TXListHTML(std::ostream& s,
+			const Iterator begin, const Iterator end) const {
+	s << "<pre>";
+	char prevfill = s.fill('0');
+	int i = 0;
+	while(begin + i != end){
+		s << std::setw(5) << i << " " << begin[i].get();
+		if(begin + i + 1 != end){
+			s << "\n";
+		}
+                ++i;
+	}
+	s << "</pre>";
+	s.fill(prevfill);
+	return s;
+}
+
+std::ostream& HTTPDServer::BlockHTML(std::ostream& ss, const Catena::CatenaHash& hash,
 						bool printbytes) const {
 	const auto blk = chain.Inspect(hash);
 	ss << "<div id=\"block\">";
 	ss << "hash: " << blk.bhdr.hash << "<br/>";
-	ss << "prev: <a href=\"/showblock?hash=" << blk.bhdr.prev <<
-		"\">" << blk.bhdr.prev << "</a><br/>";
+	if(!blk.bhdr.prev.IsGenesis()){
+		ss << "prev: <a href=\"/showblock?hash=" << blk.bhdr.prev <<
+			"\">" << blk.bhdr.prev << "</a><br/>";
+	}else{
+		ss << "prev: " << blk.bhdr.prev << " (genesis block)<br/>";
+	}
 	char timebuf[80];
 	time_t utc = blk.bhdr.utc;
 	ctime_r(&utc, timebuf); // FIXME there's c++ for this
 	ss << "version: " << blk.bhdr.version << " bytes: " << blk.bhdr.totlen
 		<< " offset: " << blk.offset << " transactions: " << blk.bhdr.txcount
 		<< "<br/>" << timebuf << "<br/>" << std::endl;
+	TXListHTML(ss, blk.transactions.begin(), blk.transactions.end());
 	if(printbytes){
-		ss << "<br/><samp>";
+		ss << "<samp>";
 		// Print 32 bytes at a time as hex-encoded character pairs
 		constexpr auto perline = 32;
 		for(auto i = 0u ; i < blk.bhdr.totlen ; i += perline){

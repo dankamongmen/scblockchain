@@ -160,7 +160,7 @@ BlockDetail Inspect(const CatenaHash& hash) const;
 
 // Enable p2p rpc networking. Throws NetworkException if already enabled for
 // this ledger, or a variety of other possible problems.
-void EnableRPC(int port, const std::string& chainfile, const std::string& keyfile);
+void EnableRPC(const RPCServiceOptions& opts);
 
 // Return details about the RPC p2p network peers. Throws NetworkException if
 // p2p networking has not been enabled.
@@ -171,6 +171,23 @@ void AddPeers(const std::string& peerfile);
 
 // Returns 0 if RPC networking has not been enabled
 int RPCPort() const;
+
+std::vector<std::string> AdvertisedAddresses() const {
+  if(rpcnet){
+    return rpcnet.get()->Advertisement();
+  }
+  return std::vector<std::string>{};
+}
+
+// Safe to call only if RPC networking has been enabled (RPCPort() != 0)
+void PeerCount(int* defined, int* active, int* maxactive) const {
+	return rpcnet.get()->PeerCount(defined, active, maxactive);
+}
+
+// Get the node's RPC name. Safe to call only if RPC networking has been enabled.
+std::pair<std::string, std::string> RPCName() const {
+	return rpcnet.get()->Name();
+}
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
