@@ -136,11 +136,12 @@ TEST(CatenaBlocks, ChainGenerated){
 	std::tie(b2, s2) = blk2.SerializeBlock(prevhash);
 	ASSERT_NE(nullptr, b2);
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, s2);
-	char block[s1 + s2];
-	memcpy(block, b1.get(), s1);
-	memcpy(block + s1, b2.get(), s2);
+  std::vector<char> block;
+  block.reserve(s1 + s2);
+	memcpy(block.data(), b1.get(), s1);
+	memcpy(block.data() + s1, b2.get(), s2);
 	Catena::Blocks cbs;
-	EXPECT_FALSE(cbs.LoadData(block, s1 + s2, lmap, tstore));
+	EXPECT_FALSE(cbs.LoadData(block.data(), s1 + s2, lmap, tstore));
 	EXPECT_EQ(2, cbs.GetBlockCount());
 }
 

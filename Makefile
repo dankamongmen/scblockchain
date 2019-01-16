@@ -34,7 +34,7 @@ TESTDATA:=$(wildcard test/*) $(LEDGER)
 DOCKERFILE:=Dockerfile
 DOCKERBUILDFILE:=doc/Dockerfile.build
 
-WFLAGS:=-Wall -W -Werror
+WFLAGS:=-Wall -W -Werror -Werror=vla
 # clang doesn't like this
 # WFLAGS+=-Wl,-z,defs
 OFLAGS:=-g -O2
