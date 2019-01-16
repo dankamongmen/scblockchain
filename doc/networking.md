@@ -73,6 +73,109 @@ more than once on a connection.
 NodeAdvertisements are currently timestamped with the node startup time, and it
 is thought that they might one day be named and signed.
 
+### P2P connections
+
+Each node has an artificial maximum number K of established connections. In a
+network of N nodes, it is expected that K < N. We'd like to maintain the
+following properties:
+
+1. The network is connected, i.e., there are no isolated subnetworks.
+2. The pathlength between any two nodes is minimized, which seems related to
+minimizing clustering coefficient across the graph.
+3. No two nodes have more than one active connection between them, even if one
+or both nodes advertise multiple addresses.
+4. Nodes ought be able to move among addresses, even ones recently occupied by
+other nodes, without artificial latency.
+5. Connections ought not "flap" without true benefits to the network.
+
+If the network is disconnected, partitioned subnetworks will build different
+ledgers. When the subnetworks reconnect, only one ledger can persist, and any
+transactions on discarded ledgers are effectively lost. Minimized pathlengths
+imply minimized steps for a broadcasted transaction to reach the entire
+network (at the possible expense of some wasted bandwidth). It does not make
+sense for two nodes to maintain more than one connection.
+
+It is essential that the network must not evolve to a state where two
+subnetworks are statically saturated (i.e. each node has K connections, all
+within the subnetwork). Such subnetworks will never reconnect. This requirement
+drives the peer connection selection algorithm. Nodes ought prefer connections
+that lead to lower max pathlengths. Doing so perfectly requires perfect
+knowledge of the network, so this decision is made in the context of connected
+peers only.
+
+Two connections between nodes N1 and N2 could arise several ways:
+
+1. N1 and N2 could truly simultaneously establish connections to one another.
+2. N1, already connected to N2, could establish a new connection to an
+ advertised address, and discover N2 on the other side.
+3. N2, already having accepted a conn from N1, could establish a new connection
+ to an advertised address, and discover N1 on the other side.
+4. N1, already connected to N2, restarts silently. It connects to N2, which
+ thinks it already has a connection from N1.
+5. N2, already having accepted a conn from N1, restarts silently. It connects
+ to N1, which thinks it already has a connection to N2.
+
+Cases 1, 4, and 5 imply that we cannot simply "choose the older (or newer)
+connection". If we choose the older connection, one side might have an older
+connection which no longer exists on the other side. If we choose the newer
+connection, two peers can "flap", establishing and tearing down connections to
+one another (remember that a node doesn't know what node it's connecting to,
+only some advertised addresses). In the event of simultaneous connections,
+there might not even be an "older" connection, and the nodes are not guaranteed
+to see the same ordering in any case.
+
+There is a natural symmetry break provided by TLS: the ServerCertificate message
+is sent and verified prior to the ClientCertificate message. Upon receiving the
+peer cert, a node discovers that peer's name, and can make meaningful decisions.
+After verifying the ServerCertificate, N1 (having connected to N2) should:
+
+1. If name(N2) == name(N1), disconnect
+2. If N1 already has a connection to name(N2), the new connection is
+undesirable, *unless* N2 has forgotten the connection. N1 should disconnect the
+new session immediately, and ping N2 on the old connection, triggering a short
+timeout. If N2 is indeed a dead connection, it will quickly expire, and a new
+connection can arise to N2. It is true (see below) that N2 would be likely to
+disconnect the newer connection itself assuming that the old connection is
+indeed valid, but in the meantime, what should N1 do with two open connections?
+3. If N1 already has a connection from name(N2), only one of the two connections
+is desirable, but the two sides need agree on which one. With different clocks,
+connection age is not a metric. Instead, we derive the desired direction between
+two peers:
+    * Hash name(N1) and name(N2), generating B-bit hashes H(N1), H(N2)
+    * Add H(N1) and H(N2) modulo 2^B and take the result's parity
+    * If even, the name having the lesser hash is deemed the client
+    * If odd, the name having the lesser hash is deemed the server
+If N1 is decided to be the client by this procedure, it ought disconnect the
+existing connection from name(N2), and continue with its new connection. It can
+expect the server to make the same decision (i.e. if N2 receives N1's
+ClientCertificate on the new connection before receiving the shutdown of the
+old connection, it will perform its own shutdown of the old connection, and let
+the new one through). If the new connection is torn down, N1 ought ping N2 on
+the old connection, triggering a short timeout (for the same reason as in 2
+above).
+We do the parity operation rather than e.g. simple lexicographic comparison to
+break a complete ordering on names, which would otherwise bias the network (over
+time, the lexicographically extreme nodes would be all-client or all-server). We
+compare hashes for the same reason. We hash because otherwise structure in name
+distribution would be reflected in our partial ordering. All three are necessary
+to deliver a deterministic relation without global bias.
+4. The new connection should be considered established.
+
+At this point, N1 sends a ClientCertificate message to N2 (having accepted the
+connection from N1). N2 should:
+
+1. If name(N1) == name(N2), disconnect (ought already have happened)
+2. If N2 already has a connection from name(N1), the new connection is
+undesirable, *unless* N1 has forgotten the old connection. As in 2 above, N2
+ought disconnect the new session, and ping N1 on the old one. If we could
+assume that N1 wouldn't send its ClientCertificate early, and would only do so
+after having verified that it has no existing connection to N2, N2 could
+prefer the newer connection, and kill the old. We have chosen not to exploit
+this assumption, as TLS does not seem to require it.
+3. If N2 already has a connection to name(N1), the situation is exactly the
+same as 3 above. Hash the names to break symmetry, establish a bias, disconnect
+the undesirable connection, and ping on the old one if appropriate.
+
 ## Public key infrastructure
 
 Catena nodes employ a 4-level PKI. At the top is the self-signed, long-lived
