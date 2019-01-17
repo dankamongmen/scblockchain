@@ -149,6 +149,7 @@ TEST(CatenaChain, AddLookupAuth){
   Catena::TXSpec larspec(chain.MostRecentBlockHash(), 0);
   Catena::TXSpec uspec;
   Catena::SymmetricKey symkey;
+  symkey.fill(0xff);
   chain.AddLookupAuth(larspec, uspec, symkey);
 	chain.CommitOutstanding();
 	EXPECT_EQ(3, chain.TXCount());
@@ -160,6 +161,7 @@ TEST(CatenaChain, AddLookupAuthBadLAR){
   Catena::TXSpec larspec(chain.MostRecentBlockHash(), 0);
   Catena::TXSpec uspec;
   Catena::SymmetricKey symkey;
+  symkey.fill(0xff);
   EXPECT_THROW(chain.AddLookupAuth(larspec, uspec, symkey), Catena::InvalidTXSpecException);
 }
 
@@ -180,6 +182,7 @@ TEST(CatenaChain, AddUser){
 	chain.AddPrivateKey(cm2, newkp);
 	auto j = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
   Catena::SymmetricKey symkey;
+  symkey.fill(0xff);
 	chain.AddUser(cm2, reinterpret_cast<const unsigned char*>(pem.c_str()),
 					pem.length(), symkey, j);
 	chain.CommitOutstanding();
@@ -203,6 +206,7 @@ TEST(CatenaChain, AddUserNoCMRKey){
 	Catena::TXSpec cm2(chain.MostRecentBlockHash(), 0);
 	auto j = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
   Catena::SymmetricKey symkey;
+  symkey.fill(0xff);
 	EXPECT_THROW(chain.AddUser(cm2, reinterpret_cast<const unsigned char*>(pem.c_str()),
 					      pem.length(), symkey, j),
       Catena::SigningException);
@@ -218,6 +222,7 @@ TEST(CatenaChain, AddUserBadCMR){
 	chain.AddPrivateKey(cm1, kp);
 	auto uj = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
   Catena::SymmetricKey symkey;
+  symkey.fill(0xff);
 	chain.AddUser(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
 					      pem.length(), symkey, uj);
   // FIXME shouldn't this happen above?
@@ -241,6 +246,7 @@ TEST(CatenaChain, AddUserStatusDelegation){
 	chain.AddPrivateKey(cm2, newkp);
 	auto j = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
   Catena::SymmetricKey symkey;
+  symkey.fill(0xff);
 	Catena::Keypair unewkp;
 	unewkp.Generate();
 	auto upem = unewkp.PubkeyPEM();
@@ -273,6 +279,7 @@ TEST(CatenaChain, AddUserStatus){
 	chain.AddPrivateKey(cm2, newkp);
 	auto j = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
   Catena::SymmetricKey symkey;
+  symkey.fill(0xff);
 	Catena::Keypair unewkp;
 	unewkp.Generate();
 	auto upem = unewkp.PubkeyPEM();
