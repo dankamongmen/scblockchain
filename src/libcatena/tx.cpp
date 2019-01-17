@@ -3,7 +3,6 @@
 #include <iostream>
 #include <libcatena/externallookuptx.h>
 #include <libcatena/lookupauthreqtx.h>
-#include <libcatena/newversiontx.h>
 #include <libcatena/ustatus.h>
 #include <libcatena/usertx.h>
 #include <libcatena/utility.h>
@@ -23,40 +22,34 @@ std::unique_ptr<Transaction> Transaction::LexTX(const unsigned char* data, unsig
 	txtype = nbo_to_ulong(data, sizeof(txtype));
 	len -= sizeof(txtype);
 	data += sizeof(txtype);
-	Transaction* tx;
+  std::unique_ptr<Transaction> tx;
 	switch(static_cast<TXTypes>(txtype)){
-	case TXTypes::NewVersion:
-		tx = new NewVersionTX(blkhash, txidx);
-		break;
 	case TXTypes::ConsortiumMember:
-		tx = new ConsortiumMemberTX(blkhash, txidx);
+		tx = std::make_unique<ConsortiumMemberTX>(blkhash, txidx);
 		break;
 	case TXTypes::ExternalLookup:
-		tx = new ExternalLookupTX(blkhash, txidx);
+		tx = std::make_unique<ExternalLookupTX>(blkhash, txidx);
 		break;
 	case TXTypes::User:
-		tx = new UserTX(blkhash, txidx);
+		tx = std::make_unique<UserTX>(blkhash, txidx);
 		break;
 	case TXTypes::UserStatus:
-		tx = new UserStatusTX(blkhash, txidx);
+		tx = std::make_unique<UserStatusTX>(blkhash, txidx);
 		break;
 	case TXTypes::LookupAuthReq:
-		tx = new LookupAuthReqTX(blkhash, txidx);
+		tx = std::make_unique<LookupAuthReqTX>(blkhash, txidx);
 		break;
 	case TXTypes::LookupAuth:
-		tx = new LookupAuthTX(blkhash, txidx);
+		tx = std::make_unique<LookupAuthTX>(blkhash, txidx);
 		break;
 	case TXTypes::UserStatusDelegation:
-		tx = new UserStatusDelegationTX(blkhash, txidx);
+		tx = std::make_unique<UserStatusDelegationTX>(blkhash, txidx);
 		break;
 	default:
 		throw TransactionException("unknown transaction type " + std::to_string(txtype));
 	}
-	if(tx->Extract(data, len)){ // FIXME convert to exception-based
-		delete tx;
-		throw TransactionException("error extracting transaction");
-	}
-	return std::unique_ptr<Transaction>(tx);
+	tx->Extract(data, len);
+	return tx;
 }
 
 }

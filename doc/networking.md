@@ -142,7 +142,7 @@ is desirable, but the two sides need agree on which one. With different clocks,
 connection age is not a metric. Instead, we derive the desired direction between
 two peers:
     * Hash name(N1) and name(N2), generating B-bit hashes H(N1), H(N2)
-    * Add H(N1) and H(N2) modulo 2^B and take the result's parity
+    * Add H(N1) and H(N2) modulo 2ⁿ and take the result's parity
     * If even, the name having the lesser hash is deemed the client
     * If odd, the name having the lesser hash is deemed the server
 If N1 is decided to be the client by this procedure, it ought disconnect the

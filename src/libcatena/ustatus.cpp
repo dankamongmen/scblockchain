@@ -3,17 +3,15 @@
 
 namespace Catena {
 
-bool UserStatusTX::Extract(const unsigned char* data, unsigned len) {
+void UserStatusTX::Extract(const unsigned char* data, unsigned len) {
 	if(len < 2){ // 16-bit signature length
-		std::cerr << "no room for siglen in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature length");
 	}
 	siglen = nbo_to_ulong(data, 2);
 	data += 2;
 	len -= 2;
 	if(len < signerhash.size() + sizeof(signeridx)){
-		std::cerr << "no room for sigspec in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature spec");
 	}
 	memcpy(signerhash.data(), data, signerhash.size());
 	data += signerhash.size();
@@ -22,22 +20,19 @@ bool UserStatusTX::Extract(const unsigned char* data, unsigned len) {
 	data += sizeof(signeridx);
 	len -= sizeof(signeridx);
 	if(len < siglen || siglen > sizeof(signature)){
-		std::cerr << "no room for signature in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature");
 	}
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
 	if(len < signerhash.size() + 4){
-		std::cerr << "no room for subjectspec in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for subject spec");
 	}
 	usdidx = nbo_to_ulong(data + signerhash.size(), 4);
 	// FIXME verify that subjectspec is valid? verify payload is valid JSON?
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
 	payloadlen = len;
-	return false;
 }
 
 bool UserStatusTX::Validate(TrustStore& tstore, LedgerMap& lmap) {

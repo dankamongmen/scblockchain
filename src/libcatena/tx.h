@@ -13,7 +13,6 @@
 namespace Catena {
 
 enum class TXTypes {
-	NewVersion = 0x0000,
 	ConsortiumMember = 0x0001,
 	ExternalLookup = 0x0002,
 	User = 0x0003,
@@ -36,7 +35,7 @@ Transaction(const CatenaHash& hash, unsigned idx) :
 	blockhash(hash) {}
 
 virtual ~Transaction() = default;
-virtual bool Extract(const unsigned char* data, unsigned len) = 0;
+virtual void Extract(const unsigned char* data, unsigned len) = 0;
 virtual bool Validate(TrustStore& tstore, LedgerMap& lmap) = 0;
 virtual nlohmann::json JSONify() const = 0;
 

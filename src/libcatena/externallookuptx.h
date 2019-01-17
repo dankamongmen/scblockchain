@@ -5,11 +5,15 @@
 
 namespace Catena {
 
+enum class ExtIDTypes : uint16_t {
+  SharecareID = 0x0000, // 128-bit value in UUID form
+};
+
 class ExternalLookupTX : public Transaction {
 public:
 ExternalLookupTX() = default;
 ExternalLookupTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
-bool Extract(const unsigned char* data, unsigned len) override;
+void Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore, LedgerMap& lmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
@@ -19,7 +23,7 @@ private:
 unsigned char signature[SIGLEN];
 CatenaHash signerhash;
 uint32_t signeridx;
-uint16_t lookuptype;
+ExtIDTypes lookuptype;
 size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;
 size_t keylen; // length of public key within payload

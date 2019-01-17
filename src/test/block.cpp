@@ -3,7 +3,6 @@
 #include <libcatena/block.h>
 #include <libcatena/builtin.h>
 #include <libcatena/truststore.h>
-#include <libcatena/newversiontx.h>
 #include "test/defs.h"
 
 TEST(CatenaBlocks, BlocksGenesisBlock){
@@ -79,28 +78,6 @@ TEST(CatenaBlocks, BlockGenerated){
 	ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
 	Catena::Blocks cbs;
 	EXPECT_FALSE(cbs.LoadData(block.get(), size, lmap, tstore));
-}
-
-// Generate a block with some NewVersions, and read it back
-TEST(CatenaBlocks, BlockGeneratedNewVersions){
-	Catena::LedgerMap lmap;
-	Catena::TrustStore tstore;
-	for(auto i = 0 ; i < 4096 ; i += 16){
-		Catena::CatenaHash prevhash;
-		memset(prevhash.data(), 0xff, prevhash.size());
-		Catena::Block b;
-		for(auto j = 0 ; j < i + 1 ; ++j){
-			b.AddTransaction(std::make_unique<Catena::NewVersionTX>());
-		}
-		EXPECT_EQ(i + 1, b.TransactionCount());
-		std::unique_ptr<const unsigned char[]> block;
-		size_t size;
-		std::tie(block, size) = b.SerializeBlock(prevhash);
-		ASSERT_NE(nullptr, block);
-		ASSERT_LE(Catena::Block::BLOCKHEADERLEN, size);
-		Catena::Blocks cbs;
-		EXPECT_FALSE(cbs.LoadData(block.get(), size, lmap, tstore));
-	}
 }
 
 // Generate a simple block with invalid prev, and read it back

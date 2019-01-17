@@ -1,7 +1,6 @@
 #include <cstring>
 #include <libcatena/externallookuptx.h>
 #include <libcatena/lookupauthreqtx.h>
-#include <libcatena/newversiontx.h>
 #include <libcatena/ustatus.h>
 #include <libcatena/builtin.h>
 #include <libcatena/utility.h>
@@ -63,10 +62,6 @@ void Chain::FlushOutstanding(){
 	outstanding.Flush();
 }
 
-void Chain::AddNewVersion(){
-	outstanding.AddTransaction(std::make_unique<NewVersionTX>());
-}
-
 void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 				size_t plen, const nlohmann::json& payload){
 	// FIXME verify that pkey is a valid public key
@@ -91,9 +86,7 @@ void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey
 	targ += sig.second;
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<ConsortiumMemberTX>(new ConsortiumMemberTX());
-	if(tx.get()->Extract(txbuf.data(), totlen)){
-		throw BlockValidationException("couldn't unpack transaction");
-	}
+	tx.get()->Extract(txbuf.data(), totlen);
 	outstanding.AddTransaction(std::move(tx));
 }
 
@@ -132,14 +125,12 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	targ += sig.second;
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<LookupAuthReqTX>(new LookupAuthReqTX());
-	if(tx.get()->Extract(txbuf.data(), totlen)){
-		throw BlockValidationException("couldn't unpack transaction");
-	}
+	tx.get()->Extract(txbuf.data(), totlen);
 	outstanding.AddTransaction(std::move(tx));
 }
 
 void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
-		size_t plen, const std::string& extid, unsigned lookuptype){
+		size_t plen, const std::string& extid, ExtIDTypes lookuptype){
 	// FIXME verify that pkey is a valid public key
 	size_t len = plen + 2 + extid.size();
   std::vector<unsigned char> buf;
@@ -153,7 +144,7 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 4;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
-	targ = ulong_to_nbo(lookuptype, txbuf.data(), 2);
+	targ = ulong_to_nbo(static_cast<unsigned>(lookuptype), txbuf.data(), 2);
 	memcpy(targ, keyspec.first.data(), keyspec.first.size());
 	targ += keyspec.first.size();
 	targ = ulong_to_nbo(keyspec.second, targ, 4);
@@ -162,9 +153,7 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 	targ += sig.second;
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<ExternalLookupTX>(new ExternalLookupTX());
-	if(tx.get()->Extract(txbuf.data(), totlen)){
-		throw BlockValidationException("couldn't unpack transaction");
-	}
+	tx->Extract(txbuf.data(), totlen);
 	outstanding.AddTransaction(std::move(tx));
 }
 
@@ -196,9 +185,7 @@ void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
 	targ += sig.second;
 	memcpy(targ, buf.data(), len); // signed payload (pkeylen, pkey, ciphertext)
 	auto tx = std::unique_ptr<UserTX>(new UserTX());
-	if(tx.get()->Extract(txbuf.data(), totlen)){
-		throw BlockValidationException("couldn't unpack transaction");
-	}
+	tx.get()->Extract(txbuf.data(), totlen);
 	outstanding.AddTransaction(std::move(tx));
 }
 
@@ -231,9 +218,7 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
 	targ += sig.second;
 	memcpy(targ, etext.first.get(), etext.second); // signed, encrypted payload
 	auto tx = std::unique_ptr<LookupAuthTX>(new LookupAuthTX());
-	if(tx.get()->Extract(txbuf.data(), totlen)){
-		throw BlockValidationException("couldn't unpack transaction");
-	}
+	tx.get()->Extract(txbuf.data(), totlen);
 	outstanding.AddTransaction(std::move(tx));
 }
 
@@ -262,9 +247,7 @@ void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload){
 	targ += sig.second;
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<UserStatusTX>(new UserStatusTX());
-	if(tx.get()->Extract(txbuf.data(), totlen)){
-		throw BlockValidationException("couldn't unpack transaction");
-	}
+	tx.get()->Extract(txbuf.data(), totlen);
 	outstanding.AddTransaction(std::move(tx));
 }
 
@@ -293,9 +276,7 @@ void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 	targ += sig.second;
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<UserStatusDelegationTX>(new UserStatusDelegationTX());
-	if(tx.get()->Extract(txbuf.data(), totlen)){
-		throw BlockValidationException("couldn't unpack transaction");
-	}
+	tx.get()->Extract(txbuf.data(), totlen);
 	outstanding.AddTransaction(std::move(tx));
 }
 

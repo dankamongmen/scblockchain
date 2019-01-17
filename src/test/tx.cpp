@@ -1,6 +1,5 @@
 #include <cstring>
 #include <gtest/gtest.h>
-#include <libcatena/newversiontx.h>
 #include <libcatena/utility.h>
 #include <libcatena/hash.h>
 #include <libcatena/tx.h>
@@ -14,19 +13,6 @@ TEST(CatenaTransactions, EmptyTX){
 
 static inline const unsigned char *uccast(const char* s){
 	return reinterpret_cast<const unsigned char*>(s);
-}
-
-TEST(CatenaTransactions, NewVersion){
-	Catena::CatenaHash hash;
-	EXPECT_NE(Catena::Transaction::LexTX(uccast("\x00\x00\x00\x00"), 4, hash, 0), nullptr);
-}
-
-TEST(CatenaTransactions, NewVersionSerialize){
-	const unsigned char expected[] = { 0x0, 0x0 };
-	Catena::NewVersionTX tx;
-	auto r = tx.Serialize();
-	ASSERT_EQ(r.second, sizeof(expected));
-	EXPECT_EQ(0, memcmp(r.first.get(), expected, sizeof(expected)));
 }
 
 TEST(CatenaTransactions, StrToTXSpec){

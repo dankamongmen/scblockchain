@@ -114,45 +114,6 @@ table (transactions ought not have trailing padding).
 
 ## Transactions
 
-### NewVersion
-
-Transaction type 0x0000, followed by a 16-bit signature length, followed by
-the 256-bit hash and 32-bit index of the signing party, followed by the
-signature, followed by a NewVersion JSON payload. Only builtin keys can sign
-this message.
-
-```
- 0                   1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         type (0x0000)         |            siglength          |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                           signer hash                         +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+                                                               +
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                          signer index                         |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                    ...NewVersion payload...                   |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-```
-
-The version and utc announced in the transaction payload ought not be less than
-or equal to any other published NewVersion transaction, to protect against
-replay.
-
 ### Consortium Member
 
 Transaction type 0x0001, followed by a 16-bit signature length, followed by

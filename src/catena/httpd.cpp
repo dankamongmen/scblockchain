@@ -551,7 +551,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) c
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
 			chain.AddExternalLookup(regkl,
 					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), pstr, ltype);
+					kstr.size(), pstr, static_cast<Catena::ExtIDTypes>(ltype));
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
