@@ -468,7 +468,8 @@ int ReadlineUI::NewExternalLookup(const Iterator start, const Iterator end){
 		size_t plen;
 		auto pkey = Catena::ReadBinaryFile(keyfile, &plen);
 		const auto& signspec = Catena::TXSpec::StrToTXSpec(start[0]);
-		chain.AddExternalLookup(signspec, pkey.get(), plen, extid, ltype);
+		chain.AddExternalLookup(signspec, pkey.get(), plen, extid,
+        static_cast<Catena::ExtIDTypes>(ltype));
 		return 0;
 	}catch(std::ifstream::failure& e){
 		std::cerr << "couldn't read a public key from " << keyfile << std::endl;

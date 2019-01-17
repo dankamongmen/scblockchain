@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <libcatena/externallookuptx.h>
 #include <libcatena/chain.h>
 #include <libcatena/sig.h>
 #include "test/defs.h"
@@ -46,6 +47,46 @@ TEST(CatenaChain, ChainAddConsortiumMember){
 	EXPECT_LT(origsize, chain.Size());
 	EXPECT_EQ(1, chain.TXCount());
 	EXPECT_EQ(1, chain.GetBlockCount());
+}
+
+TEST(CatenaChain, ChainAddExternalLookup){
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+	auto origsize = chain.Size();
+	EXPECT_EQ(0, chain.TXCount());
+	EXPECT_EQ(0, chain.GetBlockCount());
+	EXPECT_EQ(0, chain.OutstandingTXCount());
+  std::string extid = "50a0a990-1a25-11e9-9131-8b159f637c76";
+	chain.AddExternalLookup(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), extid, Catena::ExtIDTypes::SharecareID);
+	EXPECT_EQ(1, chain.OutstandingTXCount());
+	EXPECT_EQ(0, chain.TXCount());
+	EXPECT_EQ(origsize, chain.Size());
+	chain.CommitOutstanding();
+	EXPECT_LT(origsize, chain.Size());
+	EXPECT_EQ(1, chain.TXCount());
+	EXPECT_EQ(1, chain.GetBlockCount());
+}
+
+TEST(CatenaChain, ChainAddExternalLookupBadType){
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+  std::string extid;
+  EXPECT_THROW(chain.AddExternalLookup(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+                pem.length(), extid, static_cast<Catena::ExtIDTypes>(1)),
+	  Catena::BlockValidationException);
 }
 
 // FIXME add tests which reject
