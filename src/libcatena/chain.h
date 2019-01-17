@@ -140,7 +140,7 @@ void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 		size_t plen, const std::string& extid, ExtIDTypes lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
-void AddLookupAuth(const TXSpec& elspec, const TXSpec& uspec, const SymmetricKey& symkey);
+void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey);
 void AddUser(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
 		const SymmetricKey& symkey, const nlohmann::json& payload);
 void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload);
