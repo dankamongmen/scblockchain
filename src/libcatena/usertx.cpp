@@ -4,17 +4,15 @@
 
 namespace Catena {
 
-bool UserTX::Extract(const unsigned char* data, unsigned len) {
+void UserTX::Extract(const unsigned char* data, unsigned len) {
 	if(len < 2){ // 16-bit signature length
-		std::cerr << "no room for signature type in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature length");
 	}
 	siglen = nbo_to_ulong(data, 2);
 	data += 2;
 	len -= 2;
 	if(len < signerhash.size() + sizeof(signeridx)){
-		std::cerr << "no room for sigspec in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature spec");
 	}
 	memcpy(signerhash.data(), data, signerhash.size());
 	data += signerhash.size();
@@ -23,26 +21,22 @@ bool UserTX::Extract(const unsigned char* data, unsigned len) {
 	data += sizeof(signeridx);
 	len -= sizeof(signeridx);
 	if(len < siglen || siglen > sizeof(signature)){
-		std::cerr << "no room for signature in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature");
 	}
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
 	if(len < 2){
-		std::cerr << "no room for keylen in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for key length");
 	}
 	keylen = nbo_to_ulong(data, 2);
 	if(keylen + 2 > len){
-		std::cerr << "no room for key in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for key");
 	}
 	// FIXME verify that key is valid?
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
 	payloadlen = len;
-	return false;
 }
 
 bool UserTX::Validate(TrustStore& tstore, LedgerMap& lmap) {
@@ -94,17 +88,15 @@ nlohmann::json UserTX::JSONify() const {
 	return ret;
 }
 
-bool UserStatusDelegationTX::Extract(const unsigned char* data, unsigned len) {
+void UserStatusDelegationTX::Extract(const unsigned char* data, unsigned len) {
 	if(len < 2){ // 16-bit signature length
-		std::cerr << "no room for signature type in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature length");
 	}
 	siglen = nbo_to_ulong(data, 2);
 	data += 2;
 	len -= 2;
 	if(len < signerhash.size() + sizeof(signeridx)){
-		std::cerr << "no room for sigspec in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature spec");
 	}
 	memcpy(signerhash.data(), data, signerhash.size());
 	data += signerhash.size();
@@ -113,22 +105,19 @@ bool UserStatusDelegationTX::Extract(const unsigned char* data, unsigned len) {
 	data += sizeof(signeridx);
 	len -= sizeof(signeridx);
 	if(len < siglen || siglen > sizeof(signature)){
-		std::cerr << "no room for signature in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for signature");
 	}
 	memcpy(signature, data, siglen);
 	data += siglen;
 	len -= siglen;
 	if(len < signerhash.size() + sizeof(cmidx) + 4){
-		std::cerr << "no room for cmspec+stype in " << len << std::endl;
-		return true;
+		throw TransactionException("no room for cmspec + stype");
 	}
 	cmidx = nbo_to_ulong(data + signerhash.size(), 4);
 	statustype = nbo_to_ulong(data + signerhash.size() + 4, 4);
 	payload = std::unique_ptr<unsigned char[]>(new unsigned char[len]);
 	memcpy(payload.get(), data, len);
 	payloadlen = len;
-	return false;
 }
 
 bool UserStatusDelegationTX::Validate(TrustStore& tstore, LedgerMap& lmap) {

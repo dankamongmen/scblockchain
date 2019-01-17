@@ -10,7 +10,7 @@ class ConsortiumMemberTX : public Transaction {
 public:
 ConsortiumMemberTX() = default;
 ConsortiumMemberTX(const CatenaHash& hash, unsigned idx) : Transaction(hash, idx) {}
-bool Extract(const unsigned char* data, unsigned len) override;
+void Extract(const unsigned char* data, unsigned len) override;
 bool Validate(TrustStore& tstore, LedgerMap& lmap) override;
 std::ostream& TXOStream(std::ostream& s) const override;
 std::pair<std::unique_ptr<unsigned char[]>, size_t> Serialize() const override;
