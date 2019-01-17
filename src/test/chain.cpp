@@ -195,4 +195,51 @@ TEST(CatenaChain, AddUserNoCMRKey){
       Catena::SigningException);
 }
 
+TEST(CatenaChain, AddUserBadCMR){
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+	auto uj = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
+  Catena::SymmetricKey symkey;
+	chain.AddUser(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					      pem.length(), symkey, uj);
+  EXPECT_THROW(chain.CommitOutstanding(), Catena::InvalidTXSpecException);
+}
+
+TEST(CatenaChain, AddUserStatusDelegation){
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+	auto cmj = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
+	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), cmj);
+	chain.CommitOutstanding();
+	Catena::TXSpec cm2(chain.MostRecentBlockHash(), 0);
+	chain.AddPrivateKey(cm2, newkp);
+	auto j = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
+  Catena::SymmetricKey symkey;
+	Catena::Keypair unewkp;
+	unewkp.Generate();
+	auto upem = unewkp.PubkeyPEM();
+	chain.AddUser(cm2, reinterpret_cast<const unsigned char*>(upem.c_str()),
+					upem.length(), symkey, j);
+	chain.CommitOutstanding();
+  Catena::TXSpec uspec(chain.MostRecentBlockHash(), 0);
+	chain.AddPrivateKey(uspec, unewkp);
+	auto psdj = nlohmann::json::parse("{ \"Reason\": \"i ❤ delegations\" }");
+  chain.AddUserStatusDelegation(cm2, uspec, 0, psdj);
+	chain.CommitOutstanding();
+	EXPECT_EQ(3, chain.TXCount());
+	EXPECT_EQ(3, chain.GetBlockCount());
+}
+
 // FIXME add rpc test (chain.EnableRPC())
