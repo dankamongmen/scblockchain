@@ -49,6 +49,18 @@ TEST(CatenaChain, AddConsortiumMember){
 	EXPECT_EQ(1, chain.GetBlockCount());
 }
 
+TEST(CatenaChain, AddConsortiumMemberNoKey){
+	Catena::Chain chain("", 0);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	nlohmann::json j = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
+  EXPECT_THROW(chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					      pem.length(), j),
+      Catena::SigningException);
+}
+
 TEST(CatenaChain, AddExternalLookup){
 	Catena::Keypair kp(ECDSAKEY);
 	Catena::TXSpec cm1(CM1_TEST_TX);
