@@ -9,10 +9,10 @@ bool ExternalLookupTX::Extract(const unsigned char* data, unsigned len) {
 		std::cerr << "no room for lookup type in " << len << std::endl;
 		return true;
 	}
-	lookuptype = nbo_to_ulong(data, 2);
-	// FIXME get us some enums
-	if(lookuptype){
-		std::cerr << "unknown external lookup type " << lookuptype << std::endl;
+  auto ltype = nbo_to_ulong(data, 2);
+	lookuptype = static_cast<ExtIDTypes>(ltype);
+	if(lookuptype != ExtIDTypes::SharecareID){
+		std::cerr << "unknown external lookup type " << ltype << std::endl;
 		return true;
 	}
 	data += 2;
@@ -72,14 +72,14 @@ bool ExternalLookupTX::Validate(TrustStore& tstore,
 }
 
 std::ostream& ExternalLookupTX::TXOStream(std::ostream& s) const {
-	s << "ExternalLookup (type " << lookuptype << ", " << siglen
+	s << "ExternalLookup (type " << static_cast<unsigned>(lookuptype) << ", " << siglen
 		<< "b signature, " << payloadlen << "b payload, "
 		<< keylen << "b key)\n";
 	s << " registrar: " << signerhash << "." << signeridx << "\n";
 	s << " payload: ";
 	std::copy(GetPayload(), GetPayload() + GetPayloadLength(), std::ostream_iterator<char>(s, ""));
 	switch(lookuptype){
-		case 0: s << " (SCID)"; break;
+    case ExtIDTypes::SharecareID: s << " (SCID)"; break;
 		default: s << " (Unknown type)"; break;
 	}
 	return s;
@@ -91,7 +91,7 @@ ExternalLookupTX::Serialize() const {
 		payloadlen;
 	std::unique_ptr<unsigned char[]> ret(new unsigned char[len]);
 	auto data = TXType_to_nbo(TXTypes::ExternalLookup, ret.get());
-	data = ulong_to_nbo(lookuptype, data, 2);
+	data = ulong_to_nbo(static_cast<unsigned>(lookuptype), data, 2);
 	memcpy(data, signerhash.data(), signerhash.size());
 	data += signerhash.size();
 	data = ulong_to_nbo(signeridx, data, 4);

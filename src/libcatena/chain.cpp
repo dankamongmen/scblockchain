@@ -134,7 +134,7 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 }
 
 void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
-		size_t plen, const std::string& extid, unsigned lookuptype){
+		size_t plen, const std::string& extid, ExtIDTypes lookuptype){
 	// FIXME verify that pkey is a valid public key
 	size_t len = plen + 2 + extid.size();
   std::vector<unsigned char> buf;
@@ -148,7 +148,7 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 4;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
-	targ = ulong_to_nbo(lookuptype, txbuf.data(), 2);
+	targ = ulong_to_nbo(static_cast<unsigned>(lookuptype), txbuf.data(), 2);
 	memcpy(targ, keyspec.first.data(), keyspec.first.size());
 	targ += keyspec.first.size();
 	targ = ulong_to_nbo(keyspec.second, targ, 4);

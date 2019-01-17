@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <nlohmann/json_fwd.hpp>
+#include <libcatena/externallookuptx.h>
 #include <libcatena/truststore.h>
 #include <libcatena/exceptions.h>
 #include <libcatena/block.h>
@@ -137,7 +138,7 @@ nlohmann::json UserStatus(const TXSpec& uspec, unsigned stype) const;
 void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 				size_t plen, const nlohmann::json& payload);
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
-		size_t plen, const std::string& extid, unsigned lookuptype);
+		size_t plen, const std::string& extid, ExtIDTypes lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
 void AddLookupAuth(const TXSpec& elspec, const TXSpec& uspec, const SymmetricKey& symkey);
 void AddUser(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,

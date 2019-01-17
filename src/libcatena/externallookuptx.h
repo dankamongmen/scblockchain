@@ -5,6 +5,10 @@
 
 namespace Catena {
 
+enum class ExtIDTypes : uint16_t {
+  SharecareID = 0x0000, // 128-bit value in UUID form
+};
+
 class ExternalLookupTX : public Transaction {
 public:
 ExternalLookupTX() = default;
@@ -19,7 +23,7 @@ private:
 unsigned char signature[SIGLEN];
 CatenaHash signerhash;
 uint32_t signeridx;
-uint16_t lookuptype;
+ExtIDTypes lookuptype;
 size_t siglen; // length of signature, up to SIGLEN
 std::unique_ptr<unsigned char[]> payload;
 size_t keylen; // length of public key within payload
