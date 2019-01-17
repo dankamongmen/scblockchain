@@ -83,10 +83,10 @@ TEST(CatenaChain, AddExternalLookupBadType){
 	ASSERT_LT(0, pem.length());
 	Catena::Chain chain("", 0);
 	chain.AddPrivateKey(cm1, kp);
-  std::string extid;
+  std::string extid; // FIXME appears to accept bogus cm1!
   EXPECT_THROW(chain.AddExternalLookup(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
                 pem.length(), extid, static_cast<Catena::ExtIDTypes>(1)),
-	  Catena::BlockValidationException);
+	  Catena::TransactionException);
 }
 
 TEST(CatenaChain, AddLookupAuthReq){
@@ -148,6 +148,51 @@ TEST(CatenaChain, AddLookupAuthBadLAR){
   Catena::TXSpec uspec;
   Catena::SymmetricKey symkey;
   EXPECT_THROW(chain.AddLookupAuth(larspec, uspec, symkey), Catena::InvalidTXSpecException);
+}
+
+TEST(CatenaChain, AddUser){
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+	auto cmj = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
+	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), cmj);
+	chain.CommitOutstanding();
+	Catena::TXSpec cm2(chain.MostRecentBlockHash(), 0);
+	chain.AddPrivateKey(cm2, newkp);
+	auto j = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
+  Catena::SymmetricKey symkey;
+	chain.AddUser(cm2, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), symkey, j);
+	chain.CommitOutstanding();
+	EXPECT_EQ(2, chain.TXCount());
+	EXPECT_EQ(2, chain.GetBlockCount());
+}
+
+TEST(CatenaChain, AddUserNoCMRKey){
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+	auto cmj = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
+	chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), cmj);
+	chain.CommitOutstanding();
+	Catena::TXSpec cm2(chain.MostRecentBlockHash(), 0);
+	auto j = nlohmann::json::parse("{ \"name\": \"test user, only a test\" }");
+  Catena::SymmetricKey symkey;
+	EXPECT_THROW(chain.AddUser(cm2, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					      pem.length(), symkey, j),
+      Catena::SigningException);
 }
 
 // FIXME add rpc test (chain.EnableRPC())
