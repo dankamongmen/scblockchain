@@ -10,6 +10,7 @@ TEST(CatenaChain, ChainGenesisBlock){
 	EXPECT_EQ(1, chain.GetBlockCount());
 	EXPECT_EQ(1, chain.TXCount());
 	EXPECT_EQ(0, chain.OutstandingTXCount());
+  EXPECT_EQ(0, chain.RPCPort());
 }
 
 TEST(CatenaChain, ChainGenesisMock){
@@ -298,4 +299,22 @@ TEST(CatenaChain, AddUserStatusBadUSD){
   EXPECT_THROW(chain.AddUserStatus(usdspec, usj), Catena::InvalidTXSpecException);
 }
 
-// FIXME add rpc test (chain.EnableRPC())
+TEST(CatenaChain, EnableRPC){
+	Catena::Chain chain("", 0);
+  Catena::RPCServiceOptions opts;
+  opts.port = Catena::DefaultRPCPort;
+  opts.keyfile = TEST_NODEKEY;
+  opts.chainfile = TEST_X509_CHAIN;
+  chain.EnableRPC(opts);
+  EXPECT_EQ(Catena::DefaultRPCPort, chain.RPCPort());
+}
+
+TEST(CatenaChain, EnableRPCTwice){
+	Catena::Chain chain("", 0);
+  Catena::RPCServiceOptions opts;
+  opts.port = Catena::DefaultRPCPort;
+  opts.keyfile = TEST_NODEKEY;
+  opts.chainfile = TEST_X509_CHAIN;
+  chain.EnableRPC(opts);
+  EXPECT_THROW(chain.EnableRPC(opts), Catena::NetworkException);
+}
