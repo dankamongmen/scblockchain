@@ -24,7 +24,7 @@ TEST(CatenaChain, ChainGenesisMock){
 	EXPECT_GE(chain.LookupRequestCount(false), 0);
 }
 
-TEST(CatenaChain, ChainAddConsortiumMember){
+TEST(CatenaChain, AddConsortiumMember){
 	Catena::Keypair kp(ECDSAKEY);
 	Catena::TXSpec cm1(CM1_TEST_TX);
 	Catena::Keypair newkp;
@@ -49,7 +49,7 @@ TEST(CatenaChain, ChainAddConsortiumMember){
 	EXPECT_EQ(1, chain.GetBlockCount());
 }
 
-TEST(CatenaChain, ChainAddExternalLookup){
+TEST(CatenaChain, AddExternalLookup){
 	Catena::Keypair kp(ECDSAKEY);
 	Catena::TXSpec cm1(CM1_TEST_TX);
 	Catena::Keypair newkp;
@@ -74,7 +74,7 @@ TEST(CatenaChain, ChainAddExternalLookup){
 	EXPECT_EQ(1, chain.GetBlockCount());
 }
 
-TEST(CatenaChain, ChainAddExternalLookupBadType){
+TEST(CatenaChain, AddExternalLookupBadType){
 	Catena::Keypair kp(ECDSAKEY);
 	Catena::TXSpec cm1(CM1_TEST_TX);
 	Catena::Keypair newkp;
@@ -89,8 +89,30 @@ TEST(CatenaChain, ChainAddExternalLookupBadType){
 	  Catena::BlockValidationException);
 }
 
-// FIXME add tests which reject
-
-// FIXME expand to cover other Add*() functionality
+TEST(CatenaChain, AddLookupAuthReq){
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	ASSERT_LT(0, pem.length());
+	Catena::Chain chain("", 0);
+	chain.AddPrivateKey(cm1, kp);
+  std::string extid;
+  Catena::TXSpec el1;
+	nlohmann::json j = nlohmann::json::parse("{ \"reason\": \"gotta have that SCID\" }");
+	auto origsize = chain.Size();
+	EXPECT_EQ(0, chain.TXCount());
+	EXPECT_EQ(0, chain.GetBlockCount());
+	EXPECT_EQ(0, chain.OutstandingTXCount());
+  chain.AddLookupAuthReq(cm1, el1, j);
+	EXPECT_EQ(1, chain.OutstandingTXCount());
+	EXPECT_EQ(0, chain.TXCount());
+	EXPECT_EQ(origsize, chain.Size());
+	chain.CommitOutstanding();
+	EXPECT_LT(origsize, chain.Size());
+	EXPECT_EQ(1, chain.TXCount());
+	EXPECT_EQ(1, chain.GetBlockCount());
+}
 
 // FIXME add rpc test (chain.EnableRPC())
