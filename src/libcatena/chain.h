@@ -134,7 +134,6 @@ void AddPrivateKey(const KeyLookup& kl, const Keypair& kp) {
 nlohmann::json UserStatus(const TXSpec& uspec, unsigned stype) const;
 
 // Generate and sign new transactions, to be added to the ledger.
-void AddNewVersion(); // FIXME
 void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 				size_t plen, const nlohmann::json& payload);
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,

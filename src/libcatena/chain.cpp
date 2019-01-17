@@ -63,10 +63,6 @@ void Chain::FlushOutstanding(){
 	outstanding.Flush();
 }
 
-void Chain::AddNewVersion(){
-	outstanding.AddTransaction(std::make_unique<NewVersionTX>());
-}
-
 void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 				size_t plen, const nlohmann::json& payload){
 	// FIXME verify that pkey is a valid public key
