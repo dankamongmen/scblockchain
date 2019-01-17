@@ -13,7 +13,6 @@
 namespace Catena {
 
 enum class TXTypes {
-	NewVersion = 0x0000,
 	ConsortiumMember = 0x0001,
 	ExternalLookup = 0x0002,
 	User = 0x0003,

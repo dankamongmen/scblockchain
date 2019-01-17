@@ -3,7 +3,6 @@
 #include <iostream>
 #include <libcatena/externallookuptx.h>
 #include <libcatena/lookupauthreqtx.h>
-#include <libcatena/newversiontx.h>
 #include <libcatena/ustatus.h>
 #include <libcatena/usertx.h>
 #include <libcatena/utility.h>
@@ -25,9 +24,6 @@ std::unique_ptr<Transaction> Transaction::LexTX(const unsigned char* data, unsig
 	data += sizeof(txtype);
 	Transaction* tx;
 	switch(static_cast<TXTypes>(txtype)){
-	case TXTypes::NewVersion:
-		tx = new NewVersionTX(blkhash, txidx);
-		break;
 	case TXTypes::ConsortiumMember:
 		tx = new ConsortiumMemberTX(blkhash, txidx);
 		break;

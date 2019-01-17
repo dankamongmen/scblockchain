@@ -1,7 +1,6 @@
 #include <cstring>
 #include <libcatena/externallookuptx.h>
 #include <libcatena/lookupauthreqtx.h>
-#include <libcatena/newversiontx.h>
 #include <libcatena/ustatus.h>
 #include <libcatena/builtin.h>
 #include <libcatena/utility.h>
