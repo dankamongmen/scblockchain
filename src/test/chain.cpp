@@ -142,4 +142,12 @@ TEST(CatenaChain, AddLookupAuth){
 	EXPECT_EQ(3, chain.GetBlockCount());
 }
 
+TEST(CatenaChain, AddLookupAuthBadLAR){
+	Catena::Chain chain("", 0);
+  Catena::TXSpec larspec(chain.MostRecentBlockHash(), 0);
+  Catena::TXSpec uspec;
+  Catena::SymmetricKey symkey;
+  EXPECT_THROW(chain.AddLookupAuth(larspec, uspec, symkey), Catena::InvalidTXSpecException);
+}
+
 // FIXME add rpc test (chain.EnableRPC())
