@@ -1,1 +1,3 @@
 .out/catena usr/bin
+doc/catena.service lib/systemd/system
+genesisblock usr/share/catena

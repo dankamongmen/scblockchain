@@ -1,0 +1,16 @@
+[Unit]
+Description=Catena distributed ledger
+After=network.target
+
+[Service]
+Type=simple
+# FIXME add catena user in dpkg, do necessary chowning
+User=catena
+Group=catena
+# We don't use the -d daemonize flag; if we do, change Type to "forking"
+ExecStart=/usr/bin/catena -l /var/lib/catena/ledger
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
