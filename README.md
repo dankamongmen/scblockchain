@@ -35,19 +35,29 @@ If Docker images are to be built, extra packages are required:
 
 * Docker 18.06+ (docker.io)
 
+If Debian packages are to be built, extra packages are required, as is sudo
+access (to create a chroot):
+
+* pbuilder
+
 ### Docker
 
 Among other formats, Catena is distributed as a Debian-based Docker image.
 The `docker` target will make use of the `dockerbuild` target to:
 
 1. Create a Debian container with build dependencies
-2. Build catena within that container, and run unit tests
-3. Extract the catena and catenatest binaries
+2. Build a debian package within that image
+3. Extract the catena deb
 4. Create a new Debian container, and install catena directly to it.
 5. Serialize this second container to a local tarball.
 
 The resulting container can be run on any Docker node. A persistent, per-node
 volume ought be attached for the ledger and node PKI.
+
+### Debian
+
+A Debian source package (tarball and .dsc) can be created with the `debsrc`
+target. A Debian binary package can be created with the `debbin` target.
 
 ## Running the catena daemon
 

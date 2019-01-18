@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test docker dockerbuild debsrc clean
+.PHONY: all bin valgrind check test docker dockerbuild debsrc debbin clean
 .DEFAULT_GOAL:=all
 
 SRC:=src
@@ -104,6 +104,10 @@ dockerbuild: $(DOCKERBUILDFILE)
 
 debsrc:
 	dpkg-source --build .
+
+debbin: debsrc
+	@mkdir -p $(OUT)/deb
+	sudo pbuilder build --buildresult $(OUT)/deb ../*dsc
 
 clean:
 	rm -rf $(OUT) $(TAGS)
