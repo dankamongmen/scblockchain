@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test docker dockerbuild clean
+.PHONY: all bin valgrind check test docker dockerbuild debsrc clean
 .DEFAULT_GOAL:=all
 
 SRC:=src
@@ -101,6 +101,9 @@ dockerbuild: $(DOCKERBUILDFILE)
 	@mkdir -p $(DOCKEROUT)/
 	# will copy catena, catenatest
 	docker cp $(CONTAINER):catena/.out/catena* $(DOCKEROUT)
+
+debsrc:
+	dpkg-source --build .
 
 clean:
 	rm -rf $(OUT) $(TAGS)
