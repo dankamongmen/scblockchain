@@ -26,6 +26,9 @@ might or might not work.
 * GNU Readline 6.3+ (libreadline-dev)
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
 * pkg-config
+
+If source tags are to be built, extra packages are required:
+
 * exuberant-ctags
 
 If Docker images are to be built, extra packages are required:

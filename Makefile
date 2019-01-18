@@ -70,7 +70,7 @@ $(OUT)/$(SRC)/libcatena/%.o: $(SRC)/libcatena/%.cpp $(LIBCATENAINC)
 
 # Generated targets which live outside of $(OUT)
 $(TAGS): $(CPPSRC) $(CPPINC)
-	ctags -f $@ $^
+	ctags -f $@ $^ || true
 
 bin: $(BIN)
 
