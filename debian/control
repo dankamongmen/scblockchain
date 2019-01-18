@@ -11,7 +11,7 @@ Vcs-Git: git@github.com:headwayplatform/scblockchain.git
 
 Package: catena
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Description: Distributed ledger for health records
  Catena node software, necessary for running a node on the distributed
  Catena health records ledger.
