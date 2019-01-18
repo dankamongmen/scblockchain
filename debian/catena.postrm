@@ -27,6 +27,9 @@ case "$1" in
         if which deluser >/dev/null 2>&1; then
 			      deluser --quiet catena > /dev/null || true
 		    fi
+        if which delgroup >/dev/null 2>&1; then
+			      delgroup --quiet catena > /dev/null || true
+		    fi
     ;;
 
     *)

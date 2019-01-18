@@ -19,7 +19,7 @@ set -e
 
 setup_catena_user() {
     if ! getent passwd catena >/dev/null; then
-        adduser --quiet --system --no-create-home --home /var/lib/catena --shell /usr/sbin/nologin catena
+        adduser --quiet --system --group --no-create-home --home /var/lib/catena --shell /usr/sbin/nologin catena
     fi
 }
 
