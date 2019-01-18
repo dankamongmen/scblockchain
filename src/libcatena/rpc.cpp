@@ -336,7 +336,7 @@ int RPCService::Accept(int sd) {
 // when those epoll()s are on a period. FIXME kill this off, rigourize.
 void RPCService::HandleCompletedConns() {
 	const auto& conns = connqueue.get()->GetCompletedPeers();
-	for(auto& c : conns){
+	for(const auto& c : conns){
     try{
       BIO* b = c.second->get();
       if(c.first->Name() == rpcName){
@@ -348,7 +348,7 @@ void RPCService::HandleCompletedConns() {
         BIO_free_all(b);
       }
     }catch(NetworkException& e){
-      std::cerr << e.what() << std::endl;
+      std::cerr << e.what() << " connecting to " << c.first->Address() << std::endl;
     }
 	}
 }

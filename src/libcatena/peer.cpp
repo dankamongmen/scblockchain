@@ -129,7 +129,7 @@ BIO* Peer::Connect() {
 		}
 	}while( (info = info->ai_next) );
 	lasttime = time(NULL);
-	throw NetworkException("couldn't connect to " + address);
+	throw NetworkException("no one listening");
 }
 
 }
