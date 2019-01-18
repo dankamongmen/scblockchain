@@ -1,3 +1,4 @@
 .out/catena usr/bin
 doc/catena.service lib/systemd/system
+doc/hcn-ca-chain.pem usr/share/cantena
 genesisblock usr/share/catena
