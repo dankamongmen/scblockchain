@@ -30,6 +30,7 @@ case "$1" in
         if which delgroup >/dev/null 2>&1; then
 			      delgroup --quiet catena > /dev/null || true
 		    fi
+        rm -rf /var/lib/catena
     ;;
 
     *)
