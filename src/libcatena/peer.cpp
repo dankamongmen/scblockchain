@@ -117,7 +117,7 @@ BIO* Peer::Connect() {
 			lasttime = time(NULL);
 			continue;
 		}
-		std::cout << "connected " << fd << " to " << address << ":" << port << "\n";
+		std::cout << "connected " << fd << " to " << address << ":" << port << std::endl;
 		lasttime = time(NULL);
 		try{
 			BIO* bio = TLSConnect(fd); // FIXME RAII that fucker

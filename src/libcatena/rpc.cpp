@@ -118,7 +118,7 @@ bool Callback(RPCService& rpc) override {
 	char buf[BUFSIZ]; // FIXME ugh
 	auto r = SSL_read(ssl, buf, sizeof(buf));
 	if(r > 0){
-		std::cout << "read us some crap " << r << "\n";
+		std::cout << "read us some crap " << r << std::endl;
 	}else{
 		auto ra = SSL_get_error(ssl, r);
 		if(ra == SSL_ERROR_WANT_WRITE){
@@ -233,7 +233,7 @@ RPCService::RPCService(Chain& ledger, const RPCServiceOptions& opts) :
 	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
 	rpcName = X509NetworkName(x509);
 	PrepSSLCTX(clictx.get()->get(), opts.chainfile.c_str(), opts.keyfile.c_str());
-	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, tls_cert_verify);
+	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 	if(port != 0){
 	  OpenListeners();
   }else{
@@ -335,15 +335,21 @@ int RPCService::Accept(int sd) {
 // Crap that we have to go checking a locked strucutre each epoll(), especially
 // when those epoll()s are on a period. FIXME kill this off, rigourize.
 void RPCService::HandleCompletedConns() {
-	auto conns = connqueue.get()->Peers();
+	const auto& conns = connqueue.get()->GetCompletedPeers();
 	for(auto& c : conns){
-		if(c.first->Name() == rpcName){
-			BIO_free_all(c.second);
-			// FIXME update peer with zee infos
-		}else{
-			// FIXME add sd from BIO to epoll set
-			active.emplace_back(c.first);
-		}
+    try{
+      BIO* b = c.second->get();
+      if(c.first->Name() == rpcName){
+        BIO_free_all(b);
+        // FIXME update peer with zee infos
+      }else{
+        // FIXME add sd from BIO to epoll set
+        active.emplace_back(c.first);
+        BIO_free_all(b);
+      }
+    }catch(NetworkException& e){
+      std::cerr << e.what() << std::endl;
+    }
 	}
 }
 

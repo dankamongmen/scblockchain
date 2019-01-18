@@ -1,7 +1,10 @@
 #ifndef CATENA_LIBCATENA_PEER
 #define CATENA_LIBCATENA_PEER
 
+#include <list>
 #include <future>
+#include <chrono>
+#include <algorithm>
 #include <openssl/bio.h>
 #include <libcatena/tls.h>
 
@@ -28,18 +31,27 @@ bool configured;
 class PeerQueue {
 public:
 
-void AddPeer(const std::shared_ptr<Peer>& p, BIO* bio) {
+void AddPeer(const std::shared_ptr<Peer>& p, std::unique_ptr<std::future<BIO*>>&& bio) {
 	std::lock_guard<std::mutex> lock(pmutex);
-	peers.emplace_back(p, bio);
+	peers.emplace_back(p, std::move(bio));
 }
 
-std::vector<std::pair<std::shared_ptr<Peer>, BIO*>> Peers() {
+std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<BIO*>>>>
+GetCompletedPeers() {
+  std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<BIO*>>>> ret;
 	std::lock_guard<std::mutex> lock(pmutex);
-	return std::move(peers);
+  ret.splice(ret.end(),
+             peers,
+             std::remove_if(peers.begin(), peers.end(),
+                            [](auto& p) -> bool {
+                              return std::future_status::ready == p.second->wait_for(std::chrono::seconds(0));
+                            }),
+             peers.end());
+  return ret;
 }
 
 private:
-std::vector<std::pair<std::shared_ptr<Peer>, BIO*>> peers;
+std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<BIO*>>>> peers;
 std::mutex pmutex;
 };
 
@@ -62,18 +74,16 @@ std::string Address() const {
 
 BIO* Connect();
 
-static void ConnectAsync(const std::shared_ptr<Peer>& p,
-			std::shared_ptr<PeerQueue> pq) {
-	// FIXME probably should be a future that gets put on PeerQueue?
-	std::thread t([](auto p, auto pq){
-			try{
-				auto bio = p.get()->Connect();
-				pq.get()->AddPeer(p, bio);
-			}catch(...){ // FIXME at most, catch Catena exceptions
-				// FIXME smells
-			}
-			}, p, pq);
-	t.detach();
+// FIXME pq shouldn't need be shared anymore, might need share p with lambda though
+static void
+ConnectAsync(std::shared_ptr<Peer> p, std::shared_ptr<PeerQueue> pq) {
+	auto fut = std::make_unique<std::future<BIO*>>
+    (std::async(std::launch::async,
+                [](const auto p, const auto pq) -> BIO* {
+                     (void)pq;
+                     return p.get()->Connect();
+                   }, p, pq));
+  pq->AddPeer(p, std::move(fut));
 }
 
 // FIXME needs lock against Connect() for at least "lasttime" purposes
