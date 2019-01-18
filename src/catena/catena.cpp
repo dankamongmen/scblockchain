@@ -174,7 +174,12 @@ int main(int argc, char **argv){
 		}
 		if(daemonize){
 			std::cout << "Daemonizing..." << std::endl;
-			return EXIT_FAILURE; // FIXME daemonize, wait on signal
+      sigset_t sigs;
+      sigemptyset(&sigs);
+      sigaddset(&sigs, SIGTERM);
+      int sig;
+      sigwait(&sigs, &sig); // FIXME daemonize
+			return EXIT_FAILURE;
 		}else{
 			ReadlineUI rline(chain);
 			rline.InputLoop();

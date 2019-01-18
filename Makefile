@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test docker dockerbuild clean
+.PHONY: all bin valgrind check test docker dockerbuild debsrc debbin clean
 .DEFAULT_GOAL:=all
 
 SRC:=src
@@ -70,7 +70,7 @@ $(OUT)/$(SRC)/libcatena/%.o: $(SRC)/libcatena/%.cpp $(LIBCATENAINC)
 
 # Generated targets which live outside of $(OUT)
 $(TAGS): $(CPPSRC) $(CPPINC)
-	ctags -f $@ $^
+	ctags -f $@ $^ || true
 
 bin: $(BIN)
 
@@ -101,6 +101,13 @@ dockerbuild: $(DOCKERBUILDFILE)
 	@mkdir -p $(DOCKEROUT)/
 	# will copy catena, catenatest
 	docker cp $(CONTAINER):catena/.out/catena* $(DOCKEROUT)
+
+debsrc:
+	dpkg-source --build .
+
+debbin: debsrc
+	@mkdir -p $(OUT)/deb
+	sudo pbuilder build --buildresult $(OUT)/deb ../*dsc
 
 clean:
 	rm -rf $(OUT) $(TAGS)

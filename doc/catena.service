@@ -1,0 +1,14 @@
+[Unit]
+Description=Catena distributed ledger
+After=network.target
+
+[Service]
+Type=simple
+User=catena
+Group=catena
+ExecStart=/usr/bin/catena -l /var/lib/catena/ledger -d
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
