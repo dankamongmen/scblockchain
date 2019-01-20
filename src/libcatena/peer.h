@@ -67,7 +67,10 @@ Peer() = delete;
 // opposed to discovery), and should thus never be removed.
 Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx,
 		bool configured);
-virtual ~Peer() = default;
+
+virtual ~Peer() {
+  BIO_free_all(connbio);
+}
 
 int Port() const {
 	return port;
@@ -110,6 +113,10 @@ std::pair<std::string, std::string> Name() const {
 	return std::make_pair(lastIssuerCN, lastSubjectCN);
 }
 
+bool Active() const {
+  return connbio != nullptr;
+}
+
 private:
 std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;
@@ -118,6 +125,7 @@ time_t lasttime; // last time this was used, successfully or otherwise
 std::string lastSubjectCN; // subject CN from last TLS handshake
 std::string lastIssuerCN; // issuer CN from last TLS handshake
 bool configured; // were we provided during initial configuration?
+BIO* connbio;
 
 BIO* TLSConnect(int sd);
 };
