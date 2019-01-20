@@ -344,7 +344,6 @@ void RPCService::HandleCompletedConns() {
         // FIXME update peer with zee infos
       }else{
         // FIXME add sd from BIO to epoll set
-        active.emplace_back(c.first);
         BIO_free_all(b);
       }
     }catch(NetworkException& e){

@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <numeric>
 #include <stdexcept>
 #include <sys/epoll.h>
 #include <openssl/ssl.h>
@@ -57,7 +58,10 @@ std::vector<std::string> Advertisement() const {
 
 void PeerCount(int* defined, int* act, int* maxactive) {
 	*defined = peers.size();
-	*act = active.size();
+  *act = std::accumulate(peers.begin(), peers.end(), 0,
+                         [](int acc, std::shared_ptr<Peer>& p){
+                           return acc + p->Active();
+                         });
 	*maxactive = MaxActiveRPCPeers;
 }
 
@@ -78,7 +82,6 @@ private:
 int port;
 Chain& ledger;
 std::vector<std::shared_ptr<Peer>> peers;
-std::vector<std::shared_ptr<Peer>> active;
 SSLCtxRAII sslctx;
 PolledListenFD* lsd4; // IPv4 and IPv6 listening sockets
 PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
