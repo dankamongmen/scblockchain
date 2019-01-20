@@ -29,7 +29,7 @@ might or might not work.
 
 If source tags are to be built, extra packages are required:
 
-* exuberant-ctags
+* exuberant-ctags 5.9+
 
 If Docker images are to be built, extra packages are required:
 
@@ -38,7 +38,7 @@ If Docker images are to be built, extra packages are required:
 If Debian packages are to be built, extra packages are required, as is sudo
 access (to create a chroot):
 
-* pbuilder
+* pbuilder 0.230.1+
 
 ### Docker
 
