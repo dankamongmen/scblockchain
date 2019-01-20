@@ -155,6 +155,18 @@ int main(int argc, char **argv){
 		// to them, and only set those pointers when we need them.
 		std::unique_ptr<HTTPDServer> httpd;
 		std::unique_ptr<Catena::RPCService> rpcd;
+    // We start the HTTP server first, in the hope of detecting a port
+    // collision (two nodes accidentally on one machine) before spinning up a
+    // bunch of ultimately pointless P2P RPC connections.
+		if(httpd_port){
+			std::cout << "Enabling HTTP on port " << httpd_port << std::endl;
+      try{
+			  httpd = std::make_unique<HTTPDServer>(chain, httpd_port);
+      }catch(HTTPException& e){
+        std::cerr << "Couldn't serve HTTP: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+      }
+		}
 		if(rpc_port){
 			std::cout << "Enabling RPC on port " << rpc_port << std::endl;
       const Catena::RPCServiceOptions opts = {
@@ -167,10 +179,6 @@ int main(int argc, char **argv){
 			if(peer_file){
 				chain.AddPeers(peer_file);
 			}
-		}
-		if(httpd_port){
-			std::cout << "Enabling HTTP on port " << httpd_port << std::endl;
-			httpd = std::make_unique<HTTPDServer>(chain, httpd_port);
 		}
 		if(daemonize){
 			std::cout << "Daemonizing..." << std::endl;
