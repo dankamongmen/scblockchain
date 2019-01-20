@@ -30,7 +30,6 @@ bool configured;
 // initiated the ConnectAsync might have disappeared while we were connecting.
 class PeerQueue {
 public:
-
 void AddPeer(const std::shared_ptr<Peer>& p, std::unique_ptr<std::future<BIO*>> bio) {
 	std::lock_guard<std::mutex> lock(pmutex);
 	peers.emplace_back(p, std::move(bio));
@@ -111,16 +110,6 @@ std::pair<std::string, std::string> Name() const {
 	return std::make_pair(lastIssuerCN, lastSubjectCN);
 }
 
-bool Active() const {
-  return conn != nullptr;
-}
-
-void Disconnect() {
-  BIO_free_all(conn);
-  conn = nullptr;
-  lasttime = time(nullptr);
-}
-
 private:
 std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;
@@ -129,7 +118,6 @@ time_t lasttime; // last time this was used, successfully or otherwise
 std::string lastSubjectCN; // subject CN from last TLS handshake
 std::string lastIssuerCN; // issuer CN from last TLS handshake
 bool configured; // were we provided during initial configuration?
-BIO* conn;
 
 BIO* TLSConnect(int sd);
 };

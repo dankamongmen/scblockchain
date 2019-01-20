@@ -15,8 +15,7 @@ Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII>
 		bool configured) :
   sslctx(sctx),
   lasttime(time(nullptr)),
-  configured(configured),
-  conn(nullptr) {
+  configured(configured) {
 	// If there's a colon, the remainder must be a valid port. If there is
 	// no colon, assume the entirety to be the address.
 	auto colon = addr.find(':');
@@ -122,7 +121,6 @@ BIO* Peer::Connect() {
 		try{
 			BIO* bio = TLSConnect(fd); // FIXME RAII that fucker
 			FDSetNonblocking(fd);
-      conn = bio;
 			return bio;
 		}catch(...){
 			close(fd);

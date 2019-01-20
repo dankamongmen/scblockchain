@@ -70,10 +70,11 @@ PolledConnFD(BIO* bio, std::shared_ptr<Peer> p) :
 }
 
 virtual ~PolledConnFD() {
-  peer->Disconnect();
+  BIO_free_all(bio);
 }
 
 bool Callback(RPCService& rpc) override {
+  (void)rpc;
 	char buf[BUFSIZ]; // FIXME ugh
 	auto r = BIO_read(bio, buf, sizeof(buf));
 	if(r > 0){
@@ -85,10 +86,8 @@ bool Callback(RPCService& rpc) override {
 		if(ra == SSL_ERROR_WANT_WRITE){
 			// FIXME else check for SSL_ERROR_WANT_WRITE
 		}else if(ra != SSL_ERROR_WANT_READ){
-			std::cout << "lost ssl connection with error " << ra << std::endl;
-      int fd = BIO_get_fd(bio, NULL);
-      rpc.DisconnectConn(fd); // we die here, as we are removed from active
-      return false;
+			std::cerr << "lost ssl connection with error " << ra << std::endl;
+      return true;
 		}
 	}
 	return false;
@@ -164,7 +163,7 @@ bool Callback(RPCService& rpc) override {
 		if(ra == SSL_ERROR_WANT_WRITE){
 			// FIXME else check for SSL_ERROR_WANT_WRITE
 		}else if(ra != SSL_ERROR_WANT_READ){
-			std::cout << "lost ssl connection with error " << ra << std::endl;
+			std::cerr << "lost ssl connection with error " << ra << std::endl;
 			return true;
 		}
 	}
@@ -176,68 +175,51 @@ SSL* ssl;
 bool accepting;
 };
 
+// Relies on constructor to purge any added elements if constructor is thrown
 void RPCService::OpenListeners() {
-	lsd4 = new PolledListenFD(AF_INET);
-	try{
-		struct sockaddr_in sin;
-		memset(&sin, 0, sizeof(sin));
-		sin.sin_family = AF_INET;
-		sin.sin_port = htons(port);
-		sin.sin_addr.s_addr = INADDR_ANY;
-		if(bind(lsd4->FD(), (const struct sockaddr*)&sin, sizeof(sin))){
-			throw NetworkException("couldn't bind IPv4 listener");
-		}
-		lsd6 = new PolledListenFD(AF_INET6);
-		try{
-			struct sockaddr_in6 sin6;
-			memset(&sin6, 0, sizeof(sin6));
-			sin6.sin6_family = AF_INET6;
-			sin6.sin6_port = htons(port);
-			memcpy(&sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-			int v6only = 1;
-			if(setsockopt(lsd6->FD(), IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only))){
-				throw NetworkException("no pure IPv6 listeners");
-			}
-			if(bind(lsd6->FD(), (const struct sockaddr*)&sin6, sizeof(sin6))){
-				throw NetworkException("couldn't bind IPv6 listener");
-			}
-			if(listen(lsd4->FD(), SOMAXCONN) || listen(lsd6->FD(), SOMAXCONN)){
-				throw NetworkException("couldn't set up listener queues");
-			}
-		}catch(...){
-			delete lsd6;
-			throw;
-		}
-	}catch(...){
-		delete lsd4;
-		throw;
-	}
-}
-
-int RPCService::EpollListeners() {
-	int ret = epoll_create1(EPOLL_CLOEXEC);
-	if(ret < 0){
-		throw NetworkException("couldn't get an epoll");
-	}
-  if(lsd4 && lsd6){
-    try{
-      struct epoll_event ev = {
-        .events = EPOLLIN,
-        .data = { .ptr = lsd4, },
-      };
-      if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd4->FD(), &ev)){
-        throw NetworkException("couldn't epoll on sd4");
-      }
-      ev.data.ptr = lsd6;
-      if(epoll_ctl(ret, EPOLL_CTL_ADD, lsd6->FD(), &ev)){
-        throw NetworkException("couldn't epoll on sd6");
-      }
-    }catch(...){
-      close(ret);
-      throw;
-    }
+	auto lsd = std::make_unique<PolledListenFD>(AF_INET);
+  int fd = lsd->FD();
+  struct sockaddr_in sin;
+  memset(&sin, 0, sizeof(sin));
+  sin.sin_family = AF_INET;
+  sin.sin_port = htons(port);
+  sin.sin_addr.s_addr = INADDR_ANY;
+  if(bind(fd, (const struct sockaddr*)&sin, sizeof(sin))){
+    throw NetworkException("couldn't bind IPv4 listener");
   }
-	return ret;
+  if(listen(fd, SOMAXCONN)){
+    throw NetworkException("couldn't set up listener queues");
+  }
+  struct epoll_event ev = {
+    .events = EPOLLIN,
+    .data = { .ptr = lsd.get(), },
+  };
+  if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
+    throw NetworkException("couldn't epoll on sd4");
+  }
+  epolls.emplace(fd, std::move(lsd));
+  lsd = std::make_unique<PolledListenFD>(AF_INET6);
+  fd = lsd->FD();
+  struct sockaddr_in6 sin6;
+  memset(&sin6, 0, sizeof(sin6));
+  sin6.sin6_family = AF_INET6;
+  sin6.sin6_port = htons(port);
+  memcpy(&sin6.sin6_addr, &in6addr_any, sizeof(in6addr_any));
+  int v6only = 1;
+  if(setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only))){
+    throw NetworkException("no pure IPv6 listeners");
+  }
+  if(bind(fd, (const struct sockaddr*)&sin6, sizeof(sin6))){
+    throw NetworkException("couldn't bind IPv6 listener");
+  }
+  if(listen(fd, SOMAXCONN)){
+    throw NetworkException("couldn't set up listener queues");
+  }
+  ev.data.ptr = lsd.get();
+  if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
+    throw NetworkException("couldn't epoll on sd6");
+  }
+  epolls.emplace(fd, std::move(lsd));
 }
 
 void RPCService::PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile) {
@@ -274,23 +256,17 @@ RPCService::RPCService(Chain& ledger, const RPCServiceOptions& opts) :
 	rpcName = X509NetworkName(x509);
 	PrepSSLCTX(clictx.get()->get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-	if(port != 0){
-	  OpenListeners();
-  }else{
-    lsd4 = nullptr;
-    lsd6 = nullptr;
-  }
+	epollfd = epoll_create1(EPOLL_CLOEXEC);
+	if(epollfd < 0){
+		throw NetworkException("couldn't get an epoll");
+	}
 	try{
-		epollfd = EpollListeners();
-		try{
-			epoller = std::thread(&RPCService::Epoller, this);
-		}catch(...){
-			close(epollfd);
-			throw;
-		}
+    if(port != 0){
+      OpenListeners();
+    }
+	  epoller = std::thread(&RPCService::Epoller, this);
 	}catch(...){
-		delete lsd4;
-		delete lsd6;
+	  close(epollfd);
 		throw;
 	}
 }
@@ -302,8 +278,6 @@ RPCService::~RPCService() {
 	if(close(epollfd)){
 		std::cerr << "warning: error closing epoll fd\n";
 	}
-	delete lsd4;
-	delete lsd6;
 }
 
 // FIXME need arrange this all as non-blocking
@@ -312,8 +286,9 @@ int RPCService::Accept(int sd) {
 	socklen_t slen = sizeof(ss);
 	int ret = accept4(sd, &ss, &slen, SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if(ret < 0){
-		throw NetworkException("error accept()ing socket");
+		throw NetworkException(std::string("error accept()ing socket: ") + strerror(errno));
 	}
+  std::unique_ptr<PolledTLSFD> sfd;
 	try{
 		char paddr[INET6_ADDRSTRLEN];
 		char pport[6];
@@ -322,54 +297,48 @@ int RPCService::Accept(int sd) {
 			throw NetworkException("error naming socket");
 		}
 		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
-		// FIXME don't want SSLRAII, as we hand this off, but also don't
-		// want to leak SSL* on exceptions...also, we need this cleaned
-		// up on RPCService destroy even if we never see another event...
-		auto sfd = new PolledTLSFD(ret, sslctx.NewSSL());
-		// FIXME rewrite all the following as a call to sfd->Callback
-		auto ra = SSL_accept(sfd->HackSSL());
-		if(1 != ra){
-			auto oerr = SSL_get_error(sfd->HackSSL(), ra);
-			if(oerr == SSL_ERROR_WANT_READ){
-				// FIXME this isn't picking up a remote shutdown
-				struct epoll_event ev = {
-					.events = EPOLLIN | EPOLLRDHUP,
-					.data = { .ptr = sfd, },
-				};
-				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-					delete sfd;
-					throw NetworkException("couldn't epoll-r on new sd");
-				}
-			}else if(oerr == SSL_ERROR_WANT_WRITE){
-				struct epoll_event ev = {
-					.events = EPOLLOUT | EPOLLRDHUP,
-					.data = { .ptr = sfd, },
-				};
-				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-					delete sfd;
-					throw NetworkException("couldn't epoll-w on new sd");
-				}
-			}else{
-				delete sfd;
-				throw NetworkException("error accepting TLS");
-			}
-		}else{
-			// FIXME this isn't picking up a remote shutdown
-			// FIXME will be seen as accept()ing socket
-			struct epoll_event ev = {
-				.events = EPOLLIN | EPOLLRDHUP,
-				.data = { .ptr = sfd, },
-			};
-			if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-				delete sfd;
-				throw NetworkException("couldn't epoll-r on new sd");
-			}
-		}
-		return ret;
+		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL());
 	}catch(...){
 		close(ret);
 		throw;
 	}
+  // FIXME rewrite all the following as a call to sfd->Callback
+  auto ra = SSL_accept(sfd->HackSSL());
+  if(1 != ra){
+    auto oerr = SSL_get_error(sfd->HackSSL(), ra);
+    if(oerr == SSL_ERROR_WANT_READ){
+      // FIXME this isn't picking up a remote shutdown
+      struct epoll_event ev = {
+        .events = EPOLLIN | EPOLLRDHUP,
+        .data = { .ptr = sfd.get(), },
+      };
+      if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+        throw NetworkException("couldn't epoll-r on new sd");
+      }
+    }else if(oerr == SSL_ERROR_WANT_WRITE){
+      struct epoll_event ev = {
+        .events = EPOLLOUT | EPOLLRDHUP,
+        .data = { .ptr = sfd.get(), },
+      };
+      if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+        throw NetworkException("couldn't epoll-w on new sd");
+      }
+    }else{
+      throw NetworkException("error accepting TLS");
+    }
+  }else{
+    // FIXME this isn't picking up a remote shutdown
+    // FIXME will be seen as accept()ing socket
+    struct epoll_event ev = {
+      .events = EPOLLIN | EPOLLRDHUP,
+      .data = { .ptr = sfd.get(), },
+    };
+    if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+      throw NetworkException("couldn't epoll-r on new sd");
+    }
+  }
+  epolls.emplace(ret, std::move(sfd));
+  return ret;
 }
 
 // Crap that we have to go checking a locked strucutre each epoll(), especially
@@ -378,19 +347,20 @@ void RPCService::HandleCompletedConns() {
 	const auto& conns = connqueue.get()->GetCompletedPeers();
 	for(const auto& c : conns){
     try{
+      BIO* b = c.second->get();
       if(c.first->Name() == rpcName){ // connected to ourselves
-        c.first->Disconnect();
+        BIO_free_all(b);
       }else{
-        BIO* b = c.second->get();
-        BIO_set_close(b, BIO_NOCLOSE); // we're taking ownership of the fd
+        // FIXME isn't the Peer object also going to BIO_free_all() the BIO,
+        // thus closing the fd? zero out upon AsyncConnect done?
         int fd = BIO_get_fd(b, NULL); // FIXME can fail
-        auto mapins = active.emplace(fd, std::make_unique<PolledConnFD>(b, c.first));
+        auto mapins = epolls.emplace(fd, std::make_unique<PolledConnFD>(b, c.first));
         struct epoll_event ev = {
           .events = EPOLLIN | EPOLLRDHUP,
           .data = { .ptr = (*mapins.first).second.get(), },
         };
         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
-          active.erase(mapins.first);
+          epolls.erase(mapins.first);
           throw NetworkException("couldn't epoll-r on new sd");
         }
       }
@@ -416,10 +386,11 @@ void RPCService::Epoller() {
 			PolledFD* pfd = static_cast<PolledFD*>(ev.data.ptr);
 			try{
 				if(pfd->Callback(*this)){
-					if(epoll_ctl(epollfd, EPOLL_CTL_DEL, pfd->FD(), NULL)){
-						std::cerr << "error removing epoll on " << pfd->FD() << std::endl;
+          int fd = pfd->FD();
+					if(epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL)){
+						std::cerr << "error removing epoll on " << fd << std::endl;
 					}
-					delete pfd;
+          epolls.erase(fd);
 				}
 			}catch(NetworkException& e){
 				std::cerr << "error handling epoll result: " << e.what() << std::endl;
@@ -464,10 +435,6 @@ void RPCService::AddPeers(const std::string& peerfile) {
 
 int RPCService::EpollMod(int fd, struct epoll_event& ev) {
 	return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev);
-}
-
-void RPCService::DisconnectConn(int fd) {
-  active.erase(fd);
 }
 
 }

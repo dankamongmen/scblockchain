@@ -60,10 +60,7 @@ std::vector<std::string> Advertisement() const {
 
 void PeerCount(int* defined, int* act, int* maxactive) {
 	*defined = peers.size();
-  *act = std::accumulate(peers.begin(), peers.end(), 0,
-                         [](int acc, std::shared_ptr<Peer>& p){
-                           return acc + p->Active();
-                         });
+  *act = epolls.size() - 2; // FIXME broken for non-listening setups; walk epolls
 	*maxactive = MaxActiveRPCPeers;
 }
 
@@ -88,10 +85,8 @@ int port;
 Chain& ledger;
 std::vector<std::shared_ptr<Peer>> peers;
 // active connection state, keyed by file descriptor
-std::unordered_map<int, std::unique_ptr<PolledFD>> active;
+std::unordered_map<int, std::unique_ptr<PolledFD>> epolls;
 SSLCtxRAII sslctx;
-PolledListenFD* lsd4; // IPv4 and IPv6 listening sockets
-PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
 int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
@@ -103,7 +98,6 @@ std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
 
 void Epoller();
-int EpollListeners();
 void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 void HandleCompletedConns();
