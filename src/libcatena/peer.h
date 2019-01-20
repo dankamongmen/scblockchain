@@ -117,6 +117,11 @@ bool Active() const {
   return connbio != nullptr;
 }
 
+void Disconnect() {
+  BIO_free_all(connbio);
+  connbio = nullptr;
+}
+
 private:
 std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;

@@ -338,13 +338,12 @@ void RPCService::HandleCompletedConns() {
 	const auto& conns = connqueue.get()->GetCompletedPeers();
 	for(const auto& c : conns){
     try{
-      BIO* b = c.second->get();
+      // FIXME BIO* b = c.second->get();
       if(c.first->Name() == rpcName){
-        BIO_free_all(b);
-        // FIXME update peer with zee infos
+        c.first->Disconnect(); // FIXME update peer with zee infos
       }else{
         // FIXME add sd from BIO to epoll set
-        BIO_free_all(b);
+        c.first->Disconnect();
       }
     }catch(NetworkException& e){
       std::cerr << e.what() << " connecting to " << c.first->Address() << std::endl;
