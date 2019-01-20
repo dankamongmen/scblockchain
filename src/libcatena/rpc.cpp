@@ -3,13 +3,12 @@
 #include <sstream>
 #include <fstream>
 #include <unistd.h>
+#include <iostream>
 #include <sys/epoll.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <libcatena/utility.h>
 #include <libcatena/rpc.h>
-
-#include <iostream>
 
 namespace Catena {
 
@@ -58,6 +57,48 @@ bool Callback(RPCService& rpc) override {
 }
 };
 
+// A TLS-wrapped, established connection we originated to a Peer
+class PolledConnFD : public PolledFD {
+public:
+PolledConnFD(BIO* bio, std::shared_ptr<Peer> p) :
+  PolledFD(BIO_get_fd(bio, NULL)),
+  bio(bio),
+  peer(p) {
+	if(bio == nullptr){
+		throw NetworkException("tried to poll on null bio");
+	}
+}
+
+virtual ~PolledConnFD() {
+  peer->Disconnect();
+}
+
+bool Callback(RPCService& rpc) override {
+	char buf[BUFSIZ]; // FIXME ugh
+	auto r = BIO_read(bio, buf, sizeof(buf));
+	if(r > 0){
+		std::cout << "read us some crap " << r << std::endl;
+	}else{
+    SSL* s;
+    BIO_get_ssl(bio, &s);
+		auto ra = SSL_get_error(s, r);
+		if(ra == SSL_ERROR_WANT_WRITE){
+			// FIXME else check for SSL_ERROR_WANT_WRITE
+		}else if(ra != SSL_ERROR_WANT_READ){
+			std::cout << "lost ssl connection with error " << ra << std::endl;
+      int fd = BIO_get_fd(bio, NULL);
+      rpc.DisconnectConn(fd); // we die here, as we are removed from active
+      return false;
+		}
+	}
+	return false;
+}
+
+private:
+BIO* bio;
+std::shared_ptr<Peer> peer;
+};
+
 class PolledTLSFD : public PolledFD {
 public:
 PolledTLSFD(int sd, SSL* ssl) :
@@ -70,7 +111,7 @@ PolledTLSFD(int sd, SSL* ssl) :
 	SSL_set_fd(ssl, sd); // FIXME can fail
 }
 
-~PolledTLSFD() {
+virtual ~PolledTLSFD() {
 	SSL_free(ssl);
 }
 
@@ -79,7 +120,6 @@ SSL* HackSSL() const {
 	return ssl;
 }
 
-// FIXME it isn't always an accept! could be established...
 bool Callback(RPCService& rpc) override {
 	if(accepting){
 		auto ra = SSL_accept(ssl);
@@ -338,12 +378,21 @@ void RPCService::HandleCompletedConns() {
 	const auto& conns = connqueue.get()->GetCompletedPeers();
 	for(const auto& c : conns){
     try{
-      // FIXME BIO* b = c.second->get();
-      if(c.first->Name() == rpcName){
-        c.first->Disconnect(); // FIXME update peer with zee infos
-      }else{
-        // FIXME add sd from BIO to epoll set
+      if(c.first->Name() == rpcName){ // connected to ourselves
         c.first->Disconnect();
+      }else{
+        BIO* b = c.second->get();
+        BIO_set_close(b, BIO_NOCLOSE); // we're taking ownership of the fd
+        int fd = BIO_get_fd(b, NULL); // FIXME can fail
+        auto mapins = active.emplace(fd, std::make_unique<PolledConnFD>(b, c.first));
+        struct epoll_event ev = {
+          .events = EPOLLIN | EPOLLRDHUP,
+          .data = { .ptr = (*mapins.first).second.get(), },
+        };
+        if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
+          active.erase(mapins.first);
+          throw NetworkException("couldn't epoll-r on new sd");
+        }
       }
     }catch(NetworkException& e){
       std::cerr << e.what() << " connecting to " << c.first->Address() << std::endl;
@@ -415,6 +464,10 @@ void RPCService::AddPeers(const std::string& peerfile) {
 
 int RPCService::EpollMod(int fd, struct epoll_event& ev) {
 	return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev);
+}
+
+void RPCService::DisconnectConn(int fd) {
+  active.erase(fd);
 }
 
 }

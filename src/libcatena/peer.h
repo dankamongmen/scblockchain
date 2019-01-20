@@ -25,9 +25,9 @@ std::string issuer;
 bool configured;
 };
 
-// Necessary state to accept and begin using newly-connected Peers. Received
-// under a shared_ptr, since the RPCService that initiated the ConnectAsync
-// might have disappeared while we were connecting.
+// Necessary state to transfer newly-connected Peers from their AsyncConnect
+// threads to RPCService. Received under a shared_ptr, since the RPCService that
+// initiated the ConnectAsync might have disappeared while we were connecting.
 class PeerQueue {
 public:
 
@@ -68,9 +68,7 @@ Peer() = delete;
 Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx,
 		bool configured);
 
-virtual ~Peer() {
-  BIO_free_all(connbio);
-}
+virtual ~Peer() = default;
 
 int Port() const {
 	return port;
@@ -114,12 +112,13 @@ std::pair<std::string, std::string> Name() const {
 }
 
 bool Active() const {
-  return connbio != nullptr;
+  return conn != nullptr;
 }
 
 void Disconnect() {
-  BIO_free_all(connbio);
-  connbio = nullptr;
+  BIO_free_all(conn);
+  conn = nullptr;
+  lasttime = time(nullptr);
 }
 
 private:
@@ -130,7 +129,7 @@ time_t lasttime; // last time this was used, successfully or otherwise
 std::string lastSubjectCN; // subject CN from last TLS handshake
 std::string lastIssuerCN; // issuer CN from last TLS handshake
 bool configured; // were we provided during initial configuration?
-BIO* connbio;
+BIO* conn;
 
 BIO* TLSConnect(int sd);
 };

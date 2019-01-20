@@ -10,6 +10,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <sys/epoll.h>
+#include <unordered_map>
 #include <openssl/ssl.h>
 #include <libcatena/peer.h>
 #include <libcatena/tls.h>
@@ -20,6 +21,7 @@ constexpr int MaxActiveRPCPeers = 8;
 constexpr int DefaultRPCPort = 40404;
 
 class Chain;
+class PolledFD;
 class PolledListenFD;
 
 struct RPCServiceOptions {
@@ -78,10 +80,15 @@ int Accept(int sd);
 // Should only be called from within an epoll loop callback
 int EpollMod(int sd, struct epoll_event& ev);
 
+// Kill off the active connection keyed by this file descriptor
+void DisconnectConn(int fd);
+
 private:
 int port;
 Chain& ledger;
 std::vector<std::shared_ptr<Peer>> peers;
+// active connection state, keyed by file descriptor
+std::unordered_map<int, std::unique_ptr<PolledFD>> active;
 SSLCtxRAII sslctx;
 PolledListenFD* lsd4; // IPv4 and IPv6 listening sockets
 PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
