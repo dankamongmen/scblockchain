@@ -8,6 +8,7 @@ User=catena
 Group=catena
 ExecStart=/usr/bin/catena -l /var/lib/catena/ledger -d
 Restart=on-failure
+ProtectSystem=full
 NoNewPrivileges=yes
 
 [Install]
