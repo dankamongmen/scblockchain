@@ -14,8 +14,9 @@ namespace Catena {
 Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx,
 		bool configured) :
   sslctx(sctx),
-  lasttime(time(NULL)),
-  configured(configured) {
+  lasttime(-1), // trigger a connect immediately
+  configured(configured),
+  connected(false) {
 	// If there's a colon, the remainder must be a valid port. If there is
 	// no colon, assume the entirety to be the address.
 	auto colon = addr.find(':');
@@ -34,8 +35,7 @@ Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII>
 		if(!isdigit(addr[colon + 1])){
 			throw ConvertInputException("bad port: " + addr);
 		}
-		port = StrToLong(addr.substr(colon + 1, addr.length() - colon),
-					0, 65535);
+		port = StrToLong(addr.substr(colon + 1, addr.length() - colon), 0, 65535);
 	}
 	// getaddrinfo() will happily process a name with trailing whitespace
 	// (and even crap after said whitespace); purge
@@ -92,12 +92,12 @@ BIO* Peer::TLSConnect(int sd) {
 }
 
 BIO* Peer::Connect() {
-	lasttime = time(NULL);
+	lasttime = time(nullptr);
 	struct addrinfo hints{};
 	hints.ai_flags = AI_NUMERICHOST;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	AddrInfo ai(address.c_str(), NULL, &hints); // blocking call, can throw
+	AddrInfo ai(address.c_str(), nullptr, &hints); // blocking call, can throw
 	const struct addrinfo* info = ai.AddrList();
 	do{
 		if(info->ai_family == AF_INET){
@@ -117,11 +117,12 @@ BIO* Peer::Connect() {
 			lasttime = time(NULL);
 			continue;
 		}
-		std::cout << "connected " << fd << " to " << address << ":" << port << "\n";
+		std::cout << "connected " << fd << " to " << address << ":" << port << std::endl;
 		lasttime = time(NULL);
 		try{
 			BIO* bio = TLSConnect(fd); // FIXME RAII that fucker
 			FDSetNonblocking(fd);
+      MarkConnected();
 			return bio;
 		}catch(...){
 			close(fd);
@@ -129,7 +130,7 @@ BIO* Peer::Connect() {
 		}
 	}while( (info = info->ai_next) );
 	lasttime = time(NULL);
-	throw NetworkException("couldn't connect to " + address);
+	throw NetworkException("no one listening");
 }
 
 }

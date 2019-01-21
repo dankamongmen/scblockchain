@@ -7,8 +7,10 @@
 
 #include <string>
 #include <vector>
+#include <numeric>
 #include <stdexcept>
 #include <sys/epoll.h>
+#include <unordered_map>
 #include <openssl/ssl.h>
 #include <libcatena/peer.h>
 #include <libcatena/tls.h>
@@ -17,8 +19,10 @@ namespace Catena {
 
 constexpr int MaxActiveRPCPeers = 8;
 constexpr int DefaultRPCPort = 40404;
+constexpr int RetryConnSeconds = 300;
 
 class Chain;
+class PolledFD;
 class PolledListenFD;
 
 struct RPCServiceOptions {
@@ -57,7 +61,7 @@ std::vector<std::string> Advertisement() const {
 
 void PeerCount(int* defined, int* act, int* maxactive) {
 	*defined = peers.size();
-	*act = active.size();
+  *act = epolls.size() - 2; // FIXME broken for non-listening setups; walk epolls
 	*maxactive = MaxActiveRPCPeers;
 }
 
@@ -74,14 +78,16 @@ int Accept(int sd);
 // Should only be called from within an epoll loop callback
 int EpollMod(int sd, struct epoll_event& ev);
 
+// Kill off the active connection keyed by this file descriptor
+void DisconnectConn(int fd);
+
 private:
 int port;
 Chain& ledger;
 std::vector<std::shared_ptr<Peer>> peers;
-std::vector<std::shared_ptr<Peer>> active;
+// active connection state, keyed by file descriptor
+std::unordered_map<int, std::unique_ptr<PolledFD>> epolls;
 SSLCtxRAII sslctx;
-PolledListenFD* lsd4; // IPv4 and IPv6 listening sockets
-PolledListenFD* lsd6; // don't use RAII since they're registered with epoll
 int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
@@ -91,12 +97,13 @@ std::string subjectCN;
 std::shared_ptr<PeerQueue> connqueue;
 std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
+std::mutex lock;
 
-void Epoller();
-int EpollListeners();
+void Epoller(); // launched as epoller thread, joined in destructor
 void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 void HandleCompletedConns();
+void LaunchNewConns();
 };
 
 }
