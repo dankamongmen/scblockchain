@@ -74,7 +74,7 @@ std::vector<PeerInfo> Peers() const {
 }
 
 // Callback for listen()ing sockets. Initiates SSL_accept().
-int Accept(int sd);
+void Accept(int sd);
 // Should only be called from within an epoll loop callback
 int EpollMod(int sd, struct epoll_event& ev);
 

@@ -283,7 +283,8 @@ RPCService::~RPCService() {
 }
 
 // FIXME need arrange this all as non-blocking
-int RPCService::Accept(int sd) {
+// FIXME shouldn't this just be part of PolledListenFD?
+void RPCService::Accept(int sd) {
 	struct sockaddr ss;
 	socklen_t slen = sizeof(ss);
 	int ret = accept4(sd, &ss, &slen, SOCK_NONBLOCK | SOCK_CLOEXEC);
@@ -304,43 +305,27 @@ int RPCService::Accept(int sd) {
 		close(ret);
 		throw;
 	}
-  // FIXME rewrite all the following as a call to sfd->Callback
-  auto ra = SSL_accept(sfd->HackSSL());
-  if(1 != ra){
-    auto oerr = SSL_get_error(sfd->HackSSL(), ra);
-    if(oerr == SSL_ERROR_WANT_READ){
-      // FIXME this isn't picking up a remote shutdown
-      struct epoll_event ev = {
-        .events = EPOLLIN | EPOLLRDHUP,
-        .data = { .ptr = sfd.get(), },
-      };
-      if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-        throw NetworkException("couldn't epoll-r on new sd");
+  // from here on, ret is associated with sfd, and will be closed on exit
+  struct epoll_event ev = {
+    .events = EPOLLIN | EPOLLRDHUP,
+    .data = { .ptr = sfd.get(), },
+  };
+  if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
+    throw NetworkException("couldn't epoll-r on new sd");
+  }
+  try{
+    if(sfd->Callback(*this)){
+      if(epoll_ctl(epollfd, EPOLL_CTL_DEL, ret, NULL)){
+        std::cerr << "error removing epoll on " << ret << std::endl;
       }
-    }else if(oerr == SSL_ERROR_WANT_WRITE){
-      struct epoll_event ev = {
-        .events = EPOLLOUT | EPOLLRDHUP,
-        .data = { .ptr = sfd.get(), },
-      };
-      if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-        throw NetworkException("couldn't epoll-w on new sd");
-      }
-    }else{
-      throw NetworkException("error accepting TLS");
     }
-  }else{
-    // FIXME this isn't picking up a remote shutdown
-    // FIXME will be seen as accept()ing socket
-    struct epoll_event ev = {
-      .events = EPOLLIN | EPOLLRDHUP,
-      .data = { .ptr = sfd.get(), },
-    };
-    if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-      throw NetworkException("couldn't epoll-r on new sd");
+  }catch(...){
+    if(epoll_ctl(epollfd, EPOLL_CTL_DEL, ret, NULL)){
+      std::cerr << "error removing epoll on " << ret << std::endl;
     }
+    throw;
   }
   epolls.emplace(ret, std::move(sfd));
-  return ret;
 }
 
 // Crap that we have to go checking a locked strucutre each epoll(), especially
