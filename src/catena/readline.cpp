@@ -132,11 +132,11 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		std::cout << "rpc port: " << port << "\n";
 		auto rname = chain.RPCName();
 		std::cout << "rpc name: " << rname.first << " → " << rname.second << "\n";
-		int peersDefined, peersActive, peersMax;
-		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
+		int peersDefined, connsActive, connsMax;
+		chain.PeerCount(&peersDefined, &connsActive, &connsMax);
 		std::cout << "configured peers: " << peersDefined << "\n";
-		std::cout << "active peers: " << peersActive << "\n";
-		std::cout << "max active peers: " << peersMax << "\n";
+		std::cout << "active conns: " << connsActive << "\n";
+		std::cout << "max active conns: " << connsMax << "\n";
 	}else{
 		std::cout << "rpc port: not configured\n";
 		std::cout << "rpc name: n/a\n";
@@ -498,7 +498,11 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 				std::cout << " (unused) ";
 			}else{
 				int since = difftime(now, p.lasttime);
-				std::cout << " (last used " << since << "s ago) ";
+        if(p.connected){
+				  std::cout << " (connected for " << since << "s) ";
+        }else{
+				  std::cout << " (not connected for " << since << "s) ";
+        }
 			}
 			std::cout << "\n";
 		}

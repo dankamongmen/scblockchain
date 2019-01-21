@@ -24,6 +24,12 @@ constexpr int RetryConnSeconds = 300;
 class Chain;
 class PolledFD;
 
+// For returning (copied) details about connections beyond libcatena
+struct ConnInfo {
+std::string address;
+int port;
+};
+
 struct RPCServiceOptions {
   int port; // port on which to listen, may be 0 for no listening service
   std::string chainfile; // chain of PEM-encoded certs, from node to root CA
@@ -58,9 +64,12 @@ std::vector<std::string> Advertisement() const {
   return advertised;
 }
 
-void PeerCount(int* defined, int* act, int* maxactive) {
+int ActiveConnCount() const;
+
+void PeerCount(int* defined, int* act, int* maxactive) const {
+  std::lock_guard<std::mutex> guard(lock);
 	*defined = peers.size();
-  *act = epolls.size() - 2; // FIXME broken for non-listening setups; walk epolls
+  *act = ActiveConnCount();
 	*maxactive = MaxActiveRPCPeers;
 }
 
@@ -93,7 +102,7 @@ std::string subjectCN;
 std::shared_ptr<PeerQueue> connqueue;
 std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
-std::mutex lock;
+mutable std::mutex lock;
 
 void Epoller(); // launched as epoller thread, joined in destructor
 void OpenListeners();

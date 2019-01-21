@@ -26,6 +26,8 @@ PolledFD(int sd) :
 // If Callback() returns true, the PolledFD will be deleted in the epoll loop.
 virtual bool Callback(RPCService& rpc) = 0;
 
+virtual bool IsConnection() const = 0;
+
 virtual ~PolledFD() {
 	if(close(sd)){
 		std::cerr << "error closing epoll()ed sd " << sd << std::endl;
@@ -76,10 +78,7 @@ virtual ~PolledTLSFD() {
   }
 }
 
-// FIXME get rid of this, have Accept() use Callback()
-SSL* HackSSL() const {
-	return ssl;
-}
+bool IsConnection() const { return true; }
 
 bool Callback(RPCService& rpc) override {
 	if(accepting){
@@ -148,6 +147,8 @@ PolledListenFD(int family, const SSLCtxRAII& sslctx) :
 		throw NetworkException("couldn't set SO_REUSEADDR");
 	}
 }
+
+bool IsConnection() const { return false; }
 
 bool Callback(RPCService& rpc) override {
 	Accept(rpc);
@@ -426,6 +427,16 @@ void RPCService::EpollDel(int fd) {
     std::cerr << "error removing epoll on " << fd << std::endl;
   }
   epolls.erase(fd);
+}
+
+int RPCService::ActiveConnCount() const {
+  int total = 0;
+  for(const auto& element : epolls){ // FIXME rewrite as std::accumulate?
+    if(element.second->IsConnection()){
+      ++total;
+    }
+  }
+  return total;
 }
 
 }
