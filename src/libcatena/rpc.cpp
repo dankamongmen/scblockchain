@@ -377,6 +377,7 @@ void RPCService::LaunchNewConns() {
   // We'll establish a connection to anyone that hasn't been touched since...
   time_t threshold = time(nullptr) - RetryConnSeconds;
   // FIXME check to see if we have available connection spaces, bail if not
+  std::lock_guard<std::mutex> guard(lock);
   for(auto& p : peers){
     if(!p->Connected()){
       if(p->LastTime() < threshold){
@@ -444,7 +445,9 @@ void RPCService::AddPeers(const std::string& peerfile) {
 			}
 		}
 		if(!dup){
-			peers.emplace_back(r); // FIXME needs lock against epoller!
+      lock.lock();
+			peers.emplace_back(r);
+      lock.unlock();
 		}
 	}
 }

@@ -97,6 +97,7 @@ std::string subjectCN;
 std::shared_ptr<PeerQueue> connqueue;
 std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
+std::mutex lock;
 
 void Epoller(); // launched as epoller thread, joined in destructor
 void OpenListeners();
