@@ -54,6 +54,7 @@ PolledTLSFD(int sd, SSL* ssl) : // accepting form, SSL is anchor object
 		throw NetworkException("tried to poll on null tls");
 	}
 	SSL_set_fd(ssl, sd); // FIXME can fail
+  NameFDPeer();
 }
 
 PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p) : // connected form, BIO is anchor object
@@ -65,6 +66,7 @@ PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p) : // connected form, BIO 
 	if(bio == nullptr || 1 != BIO_get_ssl(bio, &ssl)){
 		throw NetworkException("tried to poll on null tls");
   }
+  NameFDPeer();
 }
 
 virtual ~PolledTLSFD() {
@@ -82,7 +84,7 @@ virtual ~PolledTLSFD() {
 bool IsConnection() const { return true; }
 
 std::string IPName() const {
-  return "fixme[l3+l4]"; // FIXME
+  return ipname;
 }
 
 bool Callback(RPCService& rpc) override {
@@ -139,6 +141,24 @@ SSL* ssl; // always set
 BIO* bio; // if set, owns ->ssl, which otherwise is its own anchor object
 std::shared_ptr<Peer> peer;
 bool accepting;
+std::string ipname;
+
+void NameFDPeer() {
+	struct sockaddr ss;
+	socklen_t slen = sizeof(ss);
+  char paddr[INET6_ADDRSTRLEN];
+  char pport[7];
+  pport[0] = ':';
+  if(getpeername(sd, &ss, &slen)){
+    throw NetworkException("error getting socket peer");
+  }
+  if(getnameinfo(&ss, slen, paddr, sizeof(paddr), pport + 1, sizeof(pport) - 1,
+      NI_NUMERICHOST | NI_NUMERICSERV)){
+    throw NetworkException("error naming socket");
+  }
+  ipname = std::string(paddr) + pport;
+}
+
 };
 
 class PolledListenFD : public PolledFD {
@@ -175,14 +195,8 @@ void Accept(RPCService& rpc) { // FIXME need arrange this all as non-blocking
 	}
   std::unique_ptr<PolledTLSFD> sfd;
 	try{
-		char paddr[INET6_ADDRSTRLEN];
-		char pport[6];
-		if(getnameinfo(&ss, slen, paddr, sizeof(paddr), pport, sizeof(pport),
-				NI_NUMERICHOST | NI_NUMERICSERV)){
-			throw NetworkException("error naming socket");
-		}
-		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
 		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL());
+		std::cout << "accepted " << ret << " on " << sd << " from " << sfd->IPName() << std::endl;
 	}catch(...){
 		close(ret);
 		throw;
