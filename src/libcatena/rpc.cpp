@@ -319,11 +319,11 @@ void RPCService::Accept(int sd) {
         std::cerr << "error removing epoll on " << ret << std::endl;
       }
     }
-  }catch(...){
+  }catch(NetworkException& e){
     if(epoll_ctl(epollfd, EPOLL_CTL_DEL, ret, NULL)){
       std::cerr << "error removing epoll on " << ret << std::endl;
     }
-    throw;
+    throw e;
   }
   epolls.emplace(ret, std::move(sfd));
 }
