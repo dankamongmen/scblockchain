@@ -23,7 +23,6 @@ constexpr int RetryConnSeconds = 300;
 
 class Chain;
 class PolledFD;
-class PolledListenFD;
 
 struct RPCServiceOptions {
   int port; // port on which to listen, may be 0 for no listening service
@@ -73,13 +72,10 @@ std::vector<PeerInfo> Peers() const {
 	return ret;
 }
 
-// Callback for listen()ing sockets. Initiates SSL_accept().
-void Accept(int sd);
 // Should only be called from within an epoll loop callback
-int EpollMod(int sd, struct epoll_event& ev);
-
-// Kill off the active connection keyed by this file descriptor
-void DisconnectConn(int fd);
+int EpollMod(int sd, struct epoll_event* ev);
+void EpollAdd(int fd, struct epoll_event* ev, std::unique_ptr<PolledFD> pfd);
+void EpollDel(int fd);
 
 private:
 int port;
