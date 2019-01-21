@@ -491,21 +491,14 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 		const auto pinfo = chain.Peers();
 		time_t now = time(NULL);
 		for(auto p : pinfo){
-			if(p.configured){
-				std::cout << "(*) ";
-			}
+      std::cout << '(' << (p.configured ? '*' : ' ') <<
+                          (p.connected ? "✔" : "✘") << ") ";
 			std::cout << p.address << ":" << p.port;
 			if(p.lasttime == -1){
 				std::cout << " (unused) ";
 			}else{
 				int since = difftime(now, p.lasttime);
 				std::cout << " (last used " << since << "s ago) ";
-			}
-			if(p.issuer.length()){
-				std::cout << p.issuer << " → ";
-			}
-			if(p.subject.length()){
-				std::cout << p.subject;
 			}
 			std::cout << "\n";
 		}
