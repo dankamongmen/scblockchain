@@ -110,6 +110,21 @@ std::pair<std::string, std::string> Name() const {
 	return std::make_pair(lastIssuerCN, lastSubjectCN);
 }
 
+time_t LastTime() const {
+  return lasttime;
+}
+
+bool Connected() const {
+  return connected;
+}
+
+void Disconnect() {
+  if(connected){
+    connected = false;
+    lasttime = time(nullptr);
+  }
+}
+
 private:
 std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;
@@ -118,6 +133,7 @@ time_t lasttime; // last time this was used, successfully or otherwise
 std::string lastSubjectCN; // subject CN from last TLS handshake
 std::string lastIssuerCN; // issuer CN from last TLS handshake
 bool configured; // were we provided during initial configuration?
+bool connected; // are we actively connected?
 
 BIO* TLSConnect(int sd);
 };

@@ -14,8 +14,9 @@ namespace Catena {
 Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx,
 		bool configured) :
   sslctx(sctx),
-  lasttime(time(nullptr)),
-  configured(configured) {
+  lasttime(0), // trigger a connect immediately
+  configured(configured),
+  connected(false) {
 	// If there's a colon, the remainder must be a valid port. If there is
 	// no colon, assume the entirety to be the address.
 	auto colon = addr.find(':');
