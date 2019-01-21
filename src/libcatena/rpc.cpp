@@ -379,6 +379,7 @@ void RPCService::LaunchNewConns() {
   // FIXME check to see if we have available connection spaces, bail if not
   std::lock_guard<std::mutex> guard(lock);
   for(auto& p : peers){
+    // FIXME need a tristate here, since we're not Connected() while connect(2)ing..
     if(!p->Connected()){
       if(p->LastTime() < threshold){
 			  Peer::ConnectAsync(p, connqueue);
