@@ -42,10 +42,10 @@ int sd;
 
 class PolledTLSFD : public PolledFD {
 public:
-PolledTLSFD(int sd, SSL* ssl) :
+PolledTLSFD(int sd, SSL* ssl, bool accepting) :
   PolledFD(sd),
   ssl(ssl),
-  accepting(true) {
+  accepting(accepting) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
@@ -86,15 +86,13 @@ bool Callback(RPCService& rpc) override {
 				std::cerr << "error accepting TLS" << std::endl;
 				return true;
 			}
-		}else{
-			struct epoll_event ev = {
-				.events = EPOLLIN | EPOLLRDHUP,
-				.data = { .ptr = &*this, },
-			};
-			accepting = false;
-			rpc.EpollMod(sd, &ev);
 		}
-		return false;
+    struct epoll_event ev = {
+      .events = EPOLLIN | EPOLLRDHUP,
+      .data = { .ptr = &*this, },
+    };
+    accepting = false;
+    rpc.EpollMod(sd, &ev);
 	}
 	char buf[BUFSIZ]; // FIXME ugh
 	auto r = SSL_read(ssl, buf, sizeof(buf));
@@ -152,7 +150,7 @@ void Accept(RPCService& rpc) { // FIXME need arrange this all as non-blocking
 			throw NetworkException("error naming socket");
 		}
 		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
-		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL());
+		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL(), true);
 	}catch(...){
 		close(ret);
 		throw;
@@ -338,7 +336,8 @@ void RPCService::HandleCompletedConns() {
         }
       }
     }catch(NetworkException& e){
-      std::cerr << e.what() << " connecting to " << c.first->Address() << std::endl;
+      std::cerr << e.what() << " connecting to " << c.first->Address()
+        << ":" << c.first->Port() << std::endl;
     }
 	}
 }
