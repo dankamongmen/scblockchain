@@ -26,8 +26,9 @@ class PolledFD;
 
 // For returning (copied) details about connections beyond libcatena
 struct ConnInfo {
-std::string address;
-int port;
+std::string ipname; // IPv[46] address plus port
+ConnInfo(std::string&& ipname) :
+  ipname(ipname) {}
 };
 
 struct RPCServiceOptions {
@@ -74,12 +75,15 @@ void PeerCount(int* defined, int* act, int* maxactive) const {
 }
 
 std::vector<PeerInfo> Peers() const {
+  std::lock_guard<std::mutex> guard(lock);
 	std::vector<PeerInfo> ret;
 	for(auto p : peers){
 		ret.push_back(p->Info()); // FIXME ideally construct in place
 	}
 	return ret;
 }
+
+std::vector<ConnInfo> Conns() const;
 
 // Should only be called from within an epoll loop callback
 int EpollMod(int sd, struct epoll_event* ev);

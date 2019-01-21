@@ -292,6 +292,13 @@ std::vector<PeerInfo> Chain::Peers() const {
 	return rpcnet.get()->Peers();
 }
 
+std::vector<ConnInfo> Chain::Conns() const {
+	if(!rpcnet){
+		throw NetworkException("rpc networking has not been enabled");
+	}
+	return rpcnet.get()->Conns();
+}
+
 void Chain::AddPeers(const std::string& peerfile) {
 	if(!rpcnet){
 		throw NetworkException("rpc networking has not been enabled");

@@ -519,7 +519,15 @@ int ReadlineUI::Conns(const Iterator start, const Iterator end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
-  // FIXME need zee crap
+	try{
+		const auto cinfo = chain.Conns();
+		for(auto c : cinfo){
+			std::cout << c.ipname;
+			std::cout << "\n";
+		}
+	}catch(Catena::NetworkException& e){
+		std::cerr << "couldn't get conns: " << e.what() << std::endl;
+	}
 	std::cout << std::flush;
 	return 0;
 }

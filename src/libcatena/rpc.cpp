@@ -27,6 +27,7 @@ PolledFD(int sd) :
 virtual bool Callback(RPCService& rpc) = 0;
 
 virtual bool IsConnection() const = 0;
+virtual std::string IPName() const = 0;
 
 virtual ~PolledFD() {
 	if(close(sd)){
@@ -79,6 +80,10 @@ virtual ~PolledTLSFD() {
 }
 
 bool IsConnection() const { return true; }
+
+std::string IPName() const {
+  return "fixme[l3+l4]"; // FIXME
+}
 
 bool Callback(RPCService& rpc) override {
 	if(accepting){
@@ -149,6 +154,10 @@ PolledListenFD(int family, const SSLCtxRAII& sslctx) :
 }
 
 bool IsConnection() const { return false; }
+
+std::string IPName() const {
+  return "fixme[l3+l4]"; // FIXME
+}
 
 bool Callback(RPCService& rpc) override {
 	Accept(rpc);
@@ -431,12 +440,23 @@ void RPCService::EpollDel(int fd) {
 
 int RPCService::ActiveConnCount() const {
   int total = 0;
-  for(const auto& element : epolls){ // FIXME rewrite as std::accumulate?
-    if(element.second->IsConnection()){
+  for(const auto& e : epolls){ // FIXME rewrite as std::accumulate?
+    if(e.second->IsConnection()){
       ++total;
     }
   }
   return total;
+}
+
+std::vector<ConnInfo> RPCService::Conns() const {
+  std::lock_guard<std::mutex> guard(lock);
+	std::vector<ConnInfo> ret;
+	for(const auto& e : epolls){
+    if(e.second->IsConnection()){
+		  ret.emplace_back(e.second->IPName());
+    }
+	}
+	return ret;
 }
 
 }
