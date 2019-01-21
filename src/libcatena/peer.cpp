@@ -14,7 +14,7 @@ namespace Catena {
 Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII> sctx,
 		bool configured) :
   sslctx(sctx),
-  lasttime(0), // trigger a connect immediately
+  lasttime(-1), // trigger a connect immediately
   configured(configured),
   connected(false) {
 	// If there's a colon, the remainder must be a valid port. If there is
@@ -122,6 +122,7 @@ BIO* Peer::Connect() {
 		try{
 			BIO* bio = TLSConnect(fd); // FIXME RAII that fucker
 			FDSetNonblocking(fd);
+      MarkConnected();
 			return bio;
 		}catch(...){
 			close(fd);

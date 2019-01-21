@@ -20,9 +20,8 @@ struct PeerInfo {
 std::string address;
 int port;
 time_t lasttime;
-std::string subject;
-std::string issuer;
 bool configured;
+bool connected;
 };
 
 // Necessary state to transfer newly-connected Peers from their AsyncConnect
@@ -101,8 +100,7 @@ ConnectAsync(std::shared_ptr<Peer> p, std::shared_ptr<PeerQueue> pq) {
 
 // FIXME needs lock against Connect() for at least "lasttime" purposes
 PeerInfo Info() const {
-	PeerInfo ret{address, port, lasttime, lastSubjectCN, lastIssuerCN,
-			configured};
+	PeerInfo ret{address, port, lasttime, configured, connected};
 	return ret;
 }
 
@@ -136,6 +134,14 @@ bool configured; // were we provided during initial configuration?
 bool connected; // are we actively connected?
 
 BIO* TLSConnect(int sd);
+
+void MarkConnected() {
+  if(!connected){
+    lasttime = time(nullptr);
+    connected = true;
+  }
+}
+
 };
 
 }
