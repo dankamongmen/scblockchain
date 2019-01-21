@@ -42,18 +42,38 @@ int sd;
 
 class PolledTLSFD : public PolledFD {
 public:
-PolledTLSFD(int sd, SSL* ssl, bool accepting) :
+PolledTLSFD(int sd, SSL* ssl) : // accepting form, SSL is anchor object
   PolledFD(sd),
   ssl(ssl),
-  accepting(accepting) {
+  bio(nullptr),
+  accepting(true) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
 	SSL_set_fd(ssl, sd); // FIXME can fail
 }
 
+PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p) : // connected form, BIO is anchor object
+  PolledFD(sd),
+  ssl(nullptr),
+  bio(bio),
+  peer(p),
+  accepting(false) {
+	if(bio == nullptr || 1 != BIO_get_ssl(bio, &ssl)){
+		throw NetworkException("tried to poll on null tls");
+  }
+}
+
 virtual ~PolledTLSFD() {
-	SSL_free(ssl);
+  if(bio == nullptr){
+	  SSL_free(ssl);
+  }else{
+    BIO_free_all(bio); // SSL is derived object from bio
+    // FIXME isn't the sd also going to get close()d in the base destructor?
+  }
+  if(peer){
+    peer->Disconnect();
+  }
 }
 
 // FIXME get rid of this, have Accept() use Callback()
@@ -111,7 +131,9 @@ bool Callback(RPCService& rpc) override {
 }
 
 private:
-SSL* ssl;
+SSL* ssl; // always set
+BIO* bio; // if set, owns ->ssl, which otherwise is its own anchor object
+std::shared_ptr<Peer> peer;
 bool accepting;
 };
 
@@ -150,7 +172,7 @@ void Accept(RPCService& rpc) { // FIXME need arrange this all as non-blocking
 			throw NetworkException("error naming socket");
 		}
 		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
-		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL(), true);
+		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL());
 	}catch(...){
 		close(ret);
 		throw;
@@ -163,49 +185,6 @@ void Accept(RPCService& rpc) { // FIXME need arrange this all as non-blocking
   rpc.EpollAdd(ret, &ev, std::move(sfd));
 }
 
-};
-
-// A TLS-wrapped, established connection we originated to a Peer
-class PolledConnFD : public PolledFD {
-public:
-PolledConnFD(BIO* bio, std::shared_ptr<Peer> p) :
-  PolledFD(BIO_get_fd(bio, NULL)),
-  bio(bio),
-  peer(p) {
-	if(bio == nullptr){
-		throw NetworkException("tried to poll on null bio");
-	}
-}
-
-virtual ~PolledConnFD() {
-  BIO_free_all(bio);
-  peer->Disconnect();
-  // FIXME isn't the sd also going to get close()d in the base destructor?
-}
-
-bool Callback(RPCService& rpc) override {
-  (void)rpc;
-	char buf[BUFSIZ]; // FIXME ugh
-	auto r = BIO_read(bio, buf, sizeof(buf));
-	if(r > 0){
-		std::cout << "read us some crap " << r << std::endl;
-	}else{
-    SSL* s;
-    BIO_get_ssl(bio, &s);
-		auto ra = SSL_get_error(s, r);
-		if(ra == SSL_ERROR_WANT_WRITE){
-			// FIXME else check for SSL_ERROR_WANT_WRITE
-		}else if(ra != SSL_ERROR_WANT_READ){
-			std::cerr << "lost ssl connection with error " << ra << std::endl;
-      return true;
-		}
-	}
-	return false;
-}
-
-private:
-BIO* bio;
-std::shared_ptr<Peer> peer;
 };
 
 // Relies on constructor to purge any added elements if constructor is thrown
@@ -325,7 +304,7 @@ void RPCService::HandleCompletedConns() {
         BIO_free_all(b);
       }else{
         int fd = BIO_get_fd(b, NULL); // FIXME can fail
-        auto mapins = epolls.emplace(fd, std::make_unique<PolledConnFD>(b, c.first));
+        auto mapins = epolls.emplace(fd, std::make_unique<PolledTLSFD>(fd, b, c.first));
         struct epoll_event ev = {
           .events = EPOLLIN | EPOLLRDHUP,
           .data = { .ptr = (*mapins.first).second.get(), },
