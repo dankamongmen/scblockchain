@@ -509,6 +509,17 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 	return 0;
 }
 
+template <typename Iterator>
+int ReadlineUI::Conns(const Iterator start, const Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+  // FIXME need zee crap
+	std::cout << std::flush;
+	return 0;
+}
+
 #define RL_START "\x01" // RL_PROMPT_START_IGNORE
 #define RL_END "\x02"   // RL_PROMPT_END_IGNORE
 
@@ -536,7 +547,8 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "delustatus", .fxn = &ReadlineUI::NewUserStatusDelegation, .help = "create new UserStatusDelegation transaction", },
 		{ .cmd = "ustatus", .fxn = &ReadlineUI::NewUserStatus, .help = "create new UserStatus transaction", },
 		{ .cmd = "getustatus", .fxn = &ReadlineUI::GetUserStatus, .help = "look up a patient's status", },
-		{ .cmd = "peers", .fxn = &ReadlineUI::Peers, .help = "summarize p2p network peers", },
+		{ .cmd = "peers", .fxn = &ReadlineUI::Peers, .help = "summarize configured/discovewred p2p peers", },
+		{ .cmd = "conns", .fxn = &ReadlineUI::Conns, .help = "summarize p2p network connections", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;
