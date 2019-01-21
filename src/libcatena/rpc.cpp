@@ -71,6 +71,8 @@ PolledConnFD(BIO* bio, std::shared_ptr<Peer> p) :
 
 virtual ~PolledConnFD() {
   BIO_free_all(bio);
+  peer->Disconnect();
+  // FIXME isn't the sd also going to get close()d in the base destructor?
 }
 
 bool Callback(RPCService& rpc) override {
@@ -349,10 +351,9 @@ void RPCService::HandleCompletedConns() {
     try{
       BIO* b = c.second->get();
       if(c.first->Name() == rpcName){ // connected to ourselves
+        c.first->Disconnect();
         BIO_free_all(b);
       }else{
-        // FIXME isn't the Peer object also going to BIO_free_all() the BIO,
-        // thus closing the fd? zero out upon AsyncConnect done?
         int fd = BIO_get_fd(b, NULL); // FIXME can fail
         auto mapins = epolls.emplace(fd, std::make_unique<PolledConnFD>(b, c.first));
         struct epoll_event ev = {
@@ -370,6 +371,21 @@ void RPCService::HandleCompletedConns() {
 	}
 }
 
+// FIXME for now, we just iterate over the peer list checking for any needing a
+// connection. we ought convert it into a list sorted by conntime for o(1).
+void RPCService::LaunchNewConns() {
+  // We'll establish a connection to anyone that hasn't been touched since...
+  time_t threshold = time(nullptr) - RetryConnSeconds;
+  // FIXME check to see if we have available connection spaces, bail if not
+  for(auto& p : peers){
+    if(!p->Connected()){
+      if(p->LastTime() < threshold){
+			  Peer::ConnectAsync(p, connqueue);
+      }
+    }
+  }
+}
+
 void RPCService::Epoller() {
 	(void)ledger;
 	while(1) {
@@ -377,6 +393,7 @@ void RPCService::Epoller() {
 			return;
 		}
 		HandleCompletedConns();
+    LaunchNewConns();
 		struct epoll_event ev; // FIXME accept multiple events
 		auto eret = epoll_wait(epollfd, &ev, 1, 100); // FIXME kill timeout
 		if(eret < 0 && errno != EINTR){
@@ -427,8 +444,7 @@ void RPCService::AddPeers(const std::string& peerfile) {
 			}
 		}
 		if(!dup){
-			peers.emplace_back(r);
-			Peer::ConnectAsync(r, connqueue);
+			peers.emplace_back(r); // FIXME needs lock against epoller!
 		}
 	}
 }

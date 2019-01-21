@@ -19,6 +19,7 @@ namespace Catena {
 
 constexpr int MaxActiveRPCPeers = 8;
 constexpr int DefaultRPCPort = 40404;
+constexpr int RetryConnSeconds = 300;
 
 class Chain;
 class PolledFD;
@@ -97,10 +98,11 @@ std::shared_ptr<PeerQueue> connqueue;
 std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
 
-void Epoller();
+void Epoller(); // launched as epoller thread, joined in destructor
 void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 void HandleCompletedConns();
+void LaunchNewConns();
 };
 
 }
