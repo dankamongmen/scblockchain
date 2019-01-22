@@ -107,6 +107,7 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		std::cerr << "command does not accept arguments" << std::endl;
 		return -1;
 	}
+  std::cout << "catena v" << VERSION << " on " << Catena::Hostname() << "\n";
 	std::cout << "cxx: " << Catena::GetCompilerID() << "\n";
 	std::cout << "libc: " << Catena::GetLibcID() << "\n";
 	std::cout << "json: JSON for Modern C++ " <<
