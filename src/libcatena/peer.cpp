@@ -53,45 +53,43 @@ Peer::Peer(const std::string& addr, int defaultport, std::shared_ptr<SSLCtxRAII>
 	freeaddrinfo(res);
 }
 
-BIO* Peer::TLSConnect(int sd) {
-	auto ret = BIO_new_ssl_connect(sslctx.get()->get());
-	if(ret == nullptr){
+ConnFuture Peer::TLSConnect(int sd) {
+	auto bio = BIO_new_ssl_connect(sslctx.get()->get());
+	if(bio == nullptr){
 		throw NetworkException("coudln't get TLS connect BIO");
 	}
 	SSL* s;
-	BIO_get_ssl(ret, &s);
+	BIO_get_ssl(bio, &s);
 	SSL_set_fd(s, sd);
 	SSL_set_verify(s, SSL_VERIFY_PEER, tls_cert_verify);
 	if(1 != SSL_connect(s)){
-		std::cout << "ssl connect failure" << std::endl;
-		BIO_free_all(ret);
-		return nullptr; // FIXME throw
+		BIO_free_all(bio);
+    throw NetworkException("ssl connect failure");
 	}
+  // FIXME rewrite this as call to SSLPeerName()
 	if(X509_V_OK != SSL_get_verify_result(s)){
-		std::cout << "ssl verify failure" << std::endl;
-		BIO_free_all(ret);
-		return nullptr; // FIXME throw
+		BIO_free_all(bio);
+    throw NetworkException("ssl verify failure");
 	}
+  ConnFuture cf;
 	auto x509 = SSL_get_peer_certificate(s);
 	if(x509 == nullptr){
-		std::cout << "error getting peer cert" << std::endl;
-		BIO_free_all(ret);
-		return nullptr; // FIXME throw
+		BIO_free_all(bio);
+    throw NetworkException("error getting peer cert");
 	}
 	try{
-		auto xname = X509NetworkName(x509);
-		lastIssuerCN = xname.first;
-		lastSubjectCN = xname.second;
+		cf.name = X509NetworkName(x509);
 	}catch(...){
 		X509_free(x509);
-		BIO_free_all(ret);
+		BIO_free_all(bio);
 		throw;
 	}
 	X509_free(x509);
-	return ret;
+  cf.bio = bio;
+	return cf;
 }
 
-BIO* Peer::Connect() {
+ConnFuture Peer::Connect() {
 	lasttime = time(nullptr);
 	struct addrinfo hints{};
 	hints.ai_flags = AI_NUMERICHOST;
@@ -120,10 +118,10 @@ BIO* Peer::Connect() {
 		std::cout << "connected " << fd << " to " << address << ":" << port << std::endl;
 		lasttime = time(NULL);
 		try{
-			BIO* bio = TLSConnect(fd); // FIXME RAII that fucker
+			auto ret = TLSConnect(fd); // FIXME RAII that fucker
 			FDSetNonblocking(fd);
       MarkConnected();
-			return bio;
+			return ret;
 		}catch(...){
 			close(fd);
 			throw;

@@ -73,18 +73,25 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
 	if(port){
 		ss << "<tr><td>rpc port</td><td>" << port << "</td></tr>";
 		auto xname = chain.RPCName();
-		ss << "<tr><td>rpc name</td><td>" << xname.first << " → " << xname.second << "</td></tr>";
-		int peersDefined, peersActive, peersMax;
-		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
+		ss << "<tr><td>rpc name</td><td>";
+    Catena::StrTLSName(ss, xname) << "</td></tr>";
+		int peersDefined, connsActive, connsMax;
+		chain.PeerCount(&peersDefined, &connsActive, &connsMax);
 		ss << "<tr><td>configured peers</td><td>" << peersDefined << "</td></tr>";
-		ss << "<tr><td>active peers</td><td>" << peersActive << "</td></tr>";
-		ss << "<tr><td>max active peers</td><td>" << peersMax << "</td></tr>";
+    auto conns = chain.Conns();
+		ss << "<tr><td>active conns</td><td>" << connsActive << " ";
+    for(const auto c : conns){
+      ss << c.ipname << " (";
+      Catena::StrTLSName(ss, c.name) << ") ";
+    }
+    ss << "</td></tr>";
+		ss << "<tr><td>max active conns</td><td>" << connsMax << "</td></tr>";
 	}else{
 		ss << "<tr><td>rpc port</td><td>not configured</td></tr>";
 		ss << "<tr><td>rpc name</td><td>n/a</td></tr>";
 		ss << "<tr><td>configured peers</td><td>n/a</td></tr>";
-		ss << "<tr><td>active peers</td><td>n/a</td></tr>";
-		ss << "<tr><td>max active peers</td><td>n/a</td></tr>";
+		ss << "<tr><td>active conns</td><td>n/a</td></tr>";
+		ss << "<tr><td>max active conns</td><td>n/a</td></tr>";
 	}
   auto ads = chain.AdvertisedAddresses();
   ss << "<tr><td>advertisements</td><td>" << ads.size();

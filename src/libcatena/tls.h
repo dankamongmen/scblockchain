@@ -4,10 +4,18 @@
 #include <openssl/ssl.h>
 #include <libcatena/exceptions.h>
 
-// RAII wrappers for OpenSSL objects e.g. SSL_CTX, SSL
-
 namespace Catena {
 
+// A TLSName, (hopefully) unique within the network, is the Issuer CN plus the
+// Subject CN of the node's certificate.
+using TLSName = std::pair<std::string, std::string>;
+
+inline std::ostream& StrTLSName(std::ostream& stream, const TLSName& name){
+	stream << name.first << "::" << name.second;
+	return stream;
+}
+
+// RAII wrappers for OpenSSL objects e.g. SSL_CTX, SSL
 class SSLRAII {
 public:
 

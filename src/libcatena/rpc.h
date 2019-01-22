@@ -23,7 +23,15 @@ constexpr int RetryConnSeconds = 300;
 
 class Chain;
 class PolledFD;
-class PolledListenFD;
+
+// For returning (copied) details about connections beyond libcatena
+struct ConnInfo {
+std::string ipname; // IPv[46] address plus port
+TLSName name;
+ConnInfo(std::string&& ipname, const TLSName& name) :
+  ipname(ipname),
+  name(name) {}
+};
 
 struct RPCServiceOptions {
   int port; // port on which to listen, may be 0 for no listening service
@@ -59,13 +67,17 @@ std::vector<std::string> Advertisement() const {
   return advertised;
 }
 
-void PeerCount(int* defined, int* act, int* maxactive) {
+int ActiveConnCount() const;
+
+void PeerCount(int* defined, int* act, int* maxactive) const {
+  std::lock_guard<std::mutex> guard(lock);
 	*defined = peers.size();
-  *act = epolls.size() - 2; // FIXME broken for non-listening setups; walk epolls
+  *act = ActiveConnCount();
 	*maxactive = MaxActiveRPCPeers;
 }
 
 std::vector<PeerInfo> Peers() const {
+  std::lock_guard<std::mutex> guard(lock);
 	std::vector<PeerInfo> ret;
 	for(auto p : peers){
 		ret.push_back(p->Info()); // FIXME ideally construct in place
@@ -73,13 +85,12 @@ std::vector<PeerInfo> Peers() const {
 	return ret;
 }
 
-// Callback for listen()ing sockets. Initiates SSL_accept().
-int Accept(int sd);
-// Should only be called from within an epoll loop callback
-int EpollMod(int sd, struct epoll_event& ev);
+std::vector<ConnInfo> Conns() const;
 
-// Kill off the active connection keyed by this file descriptor
-void DisconnectConn(int fd);
+// Should only be called from within an epoll loop callback
+int EpollMod(int sd, struct epoll_event* ev);
+void EpollAdd(int fd, struct epoll_event* ev, std::unique_ptr<PolledFD> pfd);
+void EpollDel(int fd);
 
 private:
 int port;
@@ -92,12 +103,11 @@ int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
 std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
-std::string issuerCN; // taken from our X509 certificate
-std::string subjectCN;
+TLSName name;
 std::shared_ptr<PeerQueue> connqueue;
 std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
-std::mutex lock;
+mutable std::mutex lock;
 
 void Epoller(); // launched as epoller thread, joined in destructor
 void OpenListeners();

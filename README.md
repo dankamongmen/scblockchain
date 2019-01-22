@@ -154,7 +154,8 @@ ConsortiumMember, and a status type.
 TXSpec for the referenced UserStatusDelegation, and a JSON payload.
 * `getustatus`: show the most recent UserStatus for the specified user
 and user status delegation type.
-* `peers`: show network peers
+* `peers`: show configured and discovered p2p network peers
+* `conns`: show active p2p network connections
 
 Use of commands that generate signed or encrypted transactions requires an
 appropriate private key having been loaded with the `-k` option.

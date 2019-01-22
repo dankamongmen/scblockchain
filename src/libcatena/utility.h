@@ -11,6 +11,7 @@
 #include <gnu/libc-version.h>
 #endif
 #include <libcatena/exceptions.h>
+#include <libcatena/tls.h>
 
 namespace Catena {
 
@@ -125,11 +126,29 @@ inline std::string X509IssuerCN(const X509* cert) {
 	return X509CN(xname);
 }
 
-inline std::pair<std::string, std::string>
-X509NetworkName(const X509* cert) {
+inline TLSName X509NetworkName(const X509* cert) {
 	auto subcn = X509SubjectCN(cert);
 	auto isscn = X509IssuerCN(cert);
 	return std::make_pair(isscn, subcn);
+}
+
+inline TLSName SSLPeerName(SSL* s) {
+  if(X509_V_OK != SSL_get_verify_result(s)){
+    throw NetworkException("ssl verify failure");
+  }
+  auto x509 = SSL_get_peer_certificate(s); // FIXME RAII
+  if(x509 == nullptr){
+    throw NetworkException("error getting peer cert");
+  }
+  TLSName ret;
+  try{
+    ret = X509NetworkName(x509);
+  }catch(...){
+    X509_free(x509);
+    throw;
+  }
+  X509_free(x509);
+  return ret;
 }
 
 void FDSetNonblocking(int fd);

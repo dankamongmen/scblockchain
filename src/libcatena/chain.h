@@ -166,6 +166,8 @@ void EnableRPC(const RPCServiceOptions& opts);
 // p2p networking has not been enabled.
 std::vector<PeerInfo> Peers() const;
 
+std::vector<ConnInfo> Conns() const;
+
 // Throws NetworkException if RPC networking has not been enabled
 void AddPeers(const std::string& peerfile);
 

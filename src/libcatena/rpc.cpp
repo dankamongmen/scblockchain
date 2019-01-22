@@ -26,6 +26,10 @@ PolledFD(int sd) :
 // If Callback() returns true, the PolledFD will be deleted in the epoll loop.
 virtual bool Callback(RPCService& rpc) = 0;
 
+virtual bool IsConnection() const = 0;
+virtual std::string IPName() const = 0;
+virtual TLSName Name() const = 0;
+
 virtual ~PolledFD() {
 	if(close(sd)){
 		std::cerr << "error closing epoll()ed sd " << sd << std::endl;
@@ -40,85 +44,60 @@ protected:
 int sd;
 };
 
-class PolledListenFD : public PolledFD {
-public:
-PolledListenFD(int family) :
-  PolledFD(socket(family, SOCK_STREAM | SOCK_CLOEXEC, 0)) {
-	int reuse = 1;
-	if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))){
-		close(sd);
-		throw NetworkException("couldn't set SO_REUSEADDR");
-	}
-}
-
-bool Callback(RPCService& rpc) override {
-	rpc.Accept(sd);
-	return false;
-}
-};
-
-// A TLS-wrapped, established connection we originated to a Peer
-class PolledConnFD : public PolledFD {
-public:
-PolledConnFD(BIO* bio, std::shared_ptr<Peer> p) :
-  PolledFD(BIO_get_fd(bio, NULL)),
-  bio(bio),
-  peer(p) {
-	if(bio == nullptr){
-		throw NetworkException("tried to poll on null bio");
-	}
-}
-
-virtual ~PolledConnFD() {
-  BIO_free_all(bio);
-  peer->Disconnect();
-  // FIXME isn't the sd also going to get close()d in the base destructor?
-}
-
-bool Callback(RPCService& rpc) override {
-  (void)rpc;
-	char buf[BUFSIZ]; // FIXME ugh
-	auto r = BIO_read(bio, buf, sizeof(buf));
-	if(r > 0){
-		std::cout << "read us some crap " << r << std::endl;
-	}else{
-    SSL* s;
-    BIO_get_ssl(bio, &s);
-		auto ra = SSL_get_error(s, r);
-		if(ra == SSL_ERROR_WANT_WRITE){
-			// FIXME else check for SSL_ERROR_WANT_WRITE
-		}else if(ra != SSL_ERROR_WANT_READ){
-			std::cerr << "lost ssl connection with error " << ra << std::endl;
-      return true;
-		}
-	}
-	return false;
-}
-
-private:
-BIO* bio;
-std::shared_ptr<Peer> peer;
-};
-
 class PolledTLSFD : public PolledFD {
 public:
-PolledTLSFD(int sd, SSL* ssl) :
+// accepting form, SSL is anchor object
+PolledTLSFD(int sd, SSL* ssl, const TLSName& name) :
   PolledFD(sd),
   ssl(ssl),
-  accepting(true) {
+  bio(nullptr),
+  accepting(true),
+  name(name) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
 	SSL_set_fd(ssl, sd); // FIXME can fail
+  NameFDPeer();
+}
+
+// connected form, associated with Peer, BIO is anchor object
+PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p, const TLSName& name) :
+  PolledFD(sd),
+  ssl(nullptr),
+  bio(bio),
+  peer(p),
+  accepting(false),
+  name(name) {
+	if(bio == nullptr || 1 != BIO_get_ssl(bio, &ssl)){
+		throw NetworkException("tried to poll on null tls");
+  }
+  NameFDPeer();
 }
 
 virtual ~PolledTLSFD() {
-	SSL_free(ssl);
+  if(bio == nullptr){
+	  SSL_free(ssl);
+  }else{
+    BIO_free_all(bio); // SSL is derived object from bio
+    // FIXME isn't the sd also going to get close()d in the base destructor?
+  }
+  if(peer){
+    peer->Disconnect();
+  }
 }
 
-// FIXME get rid of this, have Accept() use Callback()
-SSL* HackSSL() const {
-	return ssl;
+bool IsConnection() const { return true; }
+
+std::string IPName() const {
+  return ipname;
+}
+
+TLSName Name() const {
+  return name;
+}
+
+void SetName(const TLSName& tname) {
+  name = tname;
 }
 
 bool Callback(RPCService& rpc) override {
@@ -135,26 +114,26 @@ bool Callback(RPCService& rpc) override {
 					.events = EPOLLIN | EPOLLRDHUP,
 					.data = { .ptr = &*this, },
 				};
-				rpc.EpollMod(sd, ev);
+				rpc.EpollMod(sd, &ev);
 			}else if(oerr == SSL_ERROR_WANT_WRITE){
 				struct epoll_event ev = {
 					.events = EPOLLOUT | EPOLLRDHUP,
 					.data = { .ptr = &*this, },
 				};
-				rpc.EpollMod(sd, ev);
+				rpc.EpollMod(sd, &ev);
 			}else{
 				std::cerr << "error accepting TLS" << std::endl;
 				return true;
 			}
-		}else{
-			struct epoll_event ev = {
-				.events = EPOLLIN | EPOLLRDHUP,
-				.data = { .ptr = &*this, },
-			};
-			accepting = false;
-			rpc.EpollMod(sd, ev);
+      return false;
 		}
-		return false;
+    struct epoll_event ev = { // successful negotiation
+      .events = EPOLLIN | EPOLLRDHUP,
+      .data = { .ptr = &*this, },
+    };
+    SetName(SSLPeerName(ssl));
+    accepting = false;
+    rpc.EpollMod(sd, &ev);
 	}
 	char buf[BUFSIZ]; // FIXME ugh
 	auto r = SSL_read(ssl, buf, sizeof(buf));
@@ -173,13 +152,88 @@ bool Callback(RPCService& rpc) override {
 }
 
 private:
-SSL* ssl;
+SSL* ssl; // always set
+BIO* bio; // if set, owns ->ssl, which otherwise is its own anchor object
+std::shared_ptr<Peer> peer;
 bool accepting;
+std::string ipname;
+TLSName name;
+
+void NameFDPeer() {
+	struct sockaddr ss;
+	socklen_t slen = sizeof(ss);
+  char paddr[INET6_ADDRSTRLEN];
+  char pport[7];
+  pport[0] = ':';
+  if(getpeername(sd, &ss, &slen)){
+    throw NetworkException("error getting socket peer");
+  }
+  if(getnameinfo(&ss, slen, paddr, sizeof(paddr), pport + 1, sizeof(pport) - 1,
+      NI_NUMERICHOST | NI_NUMERICSERV)){
+    throw NetworkException("error naming socket");
+  }
+  ipname = std::string(paddr) + pport;
+}
+
+};
+
+class PolledListenFD : public PolledFD {
+public:
+PolledListenFD(int family, const SSLCtxRAII& sslctx) :
+  PolledFD(socket(family, SOCK_STREAM | SOCK_CLOEXEC, 0)),
+  sslctx(sslctx) {
+	int reuse = 1;
+	if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))){
+		close(sd);
+		throw NetworkException("couldn't set SO_REUSEADDR");
+	}
+}
+
+bool IsConnection() const { return false; }
+
+std::string IPName() const {
+  return "fixme[l3+l4]"; // FIXME
+}
+
+TLSName Name() const {
+  return std::make_pair("fixmeICN", "fixmeSCN"); // FIXME, use local?
+}
+
+bool Callback(RPCService& rpc) override {
+	Accept(rpc);
+	return false;
+}
+private:
+SSLCtxRAII sslctx;
+
+void Accept(RPCService& rpc) { // FIXME need arrange this all as non-blocking
+	struct sockaddr ss;
+	socklen_t slen = sizeof(ss);
+	int ret = accept4(sd, &ss, &slen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+	if(ret < 0){
+		throw NetworkException(std::string("error accept()ing socket: ") + strerror(errno));
+	}
+  std::unique_ptr<PolledTLSFD> sfd;
+	try{
+		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL(), TLSName());
+		std::cout << "accepted " << ret << " on " << sd << " from " << sfd->IPName() << std::endl;
+	}catch(...){
+		close(ret);
+		throw;
+	}
+  // from here on, ret is associated with sfd, and will be closed on exit
+  struct epoll_event ev = {
+    .events = EPOLLIN | EPOLLRDHUP,
+    .data = { .ptr = sfd.get(), },
+  };
+  rpc.EpollAdd(ret, &ev, std::move(sfd));
+}
+
 };
 
 // Relies on constructor to purge any added elements if constructor is thrown
 void RPCService::OpenListeners() {
-	auto lsd = std::make_unique<PolledListenFD>(AF_INET);
+	auto lsd = std::make_unique<PolledListenFD>(AF_INET, sslctx);
   int fd = lsd->FD();
   struct sockaddr_in sin;
   memset(&sin, 0, sizeof(sin));
@@ -190,7 +244,7 @@ void RPCService::OpenListeners() {
     throw NetworkException("couldn't bind IPv4 listener");
   }
   if(listen(fd, SOMAXCONN)){
-    throw NetworkException("couldn't set up listener queues");
+    throw NetworkException("couldn't listen for IPv4");
   }
   struct epoll_event ev = {
     .events = EPOLLIN,
@@ -200,7 +254,7 @@ void RPCService::OpenListeners() {
     throw NetworkException("couldn't epoll on sd4");
   }
   epolls.emplace(fd, std::move(lsd));
-  lsd = std::make_unique<PolledListenFD>(AF_INET6);
+  lsd = std::make_unique<PolledListenFD>(AF_INET6, sslctx);
   fd = lsd->FD();
   struct sockaddr_in6 sin6;
   memset(&sin6, 0, sizeof(sin6));
@@ -215,7 +269,7 @@ void RPCService::OpenListeners() {
     throw NetworkException("couldn't bind IPv6 listener");
   }
   if(listen(fd, SOMAXCONN)){
-    throw NetworkException("couldn't set up listener queues");
+    throw NetworkException("couldn't listen for IPv6");
   }
   ev.data.ptr = lsd.get();
   if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
@@ -282,80 +336,19 @@ RPCService::~RPCService() {
 	}
 }
 
-// FIXME need arrange this all as non-blocking
-int RPCService::Accept(int sd) {
-	struct sockaddr ss;
-	socklen_t slen = sizeof(ss);
-	int ret = accept4(sd, &ss, &slen, SOCK_NONBLOCK | SOCK_CLOEXEC);
-	if(ret < 0){
-		throw NetworkException(std::string("error accept()ing socket: ") + strerror(errno));
-	}
-  std::unique_ptr<PolledTLSFD> sfd;
-	try{
-		char paddr[INET6_ADDRSTRLEN];
-		char pport[6];
-		if(getnameinfo(&ss, slen, paddr, sizeof(paddr), pport, sizeof(pport),
-				NI_NUMERICHOST | NI_NUMERICSERV)){
-			throw NetworkException("error naming socket");
-		}
-		std::cout << "accepted on " << sd << " from " << paddr << ":" << pport << std::endl;
-		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL());
-	}catch(...){
-		close(ret);
-		throw;
-	}
-  // FIXME rewrite all the following as a call to sfd->Callback
-  auto ra = SSL_accept(sfd->HackSSL());
-  if(1 != ra){
-    auto oerr = SSL_get_error(sfd->HackSSL(), ra);
-    if(oerr == SSL_ERROR_WANT_READ){
-      // FIXME this isn't picking up a remote shutdown
-      struct epoll_event ev = {
-        .events = EPOLLIN | EPOLLRDHUP,
-        .data = { .ptr = sfd.get(), },
-      };
-      if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-        throw NetworkException("couldn't epoll-r on new sd");
-      }
-    }else if(oerr == SSL_ERROR_WANT_WRITE){
-      struct epoll_event ev = {
-        .events = EPOLLOUT | EPOLLRDHUP,
-        .data = { .ptr = sfd.get(), },
-      };
-      if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-        throw NetworkException("couldn't epoll-w on new sd");
-      }
-    }else{
-      throw NetworkException("error accepting TLS");
-    }
-  }else{
-    // FIXME this isn't picking up a remote shutdown
-    // FIXME will be seen as accept()ing socket
-    struct epoll_event ev = {
-      .events = EPOLLIN | EPOLLRDHUP,
-      .data = { .ptr = sfd.get(), },
-    };
-    if(epoll_ctl(epollfd, EPOLL_CTL_ADD, ret, &ev)){
-      throw NetworkException("couldn't epoll-r on new sd");
-    }
-  }
-  epolls.emplace(ret, std::move(sfd));
-  return ret;
-}
-
 // Crap that we have to go checking a locked strucutre each epoll(), especially
 // when those epoll()s are on a period. FIXME kill this off, rigourize.
 void RPCService::HandleCompletedConns() {
 	const auto& conns = connqueue.get()->GetCompletedPeers();
 	for(const auto& c : conns){
     try{
-      BIO* b = c.second->get();
-      if(c.first->Name() == rpcName){ // connected to ourselves
+      ConnFuture cf = c.second->get();
+      if(cf.name == rpcName){ // connected to ourselves
         c.first->Disconnect();
-        BIO_free_all(b);
+        BIO_free_all(cf.bio);
       }else{
-        int fd = BIO_get_fd(b, NULL); // FIXME can fail
-        auto mapins = epolls.emplace(fd, std::make_unique<PolledConnFD>(b, c.first));
+        int fd = BIO_get_fd(cf.bio, NULL); // FIXME can fail
+        auto mapins = epolls.emplace(fd, std::make_unique<PolledTLSFD>(fd, cf.bio, c.first, cf.name));
         struct epoll_event ev = {
           .events = EPOLLIN | EPOLLRDHUP,
           .data = { .ptr = (*mapins.first).second.get(), },
@@ -366,7 +359,8 @@ void RPCService::HandleCompletedConns() {
         }
       }
     }catch(NetworkException& e){
-      std::cerr << e.what() << " connecting to " << c.first->Address() << std::endl;
+      std::cerr << e.what() << " connecting to " << c.first->Address()
+        << ":" << c.first->Port() << std::endl;
     }
 	}
 }
@@ -379,6 +373,7 @@ void RPCService::LaunchNewConns() {
   // FIXME check to see if we have available connection spaces, bail if not
   std::lock_guard<std::mutex> guard(lock);
   for(auto& p : peers){
+    // FIXME need a tristate here, since we're not Connected() while connect(2)ing..
     if(!p->Connected()){
       if(p->LastTime() < threshold){
 			  Peer::ConnectAsync(p, connqueue);
@@ -405,9 +400,7 @@ void RPCService::Epoller() {
 			try{
 				if(pfd->Callback(*this)){
           int fd = pfd->FD();
-					if(epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL)){
-						std::cerr << "error removing epoll on " << fd << std::endl;
-					}
+          EpollDel(fd);
           epolls.erase(fd);
 				}
 			}catch(NetworkException& e){
@@ -452,8 +445,52 @@ void RPCService::AddPeers(const std::string& peerfile) {
 	}
 }
 
-int RPCService::EpollMod(int fd, struct epoll_event& ev) {
-	return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev);
+void RPCService::EpollAdd(int fd, struct epoll_event* ev, std::unique_ptr<PolledFD> pfd){
+  if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, ev)){
+    throw NetworkException("epoll rejected new sd " + std::to_string(fd));
+  }
+  auto mapins = epolls.emplace(fd, std::move(pfd));
+  const auto pfdp = (*mapins.first).second.get();
+  try{
+    if(pfdp->Callback(*this)){
+      EpollDel(fd);
+    }
+  }catch(NetworkException& e){
+    EpollDel(fd);
+    throw e;
+  }
+}
+
+int RPCService::EpollMod(int fd, struct epoll_event* ev) {
+	return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, ev);
+}
+
+void RPCService::EpollDel(int fd) {
+  if(epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL)){
+    std::cerr << "error removing epoll on " << fd << std::endl;
+  }
+  epolls.erase(fd);
+}
+
+int RPCService::ActiveConnCount() const {
+  int total = 0;
+  for(const auto& e : epolls){ // FIXME rewrite as std::accumulate?
+    if(e.second->IsConnection()){
+      ++total;
+    }
+  }
+  return total;
+}
+
+std::vector<ConnInfo> RPCService::Conns() const {
+  std::lock_guard<std::mutex> guard(lock);
+	std::vector<ConnInfo> ret;
+	for(const auto& e : epolls){
+    if(e.second->IsConnection()){
+		  ret.emplace_back(e.second->IPName(), e.second->Name());
+    }
+	}
+	return ret;
 }
 
 }

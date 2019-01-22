@@ -131,12 +131,13 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 	if(port){
 		std::cout << "rpc port: " << port << "\n";
 		auto rname = chain.RPCName();
-		std::cout << "rpc name: " << rname.first << " → " << rname.second << "\n";
-		int peersDefined, peersActive, peersMax;
-		chain.PeerCount(&peersDefined, &peersActive, &peersMax);
+		std::cout << "rpc name: ";
+    Catena::StrTLSName(std::cout, rname) << "\n";
+		int peersDefined, connsActive, connsMax;
+		chain.PeerCount(&peersDefined, &connsActive, &connsMax);
 		std::cout << "configured peers: " << peersDefined << "\n";
-		std::cout << "active peers: " << peersActive << "\n";
-		std::cout << "max active peers: " << peersMax << "\n";
+		std::cout << "active conns: " << connsActive << "\n";
+		std::cout << "max active conns: " << connsMax << "\n";
 	}else{
 		std::cout << "rpc port: not configured\n";
 		std::cout << "rpc name: n/a\n";
@@ -498,12 +499,36 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 				std::cout << " (unused) ";
 			}else{
 				int since = difftime(now, p.lasttime);
-				std::cout << " (last used " << since << "s ago) ";
+        if(p.connected){
+				  std::cout << " (connected for " << since << "s) ";
+        }else{
+				  std::cout << " (not connected for " << since << "s) ";
+        }
 			}
 			std::cout << "\n";
 		}
 	}catch(Catena::NetworkException& e){
 		std::cerr << "couldn't get peers: " << e.what() << std::endl;
+	}
+	std::cout << std::flush;
+	return 0;
+}
+
+template <typename Iterator>
+int ReadlineUI::Conns(const Iterator start, const Iterator end){
+	if(start != end){
+		std::cerr << "command does not accept arguments" << std::endl;
+		return -1;
+	}
+	try{
+		const auto cinfo = chain.Conns();
+		for(auto c : cinfo){
+			std::cout << c.ipname << ' ';
+      Catena::StrTLSName(std::cout, c.name);
+			std::cout << "\n";
+		}
+	}catch(Catena::NetworkException& e){
+		std::cerr << "couldn't get conns: " << e.what() << std::endl;
 	}
 	std::cout << std::flush;
 	return 0;
@@ -536,7 +561,8 @@ void ReadlineUI::InputLoop(){
 		{ .cmd = "delustatus", .fxn = &ReadlineUI::NewUserStatusDelegation, .help = "create new UserStatusDelegation transaction", },
 		{ .cmd = "ustatus", .fxn = &ReadlineUI::NewUserStatus, .help = "create new UserStatus transaction", },
 		{ .cmd = "getustatus", .fxn = &ReadlineUI::GetUserStatus, .help = "look up a patient's status", },
-		{ .cmd = "peers", .fxn = &ReadlineUI::Peers, .help = "summarize p2p network peers", },
+		{ .cmd = "peers", .fxn = &ReadlineUI::Peers, .help = "summarize configured/discovewred p2p peers", },
+		{ .cmd = "conns", .fxn = &ReadlineUI::Conns, .help = "summarize p2p network connections", },
 		{ .cmd = "", .fxn = nullptr, .help = "", },
 	}, *c;
 	char* line;
