@@ -89,7 +89,7 @@ virtual ~PolledTLSFD() {
 
 bool IsConnection() const { return true; }
 
-bool IsOutgoing() const { return false; }
+bool IsOutgoing() const { return bio ? true : false; }
 
 std::string IPName() const {
   return ipname;

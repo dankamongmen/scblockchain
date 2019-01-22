@@ -86,7 +86,7 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
     auto conns = chain.Conns();
 		ss << "<tr><td>active conns</td><td>" << conns.size() << " ";
     for(const auto c : conns){
-      ss << c.ipname << " (";
+      ss << c.ipname << " (" << (c.outgoing ? "to " : "from ");
       Catena::StrTLSName(ss, c.name) << ") ";
     }
     ss << "</td></tr>";

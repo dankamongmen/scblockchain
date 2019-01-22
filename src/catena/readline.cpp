@@ -525,7 +525,7 @@ int ReadlineUI::Conns(const Iterator start, const Iterator end){
 	try{
 		const auto cinfo = chain.Conns();
 		for(auto c : cinfo){
-			std::cout << c.ipname << ' ';
+      std::cout << (c.outgoing ? "to " : "from ") << c.ipname << ' ';
       Catena::StrTLSName(std::cout, c.name);
 			std::cout << "\n";
 		}
