@@ -2,10 +2,10 @@ FROM debian:buster
 RUN apt-get update
 RUN apt-get install --assume-yes --no-install-recommends build-essential \
   nlohmann-json3-dev libreadline-dev libmicrohttpd-dev libssl-dev libgtest-dev \
-  exuberant-ctags pkg-config
+  exuberant-ctags pkg-config devscripts debhelper
 WORKDIR /catena
 
-# Send requisite building materials to $WORKDIR
-COPY * ./
+# Send source directory (minus .dockerignores) to $WORKDIR
+COPY . ./
 
-RUN make debbin
+RUN make docker-debbin
