@@ -27,6 +27,7 @@ Catena::Chain& chain;
 
 nlohmann::json InspectJSON(int start, int end) const;
 
+std::ostream& HTMLHeader(std::ostream& ss) const;
 std::ostream& HTMLSysinfo(std::ostream& ss) const;
 std::ostream& HTMLNetwork(std::ostream& ss) const;
 std::ostream& HTMLChaininfo(std::ostream& ss) const;

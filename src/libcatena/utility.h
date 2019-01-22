@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <ostream>
+#include <unistd.h>
 #include <openssl/x509.h>
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
 #include <gnu/libc-version.h>
@@ -176,6 +177,13 @@ inline std::string GetLibcID(){
 #error "couldn't determine libc versioning"
 #endif
 	return ss.str();
+}
+
+inline std::string Hostname() {
+	char hname[256] = "unknown"; // eh, from SuSv2
+	gethostname(hname, sizeof(hname));
+	hname[sizeof(hname) - 1] = '\0'; // gethostname() doesn't truncate
+	return hname;
 }
 
 }

@@ -6,7 +6,6 @@
 #include <libcatena/chain.h>
 #include <libcatena/hash.h>
 #include "catena/favicon.h"
-#include "catena/version.h"
 #include "catena/httpd.h"
 
 namespace CatenaAgent {
@@ -36,6 +35,12 @@ constexpr char htmlhdr[] =
  "#block { background: #fefefe; display: inline-block; border-radius: 1em; }"
  "</style>"
  "</head>";
+
+std::ostream& HTTPDServer::HTMLHeader(std::ostream& ss) const {
+	ss << htmlhdr;
+	ss << "<body><h2>catena v" << VERSION << " on " << Catena::Hostname() << "</h2>";
+  return ss;
+}
 
 // simple little HTML escaping for '&', '<', and '>'. might want a real one?
 std::ostream& HTTPDServer::JSONtoHTML(std::ostream& ss, const nlohmann::json& json) const {
@@ -146,18 +151,10 @@ HTTPDServer::Favicon(struct MHD_Connection* conn __attribute__ ((unused))) const
 	return resp;
 }
 
-static std::string Hostname() {
-	char hname[128] = "unknown";
-	gethostname(hname, sizeof(hname));
-	hname[sizeof(hname) - 1] = '\0'; // gethostname() doesn't truncate
-	return hname;
-}
-
 struct MHD_Response*
 HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
-	ss << htmlhdr;
-	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+  HTMLHeader(ss);
 	HTMLSysinfo(ss);
 	HTMLChaininfo(ss);
 	HTMLNetwork(ss);
@@ -189,8 +186,7 @@ HTTPDServer::Summary(struct MHD_Connection* conn __attribute__ ((unused))) const
 struct MHD_Response*
 HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
-	ss << htmlhdr;
-	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+  HTMLHeader(ss);
 	auto j = InspectJSON(0, -1);
 	ss << "<pre>";
 	JSONtoHTML(ss, InspectJSON(0, -1)) << "</pre>";
@@ -210,8 +206,7 @@ HTTPDServer::Show(struct MHD_Connection* conn __attribute__ ((unused))) const {
 struct MHD_Response*
 HTTPDServer::TStore(struct MHD_Connection* conn __attribute__ ((unused))) const {
 	std::stringstream ss;
-	ss << htmlhdr;
-	ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+  HTMLHeader(ss);
 	ss << "<pre>";
 	chain.DumpTrustStore(ss);
 	ss << "</pre></body>";
@@ -317,8 +312,7 @@ HTTPDServer::ShowBlockHTML(struct MHD_Connection* conn) const {
 		// FIXME handle genesis block manually
 		auto hash = Catena::StrToCatenaHash(hashstr);
 		std::stringstream ss;
-		ss << htmlhdr;
-		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+    HTMLHeader(ss);
 		ss << "<h3>Block " << hash << "</h3>";
 		BlockHTML(ss, hash, true);
 		ss << "</body>";
@@ -345,8 +339,7 @@ HTTPDServer::ShowMemberHTML(struct MHD_Connection* conn) const {
 	try{
 		auto cmspec = Catena::TXSpec::StrToTXSpec(cmspecstr);
 		std::stringstream ss;
-		ss << htmlhdr;
-		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+    HTMLHeader(ss);
 		const auto& cmember = chain.ConsortiumMember(cmspec);
 		const auto& users = chain.ConsortiumUsers(cmspec);
 		ss << "<h3>Consortium member " << cmspecstr << "</h3><pre>";
@@ -385,8 +378,7 @@ HTTPDServer::UstatusHTML(struct MHD_Connection* conn) const {
 		auto stype = Catena::StrToLong(stypestr, 0, LONG_MAX);
 		auto json = chain.UserStatus(uspec, stype).dump();
 		std::stringstream ss;
-		ss << htmlhdr;
-		ss << "<body><h2>catena v" << VERSION << " on " << Hostname() << "</h2>";
+    HTMLHeader(ss);
 		ss << "<h3>User " << uspecstr << "</h3>";
 		ss << "<span>" << stype << "</span><span>" << json << "</span>";
 		ss << "</body>";
