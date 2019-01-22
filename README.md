@@ -10,7 +10,8 @@ Detailed subdocumentation:
 
 The default target is `all`, which will build all binaries and docs. To run
 unit tests, use the `test` target, which will build any necessary dependencies.
-Docker images can also be built with the `docker` target, [see below](#docker).
+To build Debian source and binary packages, use `debsrc` and `debbin`,
+respectively. Docker images can be built with the `docker` target ([see below](#docker)).
 
 ### Build requirements
 

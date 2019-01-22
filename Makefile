@@ -83,24 +83,16 @@ valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
 
 DOCKEROUT:=$(OUT)/dockerbuilt
-DOCKERINPUTS:=$(addprefix $(DOCKEROUT)/, catena catenatest hcn-ca-chain.pem genesisblock)
-docker: $(DOCKERFILE) $(DOCKERINPUTS)
+# FIXME need to dep on .deb from dockerbuild target
+docker: $(DOCKERFILE)
 	docker build -f $< $(DOCKEROUT)
-
-$(DOCKEROUT)/hcn-ca-chain.pem: doc/hcn-ca-chain.pem
-	@mkdir -p $(@D)
-	cp $< $@
-
-$(DOCKEROUT)/genesisblock: genesisblock
-	@mkdir -p $(@D)
-	cp $< $@
 
 dockerbuild: $(DOCKERBUILDFILE)
 	docker build -f $< .
 	# need to get container from above with -q
 	@mkdir -p $(DOCKEROUT)/
-	# will copy catena, catenatest
-	docker cp $(CONTAINER):catena/.out/catena* $(DOCKEROUT)
+	# need to get source packages FIXME
+	docker cp $(CONTAINER):catena/*deb $(DOCKEROUT)
 
 debsrc:
 	dpkg-source --build .
