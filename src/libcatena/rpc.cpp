@@ -96,6 +96,10 @@ TLSName Name() const {
   return name;
 }
 
+void SetName(const TLSName& tname) {
+  name = tname;
+}
+
 bool Callback(RPCService& rpc) override {
 	if(accepting){
 		auto ra = SSL_accept(ssl);
@@ -121,11 +125,13 @@ bool Callback(RPCService& rpc) override {
 				std::cerr << "error accepting TLS" << std::endl;
 				return true;
 			}
+      return false;
 		}
-    struct epoll_event ev = {
+    struct epoll_event ev = { // successful negotiation
       .events = EPOLLIN | EPOLLRDHUP,
       .data = { .ptr = &*this, },
     };
+    SetName(SSLPeerName(ssl));
     accepting = false;
     rpc.EpollMod(sd, &ev);
 	}
@@ -238,7 +244,7 @@ void RPCService::OpenListeners() {
     throw NetworkException("couldn't bind IPv4 listener");
   }
   if(listen(fd, SOMAXCONN)){
-    throw NetworkException("couldn't set up listener queues");
+    throw NetworkException("couldn't listen for IPv4");
   }
   struct epoll_event ev = {
     .events = EPOLLIN,
@@ -263,7 +269,7 @@ void RPCService::OpenListeners() {
     throw NetworkException("couldn't bind IPv6 listener");
   }
   if(listen(fd, SOMAXCONN)){
-    throw NetworkException("couldn't set up listener queues");
+    throw NetworkException("couldn't listen for IPv6");
   }
   ev.data.ptr = lsd.get();
   if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){

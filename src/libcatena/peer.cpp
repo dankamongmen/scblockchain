@@ -66,6 +66,7 @@ ConnFuture Peer::TLSConnect(int sd) {
 		BIO_free_all(bio);
     throw NetworkException("ssl connect failure");
 	}
+  // FIXME rewrite this as call to SSLPeerName()
 	if(X509_V_OK != SSL_get_verify_result(s)){
 		BIO_free_all(bio);
     throw NetworkException("ssl verify failure");
