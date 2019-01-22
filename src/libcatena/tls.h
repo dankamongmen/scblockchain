@@ -11,7 +11,7 @@ namespace Catena {
 using TLSName = std::pair<std::string, std::string>;
 
 inline std::ostream& StrTLSName(std::ostream& stream, const TLSName& name){
-	stream << name.first << "→" << name.second;
+	stream << name.first << "::" << name.second;
 	return stream;
 }
 
