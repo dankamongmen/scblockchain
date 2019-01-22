@@ -24,11 +24,22 @@ constexpr int RetryConnSeconds = 300;
 class Chain;
 class PolledFD;
 
+// A TLSName, (hopefully) unique within the network, is the Issuer CN plus the
+// Subject CN of the node's certificate.
+using TLSName = std::pair<std::string, std::string>;
+
+inline std::ostream& StrTLSName(std::ostream& stream, const TLSName& name){
+	stream << name.first << "→" << name.second;
+	return stream;
+}
+
 // For returning (copied) details about connections beyond libcatena
 struct ConnInfo {
 std::string ipname; // IPv[46] address plus port
-ConnInfo(std::string&& ipname) :
-  ipname(ipname) {}
+TLSName name;
+ConnInfo(std::string&& ipname, const TLSName& name) :
+  ipname(ipname),
+  name(name) {}
 };
 
 struct RPCServiceOptions {
@@ -101,8 +112,7 @@ int epollfd; // epoll descriptor
 std::thread epoller; // sits on epoll() with listen()ing socket and peers
 std::atomic<bool> cancelled; // lame signal to Epoller
 std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
-std::string issuerCN; // taken from our X509 certificate
-std::string subjectCN;
+TLSName name;
 std::shared_ptr<PeerQueue> connqueue;
 std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;

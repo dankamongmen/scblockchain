@@ -28,6 +28,7 @@ virtual bool Callback(RPCService& rpc) = 0;
 
 virtual bool IsConnection() const = 0;
 virtual std::string IPName() const = 0;
+virtual TLSName Name() const = 0;
 
 virtual ~PolledFD() {
 	if(close(sd)){
@@ -87,6 +88,10 @@ std::string IPName() const {
   return ipname;
 }
 
+TLSName Name() const {
+  return name;
+}
+
 bool Callback(RPCService& rpc) override {
 	if(accepting){
 		auto ra = SSL_accept(ssl);
@@ -142,6 +147,7 @@ BIO* bio; // if set, owns ->ssl, which otherwise is its own anchor object
 std::shared_ptr<Peer> peer;
 bool accepting;
 std::string ipname;
+TLSName name;
 
 void NameFDPeer() {
 	struct sockaddr ss;
@@ -177,6 +183,10 @@ bool IsConnection() const { return false; }
 
 std::string IPName() const {
   return "fixme[l3+l4]"; // FIXME
+}
+
+TLSName Name() const {
+  return std::make_pair("fixmeICN", "fixmeSCN"); // FIXME, use local?
 }
 
 bool Callback(RPCService& rpc) override {
@@ -467,7 +477,7 @@ std::vector<ConnInfo> RPCService::Conns() const {
 	std::vector<ConnInfo> ret;
 	for(const auto& e : epolls){
     if(e.second->IsConnection()){
-		  ret.emplace_back(e.second->IPName());
+		  ret.emplace_back(e.second->IPName(), e.second->Name());
     }
 	}
 	return ret;
