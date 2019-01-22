@@ -101,6 +101,11 @@ dockerbuild: $(DOCKERBUILDFILE)
 	# need to get source packages FIXME
 	docker cp $(CONTAINER):catena/*deb $(DOCKEROUT)
 
+# Used by doc/Dockerfile.build
+docker-debbin:
+	@mkdir -p $(OUT)/deb
+	debuild -uc -us
+
 debsrc:
 	dpkg-source --build .
 
