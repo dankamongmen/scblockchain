@@ -1,3 +1,10 @@
+catena (0.0.3~pre) UNRELEASED; urgency=medium
+
+  * Better Docker support
+  * P2P code
+
+ -- nick black <dankamongmen@gmail.com>  Tue, 22 Jan 2019 17:19:38 -0500
+
 catena (0.0.2) unstable; urgency=medium
 
   * Add systemd unit file
