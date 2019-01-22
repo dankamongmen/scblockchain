@@ -473,6 +473,7 @@ void RPCService::EpollDel(int fd) {
 }
 
 int RPCService::ActiveConnCount() const {
+  std::lock_guard<std::mutex> guard(lock);
   int total = 0;
   for(const auto& e : epolls){ // FIXME rewrite as std::accumulate?
     if(e.second->IsConnection()){
