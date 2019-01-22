@@ -24,15 +24,6 @@ constexpr int RetryConnSeconds = 300;
 class Chain;
 class PolledFD;
 
-// A TLSName, (hopefully) unique within the network, is the Issuer CN plus the
-// Subject CN of the node's certificate.
-using TLSName = std::pair<std::string, std::string>;
-
-inline std::ostream& StrTLSName(std::ostream& stream, const TLSName& name){
-	stream << name.first << "→" << name.second;
-	return stream;
-}
-
 // For returning (copied) details about connections beyond libcatena
 struct ConnInfo {
 std::string ipname; // IPv[46] address plus port
