@@ -28,6 +28,7 @@ might or might not work.
 * JSON for Modern C++ 3.1.2+ (nlohmann-json3-dev)
 * pkg-config
 * dpkg-dev (for dpkg-parsechangelog)
+* Cap'n Proto 0.7.0+ (capnproto, libcapnp-dev)
 
 If source tags are to be built, extra packages are required:
 
