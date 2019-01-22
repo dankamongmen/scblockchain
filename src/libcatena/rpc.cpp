@@ -46,11 +46,13 @@ int sd;
 
 class PolledTLSFD : public PolledFD {
 public:
-PolledTLSFD(int sd, SSL* ssl) : // accepting form, SSL is anchor object
+// accepting form, SSL is anchor object
+PolledTLSFD(int sd, SSL* ssl, const TLSName& name) :
   PolledFD(sd),
   ssl(ssl),
   bio(nullptr),
-  accepting(true) {
+  accepting(true),
+  name(name) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
@@ -58,12 +60,14 @@ PolledTLSFD(int sd, SSL* ssl) : // accepting form, SSL is anchor object
   NameFDPeer();
 }
 
-PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p) : // connected form, BIO is anchor object
+// connected form, associated with Peer, BIO is anchor object
+PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p, const TLSName& name) :
   PolledFD(sd),
   ssl(nullptr),
   bio(bio),
   peer(p),
-  accepting(false) {
+  accepting(false),
+  name(name) {
 	if(bio == nullptr || 1 != BIO_get_ssl(bio, &ssl)){
 		throw NetworkException("tried to poll on null tls");
   }
@@ -205,7 +209,7 @@ void Accept(RPCService& rpc) { // FIXME need arrange this all as non-blocking
 	}
   std::unique_ptr<PolledTLSFD> sfd;
 	try{
-		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL());
+		sfd = std::make_unique<PolledTLSFD>(ret, sslctx.NewSSL(), TLSName());
 		std::cout << "accepted " << ret << " on " << sd << " from " << sfd->IPName() << std::endl;
 	}catch(...){
 		close(ret);
@@ -332,13 +336,13 @@ void RPCService::HandleCompletedConns() {
 	const auto& conns = connqueue.get()->GetCompletedPeers();
 	for(const auto& c : conns){
     try{
-      BIO* b = c.second->get();
-      if(c.first->Name() == rpcName){ // connected to ourselves
+      ConnFuture cf = c.second->get();
+      if(cf.name == rpcName){ // connected to ourselves
         c.first->Disconnect();
-        BIO_free_all(b);
+        BIO_free_all(cf.bio);
       }else{
-        int fd = BIO_get_fd(b, NULL); // FIXME can fail
-        auto mapins = epolls.emplace(fd, std::make_unique<PolledTLSFD>(fd, b, c.first));
+        int fd = BIO_get_fd(cf.bio, NULL); // FIXME can fail
+        auto mapins = epolls.emplace(fd, std::make_unique<PolledTLSFD>(fd, cf.bio, c.first, cf.name));
         struct epoll_event ev = {
           .events = EPOLLIN | EPOLLRDHUP,
           .data = { .ptr = (*mapins.first).second.get(), },

@@ -24,19 +24,25 @@ bool configured;
 bool connected;
 };
 
+// Information related to established connection, passed via std::future
+struct ConnFuture {
+  BIO* bio;
+  TLSName name;
+};
+
 // Necessary state to transfer newly-connected Peers from their AsyncConnect
 // threads to RPCService. Received under a shared_ptr, since the RPCService that
 // initiated the ConnectAsync might have disappeared while we were connecting.
 class PeerQueue {
 public:
-void AddPeer(const std::shared_ptr<Peer>& p, std::unique_ptr<std::future<BIO*>> bio) {
+void AddPeer(const std::shared_ptr<Peer>& p, std::unique_ptr<std::future<ConnFuture>> bio) {
 	std::lock_guard<std::mutex> lock(pmutex);
 	peers.emplace_back(p, std::move(bio));
 }
 
-std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<BIO*>>>>
+std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<ConnFuture>>>>
 GetCompletedPeers() {
-  std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<BIO*>>>> ret;
+  std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<ConnFuture>>>> ret;
 	std::lock_guard<std::mutex> lock(pmutex);
   auto it = peers.begin();
   while(it != peers.end()){
@@ -54,7 +60,7 @@ GetCompletedPeers() {
 }
 
 private:
-std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<BIO*>>>> peers;
+std::list<std::pair<std::shared_ptr<Peer>, std::unique_ptr<std::future<ConnFuture>>>> peers;
 std::mutex pmutex;
 };
 
@@ -76,13 +82,13 @@ std::string Address() const {
 	return address;
 }
 
-BIO* Connect();
+ConnFuture Connect();
 
 // FIXME pq shouldn't need be shared anymore, might need share p with lambda though
 static void
 ConnectAsync(std::shared_ptr<Peer> p, std::shared_ptr<PeerQueue> pq) {
-  std::promise<BIO*> prom;
-  auto fut = std::make_unique<std::future<BIO*>>(prom.get_future());
+  std::promise<ConnFuture> prom;
+  auto fut = std::make_unique<std::future<ConnFuture>>(prom.get_future());
   std::thread t([](const auto p, auto pq, auto prom) {
                      (void)pq;
                      try{
@@ -102,10 +108,6 @@ ConnectAsync(std::shared_ptr<Peer> p, std::shared_ptr<PeerQueue> pq) {
 PeerInfo Info() const {
 	PeerInfo ret{address, port, lasttime, configured, connected};
 	return ret;
-}
-
-std::pair<std::string, std::string> Name() const {
-	return std::make_pair(lastIssuerCN, lastSubjectCN);
 }
 
 time_t LastTime() const {
@@ -128,12 +130,10 @@ std::shared_ptr<SSLCtxRAII> sslctx;
 std::string address;
 int port;
 time_t lasttime; // last time this was used, successfully or otherwise
-std::string lastSubjectCN; // subject CN from last TLS handshake
-std::string lastIssuerCN; // issuer CN from last TLS handshake
 bool configured; // were we provided during initial configuration?
 bool connected; // are we actively connected?
 
-BIO* TLSConnect(int sd);
+ConnFuture TLSConnect(int sd);
 
 void MarkConnected() {
   if(!connected){
