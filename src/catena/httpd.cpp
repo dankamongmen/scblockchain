@@ -82,7 +82,14 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
     Catena::StrTLSName(ss, xname) << "</td></tr>";
 		int peersDefined, connsMax;
 		chain.PeerCount(&peersDefined, &connsMax);
-		ss << "<tr><td>configured peers</td><td>" << peersDefined << "</td></tr>";
+    auto peers = chain.Peers();
+		ss << "<tr><td>configured peers</td><td>" << peersDefined << " ";
+    for(const auto p : peers){
+      if(p.configured){
+        ss << p.address << ':' << p.port << ' ';
+      }
+    }
+    ss << "</td></tr>";
     auto conns = chain.Conns();
 		ss << "<tr><td>active conns</td><td>" << conns.size() << " ";
     for(const auto c : conns){
