@@ -108,6 +108,7 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		return -1;
 	}
   std::cout << "catena v" << VERSION << " on " << Catena::Hostname() << "\n";
+  std::cout << "\n";
 	std::cout << "cxx: " << Catena::GetCompilerID() << "\n";
 	std::cout << "libc: " << Catena::GetLibcID() << "\n";
 	std::cout << "json: JSON for Modern C++ " <<
@@ -134,10 +135,10 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		auto rname = chain.RPCName();
 		std::cout << "rpc name: ";
     Catena::StrTLSName(std::cout, rname) << "\n";
-		int peersDefined, connsActive, connsMax;
-		chain.PeerCount(&peersDefined, &connsActive, &connsMax);
+		int peersDefined, connsMax;
+		chain.PeerCount(&peersDefined, &connsMax);
 		std::cout << "configured peers: " << peersDefined << "\n";
-		std::cout << "active conns: " << connsActive << "\n";
+		std::cout << "active conns: " << chain.ActiveConnCount() << "\n";
 		std::cout << "max active conns: " << connsMax << "\n";
 	}else{
 		std::cout << "rpc port: not configured\n";

@@ -80,11 +80,11 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
 		auto xname = chain.RPCName();
 		ss << "<tr><td>rpc name</td><td>";
     Catena::StrTLSName(ss, xname) << "</td></tr>";
-		int peersDefined, connsActive, connsMax;
-		chain.PeerCount(&peersDefined, &connsActive, &connsMax);
+		int peersDefined, connsMax;
+		chain.PeerCount(&peersDefined, &connsMax);
 		ss << "<tr><td>configured peers</td><td>" << peersDefined << "</td></tr>";
     auto conns = chain.Conns();
-		ss << "<tr><td>active conns</td><td>" << connsActive << " ";
+		ss << "<tr><td>active conns</td><td>" << conns.size() << " ";
     for(const auto c : conns){
       ss << c.ipname << " (";
       Catena::StrTLSName(ss, c.name) << ") ";

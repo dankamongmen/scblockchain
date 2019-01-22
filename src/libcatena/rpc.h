@@ -69,10 +69,9 @@ std::vector<std::string> Advertisement() const {
 
 int ActiveConnCount() const;
 
-void PeerCount(int* defined, int* act, int* maxactive) const {
+void PeerCount(int* defined, int* maxactive) const {
   std::lock_guard<std::mutex> guard(lock);
 	*defined = peers.size();
-  *act = ActiveConnCount();
 	*maxactive = MaxActiveRPCPeers;
 }
 
