@@ -131,7 +131,8 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 	if(port){
 		std::cout << "rpc port: " << port << "\n";
 		auto rname = chain.RPCName();
-		std::cout << "rpc name: " << rname.first << " → " << rname.second << "\n";
+		std::cout << "rpc name: ";
+    Catena::StrTLSName(std::cout, rname) << "\n";
 		int peersDefined, connsActive, connsMax;
 		chain.PeerCount(&peersDefined, &connsActive, &connsMax);
 		std::cout << "configured peers: " << peersDefined << "\n";
@@ -522,7 +523,8 @@ int ReadlineUI::Conns(const Iterator start, const Iterator end){
 	try{
 		const auto cinfo = chain.Conns();
 		for(auto c : cinfo){
-			std::cout << c.ipname;
+			std::cout << c.ipname << ' ';
+      Catena::StrTLSName(std::cout, c.name);
 			std::cout << "\n";
 		}
 	}catch(Catena::NetworkException& e){
