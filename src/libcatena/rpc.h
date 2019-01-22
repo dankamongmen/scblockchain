@@ -26,11 +26,14 @@ class PolledFD;
 
 // For returning (copied) details about connections beyond libcatena
 struct ConnInfo {
+ConnInfo(std::string&& ipname, const TLSName& name, bool outgoing) :
+  ipname(ipname),
+  name(name),
+  outgoing(outgoing) {}
+
 std::string ipname; // IPv[46] address plus port
 TLSName name;
-ConnInfo(std::string&& ipname, const TLSName& name) :
-  ipname(ipname),
-  name(name) {}
+bool outgoing;
 };
 
 struct RPCServiceOptions {
