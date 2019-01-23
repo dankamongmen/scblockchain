@@ -70,13 +70,16 @@ std::vector<std::string> Advertisement() const {
   return advertised;
 }
 
-int ActiveConnCount() const;
+// Generate a NodeAdvertisement protobuf
+std::vector<unsigned char> NodeAdvertisement() const;
 
 void PeerCount(int* defined, int* maxactive) const {
   std::lock_guard<std::mutex> guard(lock);
 	*defined = peers.size();
 	*maxactive = MaxActiveRPCPeers;
 }
+
+int ActiveConnCount() const;
 
 std::vector<PeerInfo> Peers() const {
   std::lock_guard<std::mutex> guard(lock);

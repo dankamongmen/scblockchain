@@ -7,6 +7,9 @@
 #include <sys/epoll.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <capnp/message.h>
+#include <capnp/serialize.h>
+#include <proto/catena.capnp.h>
 #include <libcatena/utility.h>
 #include <libcatena/rpc.h>
 
@@ -498,6 +501,24 @@ std::vector<ConnInfo> RPCService::Conns() const {
     }
 	}
 	return ret;
+}
+
+std::vector<unsigned char> RPCService::NodeAdvertisement() const {
+  std::vector<unsigned char> ret;
+  auto adcount = advertised.size();
+  if(adcount){
+    capnp::MallocMessageBuilder builder;
+    auto nodeAd = builder.initRoot<Catena::Proto::AdvertiseNode>();
+    auto ads = nodeAd.initAds(adcount);
+    for(auto it = 0u ; it < adcount ; ++it){
+      ads.set(it, advertised[it]);
+    }
+    auto words = capnp::messageToFlatArray(builder);
+    auto bytes = words.asBytes();
+    ret.reserve(bytes.size());
+    ret.insert(ret.end(), bytes.begin(), bytes.end());
+  }
+  return ret;
 }
 
 }
