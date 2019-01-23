@@ -27,6 +27,9 @@
 #define ELOOK_TEST_PRIVKEY "test/elook-test1.pem"
 #define TEST_NODEKEY "test/ca/intermediate/testcorp/private/testnode1.key.pem"
 #define TEST_CONFIGURED_PEERS 2
+#define TEST_ISSUER_CN "TestCorp CA"
+#define TEST_SUBJECT_CN "testnode1"
+
 
 static const char TEST_X509_CHAIN[] = "test/node1chain.pem";
 

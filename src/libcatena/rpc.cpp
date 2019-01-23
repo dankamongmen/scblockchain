@@ -317,7 +317,7 @@ RPCService::RPCService(Chain& ledger, const RPCServiceOptions& opts) :
   }
 	PrepSSLCTX(sslctx.get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
-	rpcName = X509NetworkName(x509);
+	name = X509NetworkName(x509);
 	PrepSSLCTX(clictx.get()->get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 	epollfd = epoll_create1(EPOLL_CLOEXEC);
@@ -351,7 +351,7 @@ void RPCService::HandleCompletedConns() {
 	for(const auto& c : conns){
     try{
       ConnFuture cf = c.second->get();
-      if(cf.name == rpcName){ // connected to ourselves
+      if(cf.name == name){ // connected to ourselves
         c.first->Disconnect();
         BIO_free_all(cf.bio);
       }else{
@@ -509,6 +509,9 @@ std::vector<unsigned char> RPCService::NodeAdvertisement() const {
   if(adcount){
     capnp::MallocMessageBuilder builder;
     auto nodeAd = builder.initRoot<Catena::Proto::AdvertiseNode>();
+    auto bname = nodeAd.initName();
+    bname.setIssuerCN(name.first);
+    bname.setSubjectCN(name.second);
     auto ads = nodeAd.initAds(adcount);
     for(auto it = 0u ; it < adcount ; ++it){
       ads.set(it, advertised[it]);

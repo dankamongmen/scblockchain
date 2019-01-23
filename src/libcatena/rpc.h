@@ -51,8 +51,8 @@ RPCService(Chain& ledger, const RPCServiceOptions& opts);
 
 ~RPCService();
 
-std::pair<std::string, std::string> Name() const {
-	return rpcName;
+TLSName Name() const {
+	return name;
 }
 
 // peerfile must contain one peer per line, specified as an IPv4 or IPv6
@@ -110,7 +110,6 @@ std::atomic<bool> cancelled; // lame signal to Epoller
 std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
 TLSName name;
 std::shared_ptr<PeerQueue> connqueue;
-std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
 mutable std::mutex lock;
 

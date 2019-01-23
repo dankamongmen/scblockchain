@@ -69,6 +69,9 @@ TEST(CatenaRPC, TestAdvertisementProto){
   capnp::FlatArrayMessageReader node(view);
   auto nodeAd = node.getRoot<Catena::Proto::AdvertiseNode>();
   EXPECT_EQ(addrs.size(), nodeAd.getAds().size());
+  auto rname = nodeAd.getName();
+  EXPECT_STREQ(rname.getSubjectCN().cStr(), TEST_SUBJECT_CN);
+  EXPECT_STREQ(rname.getIssuerCN().cStr(), TEST_ISSUER_CN);
 }
 
 TEST(CatenaRPC, TestNoListeners){
