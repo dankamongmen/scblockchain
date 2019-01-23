@@ -1,8 +1,11 @@
 #include <fstream>
 #include <gtest/gtest.h>
+#include <capnp/message.h>
 #include <libcatena/rpc.h>
+#include <capnp/serialize.h>
 #include <libcatena/chain.h>
 #include <libcatena/utility.h>
+#include <proto/catena.capnp.h>
 #include "test/defs.h"
 
 TEST(CatenaRPC, TestChainfile){
@@ -44,6 +47,28 @@ TEST(CatenaRPC, TestAdvertisementOptions){
 	Catena::Chain chain;
 	Catena::RPCService rpc(chain, opts);
   EXPECT_EQ(rpc.Advertisement(), addrs);
+}
+
+TEST(CatenaRPC, TestAdvertisementProto){
+  const std::vector<std::string> addrs = {
+    "127.0.0.1:40404", "127.0.0.1", "localhost",
+  };
+  const Catena::RPCServiceOptions opts = {
+    .port = Catena::DefaultRPCPort,
+    .chainfile = TEST_X509_CHAIN,
+    .keyfile = TEST_NODEKEY,
+    .addresses = addrs,
+  };
+	Catena::Chain chain;
+	Catena::RPCService rpc(chain, opts);
+  auto navec = rpc.NodeAdvertisement();
+  // FIXME alignment requirements!
+  const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(&(*std::begin(navec))),
+        reinterpret_cast<const capnp::word*>(&(*std::end(navec))));
+  capnp::FlatArrayMessageReader node(view);
+  auto nodeAd = node.getRoot<Catena::Proto::AdvertiseNode>();
+  EXPECT_EQ(addrs.size(), nodeAd.getAds().size());
 }
 
 TEST(CatenaRPC, TestNoListeners){
