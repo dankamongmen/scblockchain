@@ -1,11 +1,11 @@
 FROM debian:buster
 RUN apt-get update
-RUN apt-get install --assume-yes --no-install-recommends \
-  libreadline7 libmicrohttpd12 libssl1.1 libgtest-dev
+RUN apt-get install --assume-yes --no-install-recommends build-essential \
+  nlohmann-json3-dev libreadline-dev libmicrohttpd-dev libssl-dev libgtest-dev \
+  exuberant-ctags pkg-config devscripts debhelper capnproto libcapnp-dev
+WORKDIR /catena
 
-EXPOSE 8080 40404
+# Send source directory (minus .dockerignores) to $WORKDIR
+COPY . ./
 
-# Send requisite building materials to $WORKDIR
-COPY catena catenatest /usr/bin/
-COPY genesisblock /usr/share/catena/
-COPY hcn-ca-chain.pem /usr/share/catena/
+RUN make docker-debbin

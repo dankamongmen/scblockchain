@@ -40,8 +40,8 @@ LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC))) $(
 
 LEDGER:=genesisblock
 TESTDATA:=$(wildcard test/*) $(LEDGER)
-DOCKERFILE:=Dockerfile
-DOCKERBUILDFILE:=doc/Dockerfile.build
+DOCKERBUILDFILE:=Dockerfile
+DOCKERFILE:=doc/Dockerfile.image
 
 WFLAGS:=-Wall -W -Werror -Werror=vla
 # clang doesn't like this
@@ -111,7 +111,7 @@ dockerbuild: $(DOCKERBUILDFILE)
 	# need to get source packages FIXME
 	docker cp $(CONTAINER):catena/*deb $(DOCKEROUT)
 
-# Used by doc/Dockerfile.build
+# Used by Dockerfile
 docker-debbin:
 	@mkdir -p $(OUT)/deb
 	debuild -uc -us
