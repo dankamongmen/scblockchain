@@ -7,7 +7,18 @@ $Cxx.namespace("Catena::Proto");
 
 # Method identifiers (capnp::rpc::Call::methodId)
 const methodAdvertiseNode :UInt16 = 1; # uses AdvertiseNode, no return
+const methodDiscoverNodes :UInt16 = 2; # uses void, returns AdvertiseNodes
+
+struct TLSName {
+  subjectCN @0 :Text;
+  issuerCN @1 :Text;
+}
 
 struct AdvertiseNode {
-  ads @0 :List(Text);  
+  name @0 :TLSName;
+  ads @1 :List(Text);
+}
+
+struct AdvertiseNodes {
+  nodes @0 :List(AdvertiseNode);
 }
