@@ -49,6 +49,24 @@ TEST(CatenaRPC, TestAdvertisementOptions){
   EXPECT_EQ(rpc.Advertisement(), addrs);
 }
 
+TEST(CatenaRPC, TestNullAdvertisementProto){
+  const Catena::RPCServiceOptions opts = {
+    .port = Catena::DefaultRPCPort,
+    .chainfile = TEST_X509_CHAIN,
+    .keyfile = TEST_NODEKEY,
+    .addresses = {},
+  };
+	Catena::Chain chain;
+	Catena::RPCService rpc(chain, opts);
+  auto navec = rpc.NodeAdvertisement();
+  // FIXME alignment requirements!
+  const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(&(*std::begin(navec))),
+        reinterpret_cast<const capnp::word*>(&(*std::end(navec))));
+  capnp::FlatArrayMessageReader node(view);
+  EXPECT_THROW(node.getRoot<Catena::Proto::AdvertiseNode>(), ::kj::Exception);
+}
+
 TEST(CatenaRPC, TestAdvertisementProto){
   const std::vector<std::string> addrs = {
     "127.0.0.1:40404", "127.0.0.1", "localhost",
