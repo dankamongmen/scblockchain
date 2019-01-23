@@ -76,7 +76,7 @@ is thought that they might one day be named and signed.
 ### P2P connections
 
 Each node has an artificial maximum number K of established connections. In a
-network of N nodes, it is expected that K < N. We'd like to maintain the
+network of N nodes, it is expected that K &lt; N. We'd like to maintain the
 following properties:
 
 1. The network is connected, i.e., there are no isolated subnetworks.
@@ -210,3 +210,8 @@ intermediate CA certificate, but this is not enforced. The root CA certificate
 need never be offered, as all peers are guaranteed to have it. Catena clients
 *must not* trust the host system's CA store for consortium mode operation,
 instead accepting only certificates terminating in the HCN root CA.
+
+## RPC protocol
+
+Each message is a 64-bit NBO length in bytes, followed by a Cap'n Proto
+rpc::Call message of that size. See src/proto/rpc.capnp for details.
