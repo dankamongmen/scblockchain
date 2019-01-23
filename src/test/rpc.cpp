@@ -90,10 +90,9 @@ TEST(CatenaRPC, Peerfile){
   };
 	Catena::RPCService rpc(chain, opts);
 	rpc.AddPeers(RPC_TEST_PEERS);
-	int active, defined, max;
-	rpc.PeerCount(&defined, &active, &max);
-	EXPECT_EQ(4, defined);
-	EXPECT_EQ(0, active);
+	int defined, max;
+	rpc.PeerCount(&defined, &max);
+	EXPECT_EQ(TEST_CONFIGURED_PEERS, defined);
 	EXPECT_EQ(Catena::MaxActiveRPCPeers, max);
 }
 
@@ -109,14 +108,13 @@ TEST(CatenaRPC, DoubleAddPeerfile){
   };
 	Catena::RPCService rpc(chain, opts);
 	rpc.AddPeers(RPC_TEST_PEERS);
-	int active, defined, max;
-	rpc.PeerCount(&defined, &active, &max);
-	EXPECT_EQ(4, defined);
-	EXPECT_EQ(0, active);
+	int defined, max;
+	rpc.PeerCount(&defined, &max);
+	EXPECT_EQ(TEST_CONFIGURED_PEERS, defined);
 	EXPECT_EQ(Catena::MaxActiveRPCPeers, max);
 	rpc.AddPeers(RPC_TEST_PEERS);
-	rpc.PeerCount(&defined, &active, &max);
-	EXPECT_EQ(4, defined);
+	rpc.PeerCount(&defined, &max);
+	EXPECT_EQ(TEST_CONFIGURED_PEERS, defined);
 }
 
 TEST(CatenaRPC, BadPeerfile){

@@ -27,6 +27,7 @@ PolledFD(int sd) :
 virtual bool Callback(RPCService& rpc) = 0;
 
 virtual bool IsConnection() const = 0;
+virtual bool IsOutgoing() const = 0;
 virtual std::string IPName() const = 0;
 virtual TLSName Name() const = 0;
 
@@ -87,6 +88,8 @@ virtual ~PolledTLSFD() {
 }
 
 bool IsConnection() const { return true; }
+
+bool IsOutgoing() const { return bio ? true : false; }
 
 std::string IPName() const {
   return ipname;
@@ -190,6 +193,8 @@ PolledListenFD(int family, const SSLCtxRAII& sslctx) :
 }
 
 bool IsConnection() const { return false; }
+
+bool IsOutgoing() const { return false; }
 
 std::string IPName() const {
   return "fixme[l3+l4]"; // FIXME
@@ -473,6 +478,7 @@ void RPCService::EpollDel(int fd) {
 }
 
 int RPCService::ActiveConnCount() const {
+  std::lock_guard<std::mutex> guard(lock);
   int total = 0;
   for(const auto& e : epolls){ // FIXME rewrite as std::accumulate?
     if(e.second->IsConnection()){
@@ -487,7 +493,8 @@ std::vector<ConnInfo> RPCService::Conns() const {
 	std::vector<ConnInfo> ret;
 	for(const auto& e : epolls){
     if(e.second->IsConnection()){
-		  ret.emplace_back(e.second->IPName(), e.second->Name());
+      auto out = e.second->IsOutgoing();
+		  ret.emplace_back(e.second->IPName(), e.second->Name(), out);
     }
 	}
 	return ret;

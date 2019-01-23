@@ -26,11 +26,14 @@ class PolledFD;
 
 // For returning (copied) details about connections beyond libcatena
 struct ConnInfo {
+ConnInfo(std::string&& ipname, const TLSName& name, bool outgoing) :
+  ipname(ipname),
+  name(name),
+  outgoing(outgoing) {}
+
 std::string ipname; // IPv[46] address plus port
 TLSName name;
-ConnInfo(std::string&& ipname, const TLSName& name) :
-  ipname(ipname),
-  name(name) {}
+bool outgoing;
 };
 
 struct RPCServiceOptions {
@@ -69,10 +72,9 @@ std::vector<std::string> Advertisement() const {
 
 int ActiveConnCount() const;
 
-void PeerCount(int* defined, int* act, int* maxactive) const {
+void PeerCount(int* defined, int* maxactive) const {
   std::lock_guard<std::mutex> guard(lock);
 	*defined = peers.size();
-  *act = ActiveConnCount();
 	*maxactive = MaxActiveRPCPeers;
 }
 

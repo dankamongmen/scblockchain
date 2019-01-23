@@ -182,8 +182,12 @@ std::vector<std::string> AdvertisedAddresses() const {
 }
 
 // Safe to call only if RPC networking has been enabled (RPCPort() != 0)
-void PeerCount(int* defined, int* active, int* maxactive) const {
-	return rpcnet.get()->PeerCount(defined, active, maxactive);
+void PeerCount(int* defined, int* maxactive) const {
+	return rpcnet.get()->PeerCount(defined, maxactive);
+}
+
+int ActiveConnCount() const {
+	return rpcnet.get()->ActiveConnCount();
 }
 
 // Get the node's RPC name. Safe to call only if RPC networking has been enabled.
