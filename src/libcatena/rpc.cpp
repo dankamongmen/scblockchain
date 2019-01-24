@@ -18,6 +18,8 @@ namespace Catena {
 
 // RPC messages are prefaced with a 32-bit NBO length
 constexpr auto MSGLEN_PREFACE_BYTES = 4;
+// ...though, for now, we only allow messages up to 16MB
+constexpr auto MSGLEN_MAX = 1u << 24;
 
 // Each epoll()ed file descriptor has an associated free pointer. That pointer
 // should yield up a PolledFD derivative.
@@ -198,6 +200,9 @@ bool Callback(RPCService& rpc) override {
     if(haveRead + r == wantRead){
       if(readingMsg == false){ // we were reading the length
         wantRead = nbo_to_ulong(readbuf.data(), MSGLEN_PREFACE_BYTES);
+        if(wantRead > MSGLEN_MAX){
+          throw NetworkException("message too large");
+        }
         std::cout << "Set up to read a " << wantRead << "-byte RPC" << std::endl;
         readbuf.reserve(wantRead);
       }else{
@@ -476,14 +481,14 @@ void RPCService::Epoller() {
 		}
 		if(eret){
 			PolledFD* pfd = static_cast<PolledFD*>(ev.data.ptr);
+      int fd = pfd->FD();
 			try{
 				if(pfd->Callback(*this)){
-          int fd = pfd->FD();
           EpollDel(fd);
-          epolls.erase(fd);
 				}
 			}catch(NetworkException& e){
 				std::cerr << "error handling epoll result: " << e.what() << std::endl;
+        EpollDel(fd);
 			}
 		}
 	}
