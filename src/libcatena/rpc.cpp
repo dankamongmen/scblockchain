@@ -587,19 +587,24 @@ std::vector<ConnInfo> RPCService::Conns() const {
 	return ret;
 }
 
+void RPCService::NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const {
+  auto bname = builder.initName();
+  bname.setIssuerCN(name.first);
+  bname.setSubjectCN(name.second);
+  auto adcount = advertised.size();
+  auto ads = builder.initAds(adcount);
+  for(auto it = 0u ; it < adcount ; ++it){
+    ads.set(it, advertised[it]);
+  }
+}
+
 std::vector<unsigned char> RPCService::NodeAdvertisement() const {
   std::vector<unsigned char> ret;
   auto adcount = advertised.size();
   if(adcount){
     capnp::MallocMessageBuilder builder;
     auto nodeAd = builder.initRoot<Catena::Proto::AdvertiseNode>();
-    auto bname = nodeAd.initName();
-    bname.setIssuerCN(name.first);
-    bname.setSubjectCN(name.second);
-    auto ads = nodeAd.initAds(adcount);
-    for(auto it = 0u ; it < adcount ; ++it){
-      ads.set(it, advertised[it]);
-    }
+    NodeAdvertisementFill(nodeAd);
     auto words = capnp::messageToFlatArray(builder);
     auto bytes = words.asBytes();
     ret.reserve(bytes.size());

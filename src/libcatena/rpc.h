@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 #include <unordered_map>
 #include <openssl/ssl.h>
+#include <proto/catena.capnp.h>
 #include <libcatena/peer.h>
 #include <libcatena/tls.h>
 
@@ -118,6 +119,7 @@ void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 void HandleCompletedConns();
 void LaunchNewConns();
+void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
 };
 
 }
