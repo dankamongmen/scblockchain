@@ -12,6 +12,7 @@
 #include <capnp/serialize.h>
 #include <proto/catena.capnp.h>
 #include <libcatena/utility.h>
+#include <libcatena/proto.h>
 #include <libcatena/rpc.h>
 
 namespace Catena {
@@ -188,7 +189,11 @@ bool Callback(RPCService& rpc) override {
         readbuf.reserve(wantRead);
       }else{
         std::cout << "Received " << wantRead << "-byte RPC" << std::endl;
-        Dispatch(readbuf.data(), wantRead);
+        try{
+          Dispatch(readbuf.data(), wantRead);
+        }catch(::kj::Exception &e){
+          throw NetworkException(e.getDescription());
+        }
         wantRead = MSGLEN_PREFACE_BYTES;
       }
       haveRead = 0;
@@ -242,10 +247,10 @@ void Dispatch(const unsigned char* buf, size_t len) {
         reinterpret_cast<const capnp::word*>(buf),
         reinterpret_cast<const capnp::word*>(buf + len));
   capnp::FlatArrayMessageReader node(view);
-  // FIXME
-  auto nodeAd = node.getRoot<Catena::Proto::AdvertiseNode>();
-  auto rname = nodeAd.getName();
-  std::cout << "advertisement for " << rname.getIssuerCN().cStr() << "::" << rname.getSubjectCN().cStr() << std::endl;
+  // FIXME seems this can convert from any crappo bunch of bytes...?
+  auto nodeAd = node.getRoot<capnp::rpc::Call>();
+  auto rname = nodeAd.getMethodId();
+  std::cout << "call method " << rname << std::endl;
 }
 
 void NameFDPeer() {
@@ -444,7 +449,11 @@ void RPCService::HandleCompletedConns() {
           .events = EPOLLIN | EPOLLRDHUP,
           .data = { .ptr = (*mapins.first).second.get(), },
         };
-        (*mapins.first).second->EnqueueCall(NodeAdvertisement());
+        auto cb = [this](auto& builder) -> auto {
+          NodeAdvertisementFill(builder);
+        };
+        (*mapins.first).second->EnqueueCall(PrepCall<Proto::AdvertiseNode, decltype(cb)>
+            (Proto::METHOD_ADVERTISE_NODE, cb));
         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
           epolls.erase(mapins.first);
           throw NetworkException("couldn't epoll-r on new sd");
@@ -587,7 +596,7 @@ std::vector<ConnInfo> RPCService::Conns() const {
 	return ret;
 }
 
-void RPCService::NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const {
+void RPCService::NodeAdvertisementFill(Proto::AdvertiseNode::Builder& builder) const {
   auto bname = builder.initName();
   bname.setIssuerCN(name.first);
   bname.setSubjectCN(name.second);
@@ -603,7 +612,7 @@ std::vector<unsigned char> RPCService::NodeAdvertisement() const {
   auto adcount = advertised.size();
   if(adcount){
     capnp::MallocMessageBuilder builder;
-    auto nodeAd = builder.initRoot<Catena::Proto::AdvertiseNode>();
+    auto nodeAd = builder.initRoot<Proto::AdvertiseNode>();
     NodeAdvertisementFill(nodeAd);
     auto words = capnp::messageToFlatArray(builder);
     auto bytes = words.asBytes();
