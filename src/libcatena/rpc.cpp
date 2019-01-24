@@ -63,41 +63,22 @@ int sd;
 class PolledTLSFD : public PolledFD {
 public:
 
-// FIXME factor out delegated common constructor
 // accepting form, SSL is anchor object
 PolledTLSFD(int sd, SSL* ssl, const TLSName& name) :
-  PolledFD(sd),
-  ssl(ssl),
-  bio(nullptr),
-  accepting(true),
-  name(name),
-  wantRead(MSGLEN_PREFACE_BYTES),
-  haveRead(0),
-  readingMsg(false) {
+  PolledTLSFD(sd, name, ssl, nullptr, true) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
-  readbuf.reserve(wantRead);
 	SSL_set_fd(ssl, sd); // FIXME can fail
-  NameFDPeer();
 }
 
 // connected form, associated with Peer, BIO is anchor object
-PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p, const TLSName& name) :
-  PolledFD(sd),
-  ssl(nullptr),
-  bio(bio),
-  peer(p),
-  accepting(false),
-  name(name),
-  wantRead(MSGLEN_PREFACE_BYTES),
-  haveRead(0),
-  readingMsg(false) {
+PolledTLSFD(int sd, BIO* bio, const std::shared_ptr<Peer>& p, const TLSName& name) :
+  PolledTLSFD(sd, name, nullptr, bio, false) {
 	if(bio == nullptr || 1 != BIO_get_ssl(bio, &ssl)){
 		throw NetworkException("tried to poll on null tls");
   }
-  readbuf.reserve(wantRead);
-  NameFDPeer();
+  peer = p;
 }
 
 virtual ~PolledTLSFD() {
@@ -239,6 +220,20 @@ unsigned haveRead;
 bool readingMsg;
 std::vector<unsigned char> readbuf;
 std::queue<std::vector<unsigned char>> writeq;
+
+// meant to be called by the two more specific constructors, don't use directly
+PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
+  PolledFD(sd),
+  ssl(ssl),
+  bio(bio),
+  accepting(accepting),
+  name(name),
+  wantRead(MSGLEN_PREFACE_BYTES),
+  haveRead(0),
+  readingMsg(false) {
+  readbuf.reserve(wantRead);
+  NameFDPeer();
+}
 
 void Dispatch(const unsigned char* buf, size_t len) {
   std::cout << "dispatching from " << (void*)buf << " with " << len << std::endl;
