@@ -190,7 +190,7 @@ bool Callback(RPCService& rpc) override {
       }else{
         std::cout << "Received " << wantRead << "-byte RPC" << std::endl;
         try{
-          Dispatch(readbuf.data(), wantRead);
+          rpc.Dispatch(readbuf.data(), wantRead);
         }catch(::kj::Exception &e){
           throw NetworkException(e.getDescription());
         }
@@ -238,19 +238,6 @@ PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
   readingMsg(false) {
   readbuf.reserve(wantRead);
   NameFDPeer();
-}
-
-void Dispatch(const unsigned char* buf, size_t len) {
-  std::cout << "dispatching from " << (void*)buf << " with " << len << std::endl;
-  // FIXME alignment requirements!?!
-  const kj::ArrayPtr<const capnp::word> view(
-        reinterpret_cast<const capnp::word*>(buf),
-        reinterpret_cast<const capnp::word*>(buf + len));
-  capnp::FlatArrayMessageReader node(view);
-  // FIXME seems this can convert from any crappo bunch of bytes...?
-  auto nodeAd = node.getRoot<capnp::rpc::Call>();
-  auto rname = nodeAd.getMethodId();
-  std::cout << "call method " << rname << std::endl;
 }
 
 void NameFDPeer() {
@@ -620,6 +607,40 @@ std::vector<unsigned char> RPCService::NodeAdvertisement() const {
     ret.insert(ret.end(), bytes.begin(), bytes.end());
   }
   return ret;
+}
+
+void RPCService::HandleAdvertiseNode(const Proto::AdvertiseNode::Reader& reader) {
+  if(!reader.hasName() || !reader.hasAds()){
+    throw NetworkException("NodeAdvertise was missing name/ads");
+  }
+  auto rname = reader.getName();
+  // FIXME get ads
+  std::cout << "advertised from " << rname.getIssuerCN().cStr() << "::" << rname.getSubjectCN().cStr() << std::endl;
+}
+
+void RPCService::Dispatch(const unsigned char* buf, size_t len) {
+  std::cout << "dispatching from " << (void*)buf << " with " << len << std::endl;
+  // FIXME alignment requirements!?!
+  const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(buf),
+        reinterpret_cast<const capnp::word*>(buf + len));
+  capnp::FlatArrayMessageReader node(view);
+  auto nodeAd = node.getRoot<capnp::rpc::Call>();
+  switch(nodeAd.getMethodId()){
+    case Proto::METHOD_ADVERTISE_NODE:{
+      auto pload = nodeAd.getParams();
+      if(!pload.hasContent()){
+        throw NetworkException("NodeAdvertise was missing payload");
+      }
+      auto r = pload.getContent().getAs<Proto::AdvertiseNode>();
+      HandleAdvertiseNode(r);
+      break;
+    }case Proto::METHOD_DISCOVER_NODES:{
+      // FIXME;
+      break;
+    }default:
+      throw NetworkException("unknown rpc");
+  }
 }
 
 }
