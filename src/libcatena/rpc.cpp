@@ -15,6 +15,9 @@
 
 namespace Catena {
 
+// RPC messages are prefaced with a 32-bit NBO length
+constexpr auto MSGLEN_PREFACE_BYTES = 4;
+
 // Each epoll()ed file descriptor has an associated free pointer. That pointer
 // should yield up a PolledFD derivative.
 class PolledFD {
@@ -50,16 +53,22 @@ int sd;
 
 class PolledTLSFD : public PolledFD {
 public:
+
+// FIXME factor out delegated common constructor
 // accepting form, SSL is anchor object
 PolledTLSFD(int sd, SSL* ssl, const TLSName& name) :
   PolledFD(sd),
   ssl(ssl),
   bio(nullptr),
   accepting(true),
-  name(name) {
+  name(name),
+  wantRead(MSGLEN_PREFACE_BYTES),
+  haveRead(0),
+  readingMsg(false) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
+  readbuf.reserve(wantRead);
 	SSL_set_fd(ssl, sd); // FIXME can fail
   NameFDPeer();
 }
@@ -71,10 +80,14 @@ PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p, const TLSName& name) :
   bio(bio),
   peer(p),
   accepting(false),
-  name(name) {
+  name(name),
+  wantRead(MSGLEN_PREFACE_BYTES),
+  haveRead(0),
+  readingMsg(false) {
 	if(bio == nullptr || 1 != BIO_get_ssl(bio, &ssl)){
 		throw NetworkException("tried to poll on null tls");
   }
+  readbuf.reserve(wantRead);
   NameFDPeer();
 }
 
@@ -141,10 +154,38 @@ bool Callback(RPCService& rpc) override {
     accepting = false;
     rpc.EpollMod(sd, &ev);
 	}
-	char buf[BUFSIZ]; // FIXME ugh
-	auto r = SSL_read(ssl, buf, sizeof(buf));
+  // post-handshake, rw path
+  // state machine: we always have some amount we want to read. if we are
+  // starting a new sequence, we want to read a 32-bit (4 byte) NBO length. if
+  // we have read that length, we want to read whatever it specified. thus, we
+  // have three variables at work:
+  //
+  // how much we have read, haveRead,
+  // how much we want to read in this codon, wantRead (wantRead > haveRead)
+  // what state we're in (reading length, reading message)
+  //
+  // we try to read wantRead - haveRead into buffer + haveRead. if we get the
+  // full amount, if we're reading length, prep for reading message. if we're
+  // reading message, parse and dispatch, and prep for reading length.
+  // FIXME this describes only reading, not sending...
+  auto r = SSL_read(ssl, readbuf.data() + haveRead, wantRead - haveRead);
 	if(r > 0){
 		std::cout << "read us some crap " << r << std::endl;
+    if(haveRead + r == wantRead){
+      if(readingMsg == false){ // we were reading the length
+        wantRead = nbo_to_ulong(readbuf.data(), MSGLEN_PREFACE_BYTES);
+        std::cout << "Set up to read a " << wantRead << "-byte RPC" << std::endl;
+        readbuf.reserve(wantRead);
+      }else{
+        std::cout << "Received " << wantRead << "-byte RPC" << std::endl;
+        // FIXME dispatch
+        wantRead = MSGLEN_PREFACE_BYTES;
+      }
+      haveRead = 0;
+      readingMsg = !readingMsg;
+    }else{
+      haveRead += r;
+    }
 	}else{
 		auto ra = SSL_get_error(ssl, r);
 		if(ra == SSL_ERROR_WANT_WRITE){
@@ -164,6 +205,10 @@ std::shared_ptr<Peer> peer;
 bool accepting;
 std::string ipname;
 TLSName name;
+unsigned wantRead;
+unsigned haveRead;
+bool readingMsg;
+std::vector<unsigned char> readbuf;
 
 void NameFDPeer() {
 	struct sockaddr ss;
