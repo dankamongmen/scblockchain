@@ -1,3 +1,4 @@
+#include <queue>
 #include <netdb.h>
 #include <cstring>
 #include <sstream>
@@ -36,6 +37,12 @@ virtual bool IsConnection() const = 0;
 virtual bool IsOutgoing() const = 0;
 virtual std::string IPName() const = 0;
 virtual TLSName Name() const = 0;
+
+virtual void EnqueueCall(std::vector<unsigned char>&& call) {
+  (void)call;
+  throw NetworkException("can't call on generic polled sd");
+}
+
 
 virtual ~PolledFD() {
 	if(close(sd)){
@@ -119,6 +126,10 @@ void SetName(const TLSName& tname) {
   name = tname;
 }
 
+void EnqueueCall(std::vector<unsigned char>&& call) override {
+  writeq.emplace(call);
+}
+
 bool Callback(RPCService& rpc) override {
 	if(accepting){
 		auto ra = SSL_accept(ssl);
@@ -155,7 +166,21 @@ bool Callback(RPCService& rpc) override {
     rpc.EpollMod(sd, &ev);
 	}
   // post-handshake, rw path
-  // state machine: we always have some amount we want to read. if we are
+  // write state machine: for now, just send, and expect to be able to FIXME
+  while(writeq.size()){
+    auto wq = writeq.front();
+    unsigned char buf[MSGLEN_PREFACE_BYTES];
+    ulong_to_nbo(wq.size(), buf, sizeof(buf));
+    size_t wb;
+    if(1 != SSL_write_ex(ssl, buf, sizeof(buf), &wb)){
+      throw NetworkException("couldn't write message length");
+    }
+    if(1 != SSL_write_ex(ssl, wq.data(), wq.size(), &wb)){
+      throw NetworkException("couldn't write message");
+    }
+    writeq.pop();
+  }
+  // read state machine: we always have some amount we want to read. if we are
   // starting a new sequence, we want to read a 32-bit (4 byte) NBO length. if
   // we have read that length, we want to read whatever it specified. thus, we
   // have three variables at work:
@@ -167,7 +192,6 @@ bool Callback(RPCService& rpc) override {
   // we try to read wantRead - haveRead into buffer + haveRead. if we get the
   // full amount, if we're reading length, prep for reading message. if we're
   // reading message, parse and dispatch, and prep for reading length.
-  // FIXME this describes only reading, not sending...
   auto r = SSL_read(ssl, readbuf.data() + haveRead, wantRead - haveRead);
 	if(r > 0){
 		std::cout << "read us some crap " << r << std::endl;
@@ -209,6 +233,7 @@ unsigned wantRead;
 unsigned haveRead;
 bool readingMsg;
 std::vector<unsigned char> readbuf;
+std::queue<std::vector<unsigned char>> writeq;
 
 void NameFDPeer() {
 	struct sockaddr ss;
@@ -406,6 +431,7 @@ void RPCService::HandleCompletedConns() {
           .events = EPOLLIN | EPOLLRDHUP,
           .data = { .ptr = (*mapins.first).second.get(), },
         };
+        (*mapins.first).second->EnqueueCall(NodeAdvertisement());
         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
           epolls.erase(mapins.first);
           throw NetworkException("couldn't epoll-r on new sd");
