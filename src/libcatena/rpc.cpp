@@ -207,7 +207,7 @@ bool Callback(RPCService& rpc) override {
         readbuf.reserve(wantRead);
       }else{
         std::cout << "Received " << wantRead << "-byte RPC" << std::endl;
-        // FIXME dispatch
+        Dispatch(readbuf.data(), wantRead);
         wantRead = MSGLEN_PREFACE_BYTES;
       }
       haveRead = 0;
@@ -239,6 +239,19 @@ unsigned haveRead;
 bool readingMsg;
 std::vector<unsigned char> readbuf;
 std::queue<std::vector<unsigned char>> writeq;
+
+void Dispatch(const unsigned char* buf, size_t len) {
+  std::cout << "dispatching from " << (void*)buf << " with " << len << std::endl;
+  // FIXME alignment requirements!?!
+  const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(buf),
+        reinterpret_cast<const capnp::word*>(buf + len));
+  capnp::FlatArrayMessageReader node(view);
+  // FIXME
+  auto nodeAd = node.getRoot<Catena::Proto::AdvertiseNode>();
+  auto rname = nodeAd.getName();
+  std::cout << "advertisement for " << rname.getIssuerCN().cStr() << "::" << rname.getSubjectCN().cStr() << std::endl;
+}
 
 void NameFDPeer() {
 	struct sockaddr ss;
