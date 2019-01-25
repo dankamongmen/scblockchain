@@ -154,30 +154,10 @@ inline TLSName SSLPeerName(SSL* s) {
 
 void FDSetNonblocking(int fd);
 
-inline std::string GetCompilerID(){
-#if defined(__GNUC__) && !defined(__clang__)
-	return std::string("GNU C++ ") + __VERSION__;
-#elif defined(__clang__)
-	return __VERSION__;
-#else
-#error "couldn't determine c++ compiler"
-#endif
-}
-
-inline std::string GetLibcID(){
-	std::stringstream ss;
-#if defined(__GLIBC__) && !defined(__UCLIBC__)
-	ss << "GNU glibc " << gnu_get_libc_version();
-#elif defined(__UCLIBC__)
-	ss << "µClibc " << __UCLIBC_MAJOR__ << "." << __UCLIBC_MINOR__ << "."
-		<< __UCLIBC_SUBLEVEL__;
-#elif defined(__BIONIC__)
-	ss << "Google Bionic";
-#else
-#error "couldn't determine libc versioning"
-#endif
-	return ss.str();
-}
+std::string GetCompilerID();
+std::string GetLibcID();
+std::string GetLibjsonID();
+std::string GetCapnProtoID();
 
 inline std::string Hostname() {
 	char hname[256] = "unknown"; // eh, from SuSv2

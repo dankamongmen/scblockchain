@@ -31,10 +31,10 @@ PROTOINC:=$(addprefix $(OUT)/, $(PROTOS:%.capnp=%.h))
 
 CATENASRC:=$(foreach dir, $(SRC)/catena $(SRC)/libcatena, $(filter $(dir)/%, $(CPPSRC)))
 CATENAOBJ:=$(addprefix $(OUT)/, $(CATENASRC:%.cpp=%.o))
-CATENAINC:=$(foreach dir, $(SRC)/catena $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC)))
+CATENAINC:=$(foreach dir, $(SRC)/catena $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC))) $(PROTOINC)
 CATENATESTSRC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena, $(filter $(dir)/%, $(CPPSRC)))
 CATENATESTOBJ:=$(addprefix $(OUT)/, $(CATENATESTSRC:%.cpp=%.o))
-CATENATESTINC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC)))
+CATENATESTINC:=$(foreach dir, $(SRC)/test $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC))) $(PROTOINC)
 # libcatena is not its own binary, just a namespace; no src/obj rules necessary
 LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC))) $(PROTOINC)
 

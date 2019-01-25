@@ -1,10 +1,10 @@
 #include <term.h>
-#include <unistd.h>
-#include <ncurses.h>
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <unistd.h>
 #include <iostream>
+#include <ncurses.h>
 #include <libcatena/tx.h>
 #include <nlohmann/json.hpp>
 #include <libcatena/chain.h>
@@ -111,11 +111,9 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
   std::cout << "\n";
 	std::cout << "cxx: " << Catena::GetCompilerID() << "\n";
 	std::cout << "libc: " << Catena::GetLibcID() << "\n";
-	std::cout << "json: JSON for Modern C++ " <<
-		NLOHMANN_JSON_VERSION_MAJOR << "." <<
-		NLOHMANN_JSON_VERSION_MINOR << "." <<
-		NLOHMANN_JSON_VERSION_PATCH << "\n";
+	std::cout << "json: " << Catena::GetLibjsonID() << "\n";
 	std::cout << "crypto: " << SSLeay_version(SSLEAY_VERSION) << "\n";
+  std::cout << "capnp: " << Catena::GetCapnProtoID();
 	std::cout << "\n";
 	std::cout << "chain bytes: " << chain.Size() << "\n";
 	std::cout << "blocks: " << chain.GetBlockCount() << "\n";
@@ -494,7 +492,7 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 		const auto pinfo = chain.Peers();
 		time_t now = time(NULL);
 		for(auto p : pinfo){
-      std::cout << '(' << (p.configured ? '*' : ' ') <<
+      std::cout << '(' << (p.configured ? 'C' : 'L') <<
                           (p.connected ? "✔" : "✘") << ") ";
 			std::cout << p.address << ":" << p.port;
 			if(p.lasttime == -1){

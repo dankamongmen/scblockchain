@@ -1,3 +1,4 @@
+#include <queue>
 #include <netdb.h>
 #include <cstring>
 #include <sstream>
@@ -7,10 +8,19 @@
 #include <sys/epoll.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <capnp/message.h>
+#include <capnp/serialize.h>
+#include <proto/catena.capnp.h>
 #include <libcatena/utility.h>
+#include <libcatena/proto.h>
 #include <libcatena/rpc.h>
 
 namespace Catena {
+
+// RPC messages are prefaced with a 32-bit NBO length
+constexpr auto MSGLEN_PREFACE_BYTES = 4;
+// ...though, for now, we only allow messages up to 16MB
+constexpr auto MSGLEN_MAX = 1u << 24;
 
 // Each epoll()ed file descriptor has an associated free pointer. That pointer
 // should yield up a PolledFD derivative.
@@ -31,6 +41,12 @@ virtual bool IsOutgoing() const = 0;
 virtual std::string IPName() const = 0;
 virtual TLSName Name() const = 0;
 
+virtual void EnqueueCall(std::vector<unsigned char>&& call) {
+  (void)call;
+  throw NetworkException("can't call on generic polled sd");
+}
+
+
 virtual ~PolledFD() {
 	if(close(sd)){
 		std::cerr << "error closing epoll()ed sd " << sd << std::endl;
@@ -47,32 +63,23 @@ int sd;
 
 class PolledTLSFD : public PolledFD {
 public:
+
 // accepting form, SSL is anchor object
 PolledTLSFD(int sd, SSL* ssl, const TLSName& name) :
-  PolledFD(sd),
-  ssl(ssl),
-  bio(nullptr),
-  accepting(true),
-  name(name) {
+  PolledTLSFD(sd, name, ssl, nullptr, true) {
 	if(ssl == nullptr){
 		throw NetworkException("tried to poll on null tls");
 	}
 	SSL_set_fd(ssl, sd); // FIXME can fail
-  NameFDPeer();
 }
 
 // connected form, associated with Peer, BIO is anchor object
-PolledTLSFD(int sd, BIO* bio, std::shared_ptr<Peer> p, const TLSName& name) :
-  PolledFD(sd),
-  ssl(nullptr),
-  bio(bio),
-  peer(p),
-  accepting(false),
-  name(name) {
+PolledTLSFD(int sd, BIO* bio, const std::shared_ptr<Peer>& p, const TLSName& name) :
+  PolledTLSFD(sd, name, nullptr, bio, false) {
 	if(bio == nullptr || 1 != BIO_get_ssl(bio, &ssl)){
 		throw NetworkException("tried to poll on null tls");
   }
-  NameFDPeer();
+  peer = p;
 }
 
 virtual ~PolledTLSFD() {
@@ -87,15 +94,15 @@ virtual ~PolledTLSFD() {
   }
 }
 
-bool IsConnection() const { return true; }
+bool IsConnection() const override { return true; }
 
-bool IsOutgoing() const { return bio ? true : false; }
+bool IsOutgoing() const override { return bio ? true : false; }
 
-std::string IPName() const {
+std::string IPName() const override {
   return ipname;
 }
 
-TLSName Name() const {
+TLSName Name() const override {
   return name;
 }
 
@@ -103,7 +110,16 @@ void SetName(const TLSName& tname) {
   name = tname;
 }
 
+// Always ensure that we're checking for POLLOUT after use!
+void EnqueueCall(std::vector<unsigned char>&& call) override {
+  writeq.emplace(call);
+}
+
 bool Callback(RPCService& rpc) override {
+  struct epoll_event ev = {
+    .events = EPOLLRDHUP | EPOLLIN,
+    .data = { .ptr = &*this, },
+  };
 	if(accepting){
 		auto ra = SSL_accept(ssl);
 		if(ra == 0){
@@ -113,16 +129,10 @@ bool Callback(RPCService& rpc) override {
 			auto oerr = SSL_get_error(ssl, ra);
 			// FIXME handle partial SSL_accept()
 			if(oerr == SSL_ERROR_WANT_READ){
-				struct epoll_event ev = {
-					.events = EPOLLIN | EPOLLRDHUP,
-					.data = { .ptr = &*this, },
-				};
 				rpc.EpollMod(sd, &ev);
 			}else if(oerr == SSL_ERROR_WANT_WRITE){
-				struct epoll_event ev = {
-					.events = EPOLLOUT | EPOLLRDHUP,
-					.data = { .ptr = &*this, },
-				};
+        ev.events |= EPOLLOUT;
+        ev.events &= ~EPOLLIN;
 				rpc.EpollMod(sd, &ev);
 			}else{
 				std::cerr << "error accepting TLS" << std::endl;
@@ -130,18 +140,67 @@ bool Callback(RPCService& rpc) override {
 			}
       return false;
 		}
-    struct epoll_event ev = { // successful negotiation
-      .events = EPOLLIN | EPOLLRDHUP,
-      .data = { .ptr = &*this, },
-    };
     SetName(SSLPeerName(ssl));
     accepting = false;
+    ev.events |= EPOLLOUT,
     rpc.EpollMod(sd, &ev);
 	}
-	char buf[BUFSIZ]; // FIXME ugh
-	auto r = SSL_read(ssl, buf, sizeof(buf));
+  // post-handshake, rw path
+  // write state machine: for now, just send, and expect to be able to FIXME
+  int wrote = 0;
+  while(writeq.size()){
+    auto wq = writeq.front();
+    unsigned char buf[MSGLEN_PREFACE_BYTES];
+    ulong_to_nbo(wq.size(), buf, sizeof(buf));
+    size_t wb;
+    if(1 != SSL_write_ex(ssl, buf, sizeof(buf), &wb)){
+      throw NetworkException("couldn't write message length");
+    }
+    if(1 != SSL_write_ex(ssl, wq.data(), wq.size(), &wb)){
+      throw NetworkException("couldn't write message");
+    }
+    writeq.pop();
+    ++wrote;
+  }
+  if(wrote){
+    ev.events &= ~EPOLLOUT;
+    rpc.EpollMod(sd, &ev);
+  }
+  // read state machine: we always have some amount we want to read. if we are
+  // starting a new sequence, we want to read a 32-bit (4 byte) NBO length. if
+  // we have read that length, we want to read whatever it specified. thus, we
+  // have three variables at work:
+  //
+  // how much we have read, haveRead,
+  // how much we want to read in this codon, wantRead (wantRead > haveRead)
+  // what state we're in (reading length, reading message)
+  //
+  // we try to read wantRead - haveRead into buffer + haveRead. if we get the
+  // full amount, if we're reading length, prep for reading message. if we're
+  // reading message, parse and dispatch, and prep for reading length.
+  auto r = SSL_read(ssl, readbuf.data() + haveRead, wantRead - haveRead);
 	if(r > 0){
-		std::cout << "read us some crap " << r << std::endl;
+    if(haveRead + r == wantRead){
+      if(readingMsg == false){ // we were reading the length
+        wantRead = nbo_to_ulong(readbuf.data(), MSGLEN_PREFACE_BYTES);
+        if(wantRead > MSGLEN_MAX){
+          throw NetworkException("message too large");
+        }
+        readbuf.reserve(wantRead);
+      }else{
+        std::cout << "received " << wantRead << "-byte rpc on " << sd << std::endl;
+        try{
+          Dispatch(rpc, readbuf.data(), wantRead);
+        }catch(::kj::Exception &e){
+          throw NetworkException(e.getDescription());
+        }
+        wantRead = MSGLEN_PREFACE_BYTES;
+      }
+      haveRead = 0;
+      readingMsg = !readingMsg;
+    }else{
+      haveRead += r;
+    }
 	}else{
 		auto ra = SSL_get_error(ssl, r);
 		if(ra == SSL_ERROR_WANT_WRITE){
@@ -161,6 +220,65 @@ std::shared_ptr<Peer> peer;
 bool accepting;
 std::string ipname;
 TLSName name;
+unsigned wantRead;
+unsigned haveRead;
+bool readingMsg;
+std::vector<unsigned char> readbuf;
+std::queue<std::vector<unsigned char>> writeq;
+
+// meant to be called by the two more specific constructors, don't use directly
+PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
+  PolledFD(sd),
+  ssl(ssl),
+  bio(bio),
+  accepting(accepting),
+  name(name),
+  wantRead(MSGLEN_PREFACE_BYTES),
+  haveRead(0),
+  readingMsg(false) {
+  readbuf.reserve(wantRead);
+  NameFDPeer();
+}
+
+void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
+  // FIXME alignment requirements!?!
+  const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(buf),
+        reinterpret_cast<const capnp::word*>(buf + len));
+  capnp::FlatArrayMessageReader node(view);
+  auto nodeAd = node.getRoot<capnp::rpc::Call>();
+  switch(nodeAd.getMethodId()){
+    case Proto::METHOD_ADVERTISE_NODE:{
+      auto pload = nodeAd.getParams();
+      if(!pload.hasContent()){
+        throw NetworkException("NodeAdvertise was missing payload");
+      }
+      auto r = pload.getContent().getAs<Proto::AdvertiseNode>();
+      rpc.HandleAdvertiseNode(r);
+      break;
+    }case Proto::METHOD_DISCOVER_NODES:{
+      auto cb = [&rpc](Proto::AdvertiseNodes::Builder& builder) -> void {
+        rpc.NodesAdvertisementFill(builder);
+      };
+      EnqueueCall(PrepCall<Proto::AdvertiseNodes, decltype(cb)>(Proto::METHOD_ADVERTISE_NODES, cb));
+      struct epoll_event ev = {
+        .events = EPOLLRDHUP | EPOLLIN | EPOLLOUT,
+        .data = { .ptr = &*this, },
+      };
+      rpc.EpollMod(sd, &ev);
+      break;
+    }case Proto::METHOD_ADVERTISE_NODES:{
+      auto pload = nodeAd.getParams();
+      if(!pload.hasContent()){
+        throw NetworkException("NodeAdvertises was missing payload");
+      }
+      auto r = pload.getContent().getAs<Proto::AdvertiseNodes>();
+      rpc.HandleAdvertiseNodes(r);
+      break;
+    }default:
+      throw NetworkException("unknown rpc");
+  }
+}
 
 void NameFDPeer() {
 	struct sockaddr ss;
@@ -192,15 +310,15 @@ PolledListenFD(int family, const SSLCtxRAII& sslctx) :
 	}
 }
 
-bool IsConnection() const { return false; }
+bool IsConnection() const override { return false; }
 
-bool IsOutgoing() const { return false; }
+bool IsOutgoing() const override { return false; }
 
-std::string IPName() const {
+std::string IPName() const override {
   return "fixme[l3+l4]"; // FIXME
 }
 
-TLSName Name() const {
+TLSName Name() const override {
   return std::make_pair("fixmeICN", "fixmeSCN"); // FIXME, use local?
 }
 
@@ -314,7 +432,7 @@ RPCService::RPCService(Chain& ledger, const RPCServiceOptions& opts) :
   }
 	PrepSSLCTX(sslctx.get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	auto x509 = SSL_CTX_get0_certificate(sslctx.get()); // view, don't free
-	rpcName = X509NetworkName(x509);
+	name = X509NetworkName(x509);
 	PrepSSLCTX(clictx.get()->get(), opts.chainfile.c_str(), opts.keyfile.c_str());
 	SSL_CTX_set_verify(sslctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 	epollfd = epoll_create1(EPOLL_CLOEXEC);
@@ -348,16 +466,21 @@ void RPCService::HandleCompletedConns() {
 	for(const auto& c : conns){
     try{
       ConnFuture cf = c.second->get();
-      if(cf.name == rpcName){ // connected to ourselves
+      if(cf.name == name){ // connected to ourselves
         c.first->Disconnect();
         BIO_free_all(cf.bio);
       }else{
         int fd = BIO_get_fd(cf.bio, NULL); // FIXME can fail
         auto mapins = epolls.emplace(fd, std::make_unique<PolledTLSFD>(fd, cf.bio, c.first, cf.name));
         struct epoll_event ev = {
-          .events = EPOLLIN | EPOLLRDHUP,
+          .events = EPOLLIN | EPOLLRDHUP | EPOLLOUT,
           .data = { .ptr = (*mapins.first).second.get(), },
         };
+        auto cb = [this](Proto::AdvertiseNode::Builder& builder) -> void {
+          NodeAdvertisementFill(builder);
+        };
+        (*mapins.first).second->EnqueueCall(PrepCall<Proto::AdvertiseNode, decltype(cb)>(Proto::METHOD_ADVERTISE_NODE, cb));
+        (*mapins.first).second->EnqueueCall(PrepCall(Proto::METHOD_DISCOVER_NODES));
         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
           epolls.erase(mapins.first);
           throw NetworkException("couldn't epoll-r on new sd");
@@ -402,14 +525,14 @@ void RPCService::Epoller() {
 		}
 		if(eret){
 			PolledFD* pfd = static_cast<PolledFD*>(ev.data.ptr);
+      int fd = pfd->FD();
 			try{
 				if(pfd->Callback(*this)){
-          int fd = pfd->FD();
           EpollDel(fd);
-          epolls.erase(fd);
 				}
 			}catch(NetworkException& e){
 				std::cerr << "error handling epoll result: " << e.what() << std::endl;
+        EpollDel(fd);
 			}
 		}
 	}
@@ -431,7 +554,11 @@ void RPCService::AddPeers(const std::string& peerfile) {
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");
 	}
-	for(auto const& r : ret){
+  AddPeerList(ret);
+}
+
+void RPCService::AddPeerList(std::vector<std::shared_ptr<Peer>>& pl) {
+	for(auto const& r : pl){
 		bool dup = false;
 		for(auto const& p : peers){
 			// FIXME what about if we discovered the peer, but then
@@ -498,6 +625,62 @@ std::vector<ConnInfo> RPCService::Conns() const {
     }
 	}
 	return ret;
+}
+
+void RPCService::NodesAdvertisementFill(Proto::AdvertiseNodes::Builder& builder) const {
+  auto peers = Peers(); // locks and unlocks, we use returned copy unlocked
+  auto lnodes = builder.initNodes(peers.size());
+  for(auto i = 0u ; i < peers.size() ; ++i){
+    auto ads = lnodes[i].initAds(1);
+    ads.set(0, peers[i].address + ":" + std::to_string(peers[i].port)); // FIXME
+  }
+}
+
+void RPCService::NodeAdvertisementFill(Proto::AdvertiseNode::Builder& builder) const {
+  auto bname = builder.initName();
+  bname.setIssuerCN(name.first);
+  bname.setSubjectCN(name.second);
+  auto adcount = advertised.size();
+  auto ads = builder.initAds(adcount);
+  for(auto it = 0u ; it < adcount ; ++it){
+    ads.set(it, advertised[it]);
+  }
+}
+
+std::vector<unsigned char> RPCService::NodeAdvertisement() const {
+  std::vector<unsigned char> ret;
+  auto adcount = advertised.size();
+  if(adcount){
+    capnp::MallocMessageBuilder builder;
+    auto nodeAd = builder.initRoot<Proto::AdvertiseNode>();
+    NodeAdvertisementFill(nodeAd);
+    auto words = capnp::messageToFlatArray(builder);
+    auto bytes = words.asBytes();
+    ret.reserve(bytes.size());
+    ret.insert(ret.end(), bytes.begin(), bytes.end());
+  }
+  return ret;
+}
+
+void RPCService::HandleAdvertiseNode(const Proto::AdvertiseNode::Reader& reader) {
+  if(!reader.hasAds()){
+    throw NetworkException("NodeAdvertise was missing ads");
+  }
+  std::vector<std::shared_ptr<Peer>> ret;
+  for(const auto& a : reader.getAds()){
+    // FIXME coalesce each getAds into a single Peer
+		ret.emplace_back(std::make_shared<Peer>(a.cStr(), DefaultRPCPort, clictx, false));
+  }
+  AddPeerList(ret);
+}
+
+void RPCService::HandleAdvertiseNodes(const Proto::AdvertiseNodes::Reader& reader) {
+  if(!reader.hasNodes()){
+    throw NetworkException("NodeAdvertises was missing nodes");
+  }
+  for(auto nreader : reader.getNodes()){
+    HandleAdvertiseNode(nreader);
+  }
 }
 
 }

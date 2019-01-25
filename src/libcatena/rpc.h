@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 #include <unordered_map>
 #include <openssl/ssl.h>
+#include <proto/catena.capnp.h>
 #include <libcatena/peer.h>
 #include <libcatena/tls.h>
 
@@ -51,8 +52,8 @@ RPCService(Chain& ledger, const RPCServiceOptions& opts);
 
 ~RPCService();
 
-std::pair<std::string, std::string> Name() const {
-	return rpcName;
+TLSName Name() const {
+	return name;
 }
 
 // peerfile must contain one peer per line, specified as an IPv4 or IPv6
@@ -70,13 +71,16 @@ std::vector<std::string> Advertisement() const {
   return advertised;
 }
 
-int ActiveConnCount() const;
+// Generate a NodeAdvertisement protobuf
+std::vector<unsigned char> NodeAdvertisement() const;
 
 void PeerCount(int* defined, int* maxactive) const {
   std::lock_guard<std::mutex> guard(lock);
 	*defined = peers.size();
 	*maxactive = MaxActiveRPCPeers;
 }
+
+int ActiveConnCount() const;
 
 std::vector<PeerInfo> Peers() const {
   std::lock_guard<std::mutex> guard(lock);
@@ -94,6 +98,14 @@ int EpollMod(int sd, struct epoll_event* ev);
 void EpollAdd(int fd, struct epoll_event* ev, std::unique_ptr<PolledFD> pfd);
 void EpollDel(int fd);
 
+// Handle incoming RPCs
+void HandleAdvertiseNode(const Catena::Proto::AdvertiseNode::Reader& reader);
+void HandleAdvertiseNodes(const Catena::Proto::AdvertiseNodes::Reader& reader);
+
+// Supply outgoing RPCs
+void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
+void NodesAdvertisementFill(Catena::Proto::AdvertiseNodes::Builder& builder) const;
+
 private:
 int port;
 Chain& ledger;
@@ -107,7 +119,6 @@ std::atomic<bool> cancelled; // lame signal to Epoller
 std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
 TLSName name;
 std::shared_ptr<PeerQueue> connqueue;
-std::pair<std::string, std::string> rpcName;
 std::vector<std::string> advertised;
 mutable std::mutex lock;
 
@@ -116,6 +127,7 @@ void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 void HandleCompletedConns();
 void LaunchNewConns();
+void AddPeerList(std::vector<std::shared_ptr<Peer>>& pl);
 };
 
 }
