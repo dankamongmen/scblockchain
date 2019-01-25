@@ -102,7 +102,7 @@ docker: $(DOCKERFILE)
 	docker build -f $< .
 
 debsrc:
-	dpkg-source --build .
+	dpkg-source -I -I$(OUT) --build .
 
 debbin: debsrc
 	@mkdir -p $(OUT)/deb
