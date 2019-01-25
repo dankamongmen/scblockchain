@@ -83,9 +83,20 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
 		int peersDefined, connsMax;
 		chain.PeerCount(&peersDefined, &connsMax);
     auto peers = chain.Peers();
-		ss << "<tr><td>configured peers</td><td>" << peersDefined << " ";
+    auto confpeers = std::accumulate(peers.begin(), peers.end(), 0,
+        [](int tot, const Catena:: PeerInfo& p){ return tot + p.configured; });
+		ss << "<tr><td>configured peers</td><td>" << confpeers << " ";
     for(const auto p : peers){
       if(p.configured){
+        ss << p.address << ':' << p.port << ' ';
+      }
+    }
+    ss << "</td></tr>";
+    auto discpeers = std::accumulate(peers.begin(), peers.end(), 0,
+        [](int tot, const Catena::PeerInfo& p){ return tot + !p.configured; });
+		ss << "<tr><td>discovered peers</td><td>" << discpeers << " ";
+    for(const auto p : peers){
+      if(!p.configured){
         ss << p.address << ':' << p.port << ' ';
       }
     }

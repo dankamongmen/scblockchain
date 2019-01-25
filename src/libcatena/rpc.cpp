@@ -186,10 +186,9 @@ bool Callback(RPCService& rpc) override {
         if(wantRead > MSGLEN_MAX){
           throw NetworkException("message too large");
         }
-        std::cout << "Set up to read a " << wantRead << "-byte RPC" << std::endl;
         readbuf.reserve(wantRead);
       }else{
-        std::cout << "Received " << wantRead << "-byte RPC on " << sd << std::endl;
+        std::cout << "received " << wantRead << "-byte rpc on " << sd << std::endl;
         try{
           Dispatch(rpc, readbuf.data(), wantRead);
         }catch(::kj::Exception &e){
