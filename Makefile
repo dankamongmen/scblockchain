@@ -2,7 +2,7 @@
 .PHONY: all bin valgrind check test docker docker-debbin debsrc debbin clean
 .DEFAULT_GOAL:=all
 
-VERSION:=$(shell dpkg-parsechangelog -SVersion)
+VERSION:=$(shell ext/dpkg-parsechangelog -SVersion)
 
 SRC:=src
 OUT:=.out

@@ -43,6 +43,10 @@ access (to create a chroot):
 
 * pbuilder 0.230.1+
 
+External files included in `ext`:
+
+* dpkg-parsechangelog from dpkg-dev 1.19.4 (alpine dpkg-dev is missing it)
+
 ### Docker
 
 Among other formats, Catena is distributed as a Debian-based Docker image.
