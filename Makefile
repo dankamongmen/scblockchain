@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test docker dockerbuild debsrc debbin clean
+.PHONY: all bin valgrind check test docker debsrc debbin clean
 .DEFAULT_GOAL:=all
 
 VERSION:=$(shell dpkg-parsechangelog -SVersion)
@@ -100,18 +100,27 @@ valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
 
 DOCKEROUT:=$(OUT)/dockerbuilt
-# FIXME need to dep on .deb from dockerbuild target
-docker: $(DOCKERFILE)
+DEBDOCKER:=$(addprefix $(DOCKEROUT)/catena_$(VERSION)., dsc)
+docker: $(DOCKERFILE) $(DEBDOCKER)
 	docker build -f $< $(DOCKEROUT)
 
-dockerbuild: $(DOCKERBUILDFILE)
-	docker build -f $< .
-	# need to get container from above with -q
-	@mkdir -p $(DOCKEROUT)/
-	# need to get source packages FIXME
-	docker cp $(CONTAINER):catena/*deb $(DOCKEROUT)
+IIDFILE:=$(DOCKEROUT)/iid
+dockerbuild: $(DEBDOCKER)
 
-# Used by Dockerfile
+# FIXME need to randomize the container name, lest we stomp on other runs
+$(DEBDOCKER): $(IIDFILE)
+	@mkdir -p $(@D)
+	docker run --name catena $(shell cat $<)
+	for i in .dsc .tar.xz $(addprefix _amd64, .deb .changes .build .buildinfo) ; do \
+	docker cp catena:/catena_$(VERSION)$$i $(DOCKEROUT)/ ; done
+	docker rm catena || true
+	docker rmi $(shell cat $<) || true
+
+$(IIDFILE): $(DOCKERBUILDFILE)
+	@mkdir -p $(@D)
+	docker build --iidfile $@ -f $< .
+
+# Used internally by Dockerfile
 docker-debbin:
 	@mkdir -p $(OUT)/deb
 	debuild -uc -us

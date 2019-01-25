@@ -6,6 +6,8 @@ RUN apt-get install --assume-yes --no-install-recommends \
 EXPOSE 8080 40404
 
 # Send requisite building materials to $WORKDIR
-COPY .out/deb/* /tmp/
+COPY *.tar.xz /tmp/
+COPY *.dsc /tmp/
+COPY *.deb /tmp/
 
 RUN dpkg -i /tmp/*deb
