@@ -178,7 +178,6 @@ bool Callback(RPCService& rpc) override {
   // reading message, parse and dispatch, and prep for reading length.
   auto r = SSL_read(ssl, readbuf.data() + haveRead, wantRead - haveRead);
 	if(r > 0){
-		std::cout << "read us some crap " << r << std::endl;
     if(haveRead + r == wantRead){
       if(readingMsg == false){ // we were reading the length
         wantRead = nbo_to_ulong(readbuf.data(), MSGLEN_PREFACE_BYTES);
