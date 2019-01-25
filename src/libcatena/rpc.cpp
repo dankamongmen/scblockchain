@@ -242,7 +242,6 @@ PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
 }
 
 void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
-  std::cout << "dispatching from " << (void*)buf << " with " << len << std::endl;
   // FIXME alignment requirements!?!
   const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(buf),
@@ -479,6 +478,10 @@ void RPCService::HandleCompletedConns() {
           .events = EPOLLIN | EPOLLRDHUP | EPOLLOUT,
           .data = { .ptr = (*mapins.first).second.get(), },
         };
+        auto cb = [this](Proto::AdvertiseNode::Builder& builder) -> void {
+          NodeAdvertisementFill(builder);
+        };
+        (*mapins.first).second->EnqueueCall(PrepCall<Proto::AdvertiseNode, decltype(cb)>(Proto::METHOD_ADVERTISE_NODE, cb));
         (*mapins.first).second->EnqueueCall(PrepCall(Proto::METHOD_DISCOVER_NODES));
         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
           epolls.erase(mapins.first);
@@ -553,7 +556,11 @@ void RPCService::AddPeers(const std::string& peerfile) {
 	if(!in.eof()){
 		throw ConvertInputException("couldn't extract lines from file");
 	}
-	for(auto const& r : ret){
+  AddPeerList(ret);
+}
+
+void RPCService::AddPeerList(std::vector<std::shared_ptr<Peer>>& pl) {
+	for(auto const& r : pl){
 		bool dup = false;
 		for(auto const& p : peers){
 			// FIXME what about if we discovered the peer, but then
@@ -627,10 +634,7 @@ void RPCService::NodesAdvertisementFill(Proto::AdvertiseNodes::Builder& builder)
   auto lnodes = builder.initNodes(peers.size());
   for(auto i = 0u ; i < peers.size() ; ++i){
     auto ads = lnodes[i].initAds(1);
-    ads.set(0, peers[i].address);
-    auto bname = lnodes[i].initName();
-    bname.setIssuerCN("erp");
-    bname.setSubjectCN("erp");
+    ads.set(0, peers[i].address + ":" + std::to_string(peers[i].port)); // FIXME
   }
 }
 
@@ -661,12 +665,15 @@ std::vector<unsigned char> RPCService::NodeAdvertisement() const {
 }
 
 void RPCService::HandleAdvertiseNode(const Proto::AdvertiseNode::Reader& reader) {
-  if(!reader.hasName() || !reader.hasAds()){
-    throw NetworkException("NodeAdvertise was missing name/ads");
+  if(!reader.hasAds()){
+    throw NetworkException("NodeAdvertise was missing ads");
   }
-  auto rname = reader.getName();
-  // FIXME get ads
-  std::cout << "advertised from " << rname.getIssuerCN().cStr() << "::" << rname.getSubjectCN().cStr() << std::endl;
+  std::vector<std::shared_ptr<Peer>> ret;
+  for(const auto& a : reader.getAds()){
+    // FIXME coalesce each getAds into a single Peer
+		ret.emplace_back(std::make_shared<Peer>(a.cStr(), DefaultRPCPort, clictx, false));
+  }
+  AddPeerList(ret);
 }
 
 void RPCService::HandleAdvertiseNodes(const Proto::AdvertiseNodes::Reader& reader) {

@@ -127,6 +127,7 @@ void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 void HandleCompletedConns();
 void LaunchNewConns();
+void AddPeerList(std::vector<std::shared_ptr<Peer>>& pl);
 };
 
 }

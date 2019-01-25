@@ -494,7 +494,7 @@ int ReadlineUI::Peers(const Iterator start, const Iterator end){
 		const auto pinfo = chain.Peers();
 		time_t now = time(NULL);
 		for(auto p : pinfo){
-      std::cout << '(' << (p.configured ? '*' : ' ') <<
+      std::cout << '(' << (p.configured ? 'C' : 'L') <<
                           (p.connected ? "✔" : "✘") << ") ";
 			std::cout << p.address << ":" << p.port;
 			if(p.lasttime == -1){
