@@ -5,14 +5,14 @@ CATENA=.out/catena
 make -j
 $CATENA -l test/ledger-test -r 40407 -p 8083 -C test/node4chain.pem \
   -v test/ca/intermediate/testcorp/private/testnode4.key.pem \
-  -P test/rpc-peers -A 127.0.0.1:40407 -d &
+  -P test/rpc-peers3 -A 127.0.0.1:40407 -d &
 $CATENA -l test/ledger-test -r 40406 -p 8082 -C test/node3chain.pem \
   -v test/ca/intermediate/testcorp/private/testnode3.key.pem \
-  -P test/rpc-peers -A 127.0.0.1:40406 -d &
+  -P test/rpc-peers2 -A 127.0.0.1:40406 -d &
 $CATENA -l test/ledger-test -r 40405 -p 8081 -C test/node2chain.pem \
   -v test/ca/intermediate/testcorp/private/testnode2.key.pem \
-  -P test/rpc-peers -A 127.0.0.1:40405 -d &
+  -P test/rpc-peers1 -A 127.0.0.1:40405 -d &
 $CATENA -l test/ledger-test -r 40404 -p 8080 -C test/node1chain.pem \
   -v test/ca/intermediate/testcorp/private/testnode1.key.pem \
-  -P test/rpc-peers -A 127.0.0.1:40404
+  -P test/rpc-peers0 -A 127.0.0.1:40404
 killall $CATENA
