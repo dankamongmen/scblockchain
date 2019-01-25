@@ -94,15 +94,15 @@ virtual ~PolledTLSFD() {
   }
 }
 
-bool IsConnection() const { return true; }
+bool IsConnection() const override { return true; }
 
-bool IsOutgoing() const { return bio ? true : false; }
+bool IsOutgoing() const override { return bio ? true : false; }
 
-std::string IPName() const {
+std::string IPName() const override {
   return ipname;
 }
 
-TLSName Name() const {
+TLSName Name() const override {
   return name;
 }
 
@@ -257,8 +257,7 @@ void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
       rpc.HandleAdvertiseNode(r);
       break;
     }case Proto::METHOD_DISCOVER_NODES:{
-      auto peers = rpc.Peers();
-      auto cb = [&rpc, &peers](Proto::AdvertiseNodes::Builder& builder) -> void {
+      auto cb = [&rpc](Proto::AdvertiseNodes::Builder& builder) -> void {
         rpc.NodesAdvertisementFill(builder);
       };
       EnqueueCall(PrepCall<Proto::AdvertiseNodes, decltype(cb)>(Proto::METHOD_ADVERTISE_NODES, cb));
@@ -311,15 +310,15 @@ PolledListenFD(int family, const SSLCtxRAII& sslctx) :
 	}
 }
 
-bool IsConnection() const { return false; }
+bool IsConnection() const override { return false; }
 
-bool IsOutgoing() const { return false; }
+bool IsOutgoing() const override { return false; }
 
-std::string IPName() const {
+std::string IPName() const override {
   return "fixme[l3+l4]"; // FIXME
 }
 
-TLSName Name() const {
+TLSName Name() const override {
   return std::make_pair("fixmeICN", "fixmeSCN"); // FIXME, use local?
 }
 
