@@ -98,8 +98,12 @@ int EpollMod(int sd, struct epoll_event* ev);
 void EpollAdd(int fd, struct epoll_event* ev, std::unique_ptr<PolledFD> pfd);
 void EpollDel(int fd);
 
-// Hand off an incoming RPC
-void Dispatch(const unsigned char* buf, size_t len);
+// Handle incoming RPCs
+void HandleAdvertiseNode(const Catena::Proto::AdvertiseNode::Reader& reader);
+
+// Supply outgoing RPCs
+void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
+void NodesAdvertisementFill(Catena::Proto::AdvertiseNodes::Builder& builder) const;
 
 private:
 int port;
@@ -122,8 +126,6 @@ void OpenListeners();
 void PrepSSLCTX(SSL_CTX* ctx, const char* chainfile, const char* keyfile);
 void HandleCompletedConns();
 void LaunchNewConns();
-void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
-void HandleAdvertiseNode(const Catena::Proto::AdvertiseNode::Reader& reader);
 };
 
 }

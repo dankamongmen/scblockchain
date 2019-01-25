@@ -110,11 +110,16 @@ void SetName(const TLSName& tname) {
   name = tname;
 }
 
+// Always ensure that we're checking for POLLOUT after use!
 void EnqueueCall(std::vector<unsigned char>&& call) override {
   writeq.emplace(call);
 }
 
 bool Callback(RPCService& rpc) override {
+  struct epoll_event ev = {
+    .events = EPOLLRDHUP,
+    .data = { .ptr = &*this, },
+  };
 	if(accepting){
 		auto ra = SSL_accept(ssl);
 		if(ra == 0){
@@ -124,16 +129,10 @@ bool Callback(RPCService& rpc) override {
 			auto oerr = SSL_get_error(ssl, ra);
 			// FIXME handle partial SSL_accept()
 			if(oerr == SSL_ERROR_WANT_READ){
-				struct epoll_event ev = {
-					.events = EPOLLIN | EPOLLRDHUP,
-					.data = { .ptr = &*this, },
-				};
+        ev.events |= EPOLLIN;
 				rpc.EpollMod(sd, &ev);
 			}else if(oerr == SSL_ERROR_WANT_WRITE){
-				struct epoll_event ev = {
-					.events = EPOLLOUT | EPOLLRDHUP,
-					.data = { .ptr = &*this, },
-				};
+        ev.events |= EPOLLOUT;
 				rpc.EpollMod(sd, &ev);
 			}else{
 				std::cerr << "error accepting TLS" << std::endl;
@@ -141,16 +140,14 @@ bool Callback(RPCService& rpc) override {
 			}
       return false;
 		}
-    struct epoll_event ev = { // successful negotiation
-      .events = EPOLLIN | EPOLLRDHUP,
-      .data = { .ptr = &*this, },
-    };
+    ev.events |= EPOLLIN | EPOLLOUT,
     SetName(SSLPeerName(ssl));
     accepting = false;
     rpc.EpollMod(sd, &ev);
 	}
   // post-handshake, rw path
   // write state machine: for now, just send, and expect to be able to FIXME
+  int wrote = 0;
   while(writeq.size()){
     auto wq = writeq.front();
     unsigned char buf[MSGLEN_PREFACE_BYTES];
@@ -163,6 +160,11 @@ bool Callback(RPCService& rpc) override {
       throw NetworkException("couldn't write message");
     }
     writeq.pop();
+    ++wrote;
+  }
+  if(wrote){
+    ev.events &= ~EPOLLOUT;
+    rpc.EpollMod(sd, &ev);
   }
   // read state machine: we always have some amount we want to read. if we are
   // starting a new sequence, we want to read a 32-bit (4 byte) NBO length. if
@@ -187,9 +189,9 @@ bool Callback(RPCService& rpc) override {
         std::cout << "Set up to read a " << wantRead << "-byte RPC" << std::endl;
         readbuf.reserve(wantRead);
       }else{
-        std::cout << "Received " << wantRead << "-byte RPC" << std::endl;
+        std::cout << "Received " << wantRead << "-byte RPC on " << sd << std::endl;
         try{
-          rpc.Dispatch(readbuf.data(), wantRead);
+          Dispatch(rpc, readbuf.data(), wantRead);
         }catch(::kj::Exception &e){
           throw NetworkException(e.getDescription());
         }
@@ -237,6 +239,40 @@ PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
   readingMsg(false) {
   readbuf.reserve(wantRead);
   NameFDPeer();
+}
+
+void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
+  std::cout << "dispatching from " << (void*)buf << " with " << len << std::endl;
+  // FIXME alignment requirements!?!
+  const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(buf),
+        reinterpret_cast<const capnp::word*>(buf + len));
+  capnp::FlatArrayMessageReader node(view);
+  auto nodeAd = node.getRoot<capnp::rpc::Call>();
+  switch(nodeAd.getMethodId()){
+    case Proto::METHOD_ADVERTISE_NODE:{
+      auto pload = nodeAd.getParams();
+      if(!pload.hasContent()){
+        throw NetworkException("NodeAdvertise was missing payload");
+      }
+      auto r = pload.getContent().getAs<Proto::AdvertiseNode>();
+      rpc.HandleAdvertiseNode(r);
+      break;
+    }case Proto::METHOD_DISCOVER_NODES:{
+      auto peers = rpc.Peers();
+      auto cb = [&rpc, &peers](Proto::AdvertiseNodes::Builder& builder) -> void {
+        rpc.NodesAdvertisementFill(builder);
+      };
+      EnqueueCall(PrepCall<Proto::AdvertiseNodes, decltype(cb)>(Proto::METHOD_ADVERTISE_NODES, cb));
+      struct epoll_event ev = {
+        .events = EPOLLRDHUP | EPOLLIN | EPOLLOUT,
+        .data = { .ptr = &*this, },
+      };
+      rpc.EpollMod(sd, &ev);
+      break;
+    }default:
+      throw NetworkException("unknown rpc");
+  }
 }
 
 void NameFDPeer() {
@@ -432,14 +468,10 @@ void RPCService::HandleCompletedConns() {
         int fd = BIO_get_fd(cf.bio, NULL); // FIXME can fail
         auto mapins = epolls.emplace(fd, std::make_unique<PolledTLSFD>(fd, cf.bio, c.first, cf.name));
         struct epoll_event ev = {
-          .events = EPOLLIN | EPOLLRDHUP,
+          .events = EPOLLIN | EPOLLRDHUP | EPOLLOUT,
           .data = { .ptr = (*mapins.first).second.get(), },
         };
-        auto cb = [this](auto& builder) -> auto {
-          NodeAdvertisementFill(builder);
-        };
-        (*mapins.first).second->EnqueueCall(PrepCall<Proto::AdvertiseNode, decltype(cb)>
-            (Proto::METHOD_ADVERTISE_NODE, cb));
+        (*mapins.first).second->EnqueueCall(PrepCall(Proto::METHOD_DISCOVER_NODES));
         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev)){
           epolls.erase(mapins.first);
           throw NetworkException("couldn't epoll-r on new sd");
@@ -582,6 +614,15 @@ std::vector<ConnInfo> RPCService::Conns() const {
 	return ret;
 }
 
+void RPCService::NodesAdvertisementFill(Proto::AdvertiseNodes::Builder& builder) const {
+  auto peers = Peers(); // locks and unlocks, we use returned copy unlocked
+  auto lnodes = builder.initNodes(peers.size());
+  for(auto i = 0u ; i < peers.size() ; ++i){
+    auto ads = lnodes[i].initAds(1);
+    ads.set(0, peers[i].address);
+  }
+}
+
 void RPCService::NodeAdvertisementFill(Proto::AdvertiseNode::Builder& builder) const {
   auto bname = builder.initName();
   bname.setIssuerCN(name.first);
@@ -615,31 +656,6 @@ void RPCService::HandleAdvertiseNode(const Proto::AdvertiseNode::Reader& reader)
   auto rname = reader.getName();
   // FIXME get ads
   std::cout << "advertised from " << rname.getIssuerCN().cStr() << "::" << rname.getSubjectCN().cStr() << std::endl;
-}
-
-void RPCService::Dispatch(const unsigned char* buf, size_t len) {
-  std::cout << "dispatching from " << (void*)buf << " with " << len << std::endl;
-  // FIXME alignment requirements!?!
-  const kj::ArrayPtr<const capnp::word> view(
-        reinterpret_cast<const capnp::word*>(buf),
-        reinterpret_cast<const capnp::word*>(buf + len));
-  capnp::FlatArrayMessageReader node(view);
-  auto nodeAd = node.getRoot<capnp::rpc::Call>();
-  switch(nodeAd.getMethodId()){
-    case Proto::METHOD_ADVERTISE_NODE:{
-      auto pload = nodeAd.getParams();
-      if(!pload.hasContent()){
-        throw NetworkException("NodeAdvertise was missing payload");
-      }
-      auto r = pload.getContent().getAs<Proto::AdvertiseNode>();
-      HandleAdvertiseNode(r);
-      break;
-    }case Proto::METHOD_DISCOVER_NODES:{
-      // FIXME;
-      break;
-    }default:
-      throw NetworkException("unknown rpc");
-  }
 }
 
 }
