@@ -62,12 +62,10 @@ std::ostream& HTTPDServer::HTMLSysinfo(std::ostream& ss) const {
 	ss << "<h3>system</h3><table>";
 	ss << "<tr><td>cxx</td><td>" << Catena::GetCompilerID() << "</td></tr>";
 	ss << "<tr><td>libc</td><td>" << Catena::GetLibcID() << "</td></tr>";
-	ss << "<tr><td>json</td><td>JSON for Modern C++ " <<
-		NLOHMANN_JSON_VERSION_MAJOR << "." <<
-		NLOHMANN_JSON_VERSION_MINOR << "." <<
-		NLOHMANN_JSON_VERSION_PATCH << "</td>";
+	ss << "<tr><td>json</td><td>" << Catena::GetLibjsonID() << "</td></tr>";
 	ss << "<tr><td>crypto</td><td>" <<
 		SSLeay_version(SSLEAY_VERSION) << "</td></tr>";
+  ss << "<tr><td>capnp</td><td>" << Catena::GetCapnProtoID() << "</td></tr>";
 	ss << "</table>";
 	return ss;
 }
