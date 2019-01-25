@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test docker debsrc debbin clean
+.PHONY: all bin valgrind check test docker docker-debbin debsrc debbin clean
 .DEFAULT_GOAL:=all
 
 VERSION:=$(shell dpkg-parsechangelog -SVersion)
@@ -40,8 +40,7 @@ LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC))) $(
 
 LEDGER:=genesisblock
 TESTDATA:=$(wildcard test/*) $(LEDGER)
-DOCKERBUILDFILE:=Dockerfile
-DOCKERFILE:=doc/Dockerfile.image
+DOCKERFILE:=Dockerfile
 
 WFLAGS:=-Wall -W -Werror -Werror=vla
 # clang doesn't like this
@@ -99,32 +98,8 @@ test: $(TAGS) $(TESTBIN) $(TESTDATA)
 valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
 
-DOCKEROUT:=$(OUT)/dockerbuilt
-DEBDOCKER:=$(addprefix $(DOCKEROUT)/catena_$(VERSION)., dsc)
-docker: $(DOCKERFILE) $(DEBDOCKER)
-	docker build -f $< $(DOCKEROUT)
-
-IIDFILE:=$(DOCKEROUT)/iid
-dockerbuild: $(DEBDOCKER)
-
-# FIXME need to randomize the container name, lest we stomp on other runs
-$(DEBDOCKER): $(IIDFILE)
-	@mkdir -p $(@D)
-	docker run --name catena $(shell cat $<)
-	for i in .dsc .tar.xz $(addprefix _amd64, .deb .changes .build .buildinfo) ; do \
-	docker cp catena:/catena_$(VERSION)$$i $(DOCKEROUT)/ ; done
-	docker rm catena || true
-	docker rmi $(shell cat $<) || true
-	rm -f $(IIDFILE)
-
-$(IIDFILE): $(DOCKERBUILDFILE)
-	@mkdir -p $(@D)
-	docker build --iidfile $@ -f $< .
-
-# Used internally by Dockerfile
-docker-debbin:
-	@mkdir -p $(OUT)/deb
-	debuild -uc -us
+docker: $(DOCKERFILE)
+	docker build -f $< .
 
 debsrc:
 	dpkg-source --build .
@@ -132,6 +107,11 @@ debsrc:
 debbin: debsrc
 	@mkdir -p $(OUT)/deb
 	sudo pbuilder build --buildresult $(OUT)/deb ../*dsc
+
+# Used internally by Dockerfile
+docker-debbin:
+	@mkdir -p $(OUT)/deb
+	debuild -uc -us
 
 clean:
 	rm -rf $(OUT) $(TAGS)
