@@ -115,6 +115,7 @@ $(DEBDOCKER): $(IIDFILE)
 	docker cp catena:/catena_$(VERSION)$$i $(DOCKEROUT)/ ; done
 	docker rm catena || true
 	docker rmi $(shell cat $<) || true
+	rm -f $(IIDFILE)
 
 $(IIDFILE): $(DOCKERBUILDFILE)
 	@mkdir -p $(@D)
