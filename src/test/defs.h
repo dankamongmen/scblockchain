@@ -23,10 +23,10 @@
 "AgEBA0IABBXZN8y7o3wiR9QAsGAs/aIJ3sxqWfG3zB4Q4/Us9fzGwBSKowvHiEN+\n"\
 "5ea/Xj3eFkNUaNlShsucr9+h/+7oBqU=\n"\
 "-----END PUBLIC KEY-----"
-#define RPC_TEST_PEERS "test/rpc-peers"
+#define RPC_TEST_PEERS "test/rpc-peers1"
 #define ELOOK_TEST_PRIVKEY "test/elook-test1.pem"
 #define TEST_NODEKEY "test/ca/intermediate/testcorp/private/testnode1.key.pem"
-#define TEST_CONFIGURED_PEERS 2
+#define TEST_CONFIGURED_PEERS 4
 #define TEST_ISSUER_CN "TestCorp CA"
 #define TEST_SUBJECT_CN "testnode1"
 

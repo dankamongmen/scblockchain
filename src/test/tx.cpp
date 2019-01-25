@@ -11,10 +11,6 @@ TEST(CatenaTransactions, EmptyTX){
 	EXPECT_THROW(Catena::Transaction::LexTX(buf, 1, hash, 0), Catena::TransactionException);
 }
 
-static inline const unsigned char *uccast(const char* s){
-	return reinterpret_cast<const unsigned char*>(s);
-}
-
 TEST(CatenaTransactions, StrToTXSpec){
 	auto tx = Catena::TXSpec::StrToTXSpec("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.0");
 	EXPECT_EQ(0, tx.second);
