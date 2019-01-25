@@ -27,6 +27,18 @@ std::vector<unsigned char> PrepCall(unsigned method, F fxn) {
   return ret;
 }
 
+std::vector<unsigned char> PrepCall(unsigned method) {
+  capnp::MallocMessageBuilder builder;
+  auto call = builder.initRoot<capnp::rpc::Call>();
+  call.setMethodId(method);
+  auto words = capnp::messageToFlatArray(builder);
+  auto bytes = words.asBytes();
+  std::vector<unsigned char> ret;
+  ret.reserve(bytes.size());
+  ret.insert(ret.end(), bytes.begin(), bytes.end());
+  return ret;
+}
+
 }
 
 #endif
