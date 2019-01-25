@@ -46,13 +46,12 @@ access (to create a chroot):
 ### Docker
 
 Among other formats, Catena is distributed as a Debian-based Docker image.
-The `docker` target will make use of the `dockerbuild` target to:
+The `docker` target will:
 
 1. Create a Debian container with build dependencies
 2. Build a debian package within that image
 3. Extract the catena deb
 4. Create a new Debian container, and install catena directly to it.
-5. Serialize this second container to a local tarball.
 
 The resulting container can be run on any Docker node. A persistent, per-node
 volume ought be attached for the ledger and node PKI.

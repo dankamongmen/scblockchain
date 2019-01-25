@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test docker dockerbuild debsrc debbin clean
+.PHONY: all bin valgrind check test docker docker-debbin debsrc debbin clean
 .DEFAULT_GOAL:=all
 
 VERSION:=$(shell dpkg-parsechangelog -SVersion)
@@ -40,8 +40,7 @@ LIBCATENAINC:=$(foreach dir, $(SRC)/libcatena, $(filter $(dir)/%, $(CPPINC))) $(
 
 LEDGER:=genesisblock
 TESTDATA:=$(wildcard test/*) $(LEDGER)
-DOCKERBUILDFILE:=Dockerfile
-DOCKERFILE:=doc/Dockerfile.image
+DOCKERFILE:=Dockerfile
 
 WFLAGS:=-Wall -W -Werror -Werror=vla
 # clang doesn't like this
@@ -99,22 +98,8 @@ test: $(TAGS) $(TESTBIN) $(TESTDATA)
 valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(VALGRIND) $(BINOUT)/catenatest
 
-DOCKEROUT:=$(OUT)/dockerbuilt
-# FIXME need to dep on .deb from dockerbuild target
 docker: $(DOCKERFILE)
-	docker build -f $< $(DOCKEROUT)
-
-dockerbuild: $(DOCKERBUILDFILE)
 	docker build -f $< .
-	# need to get container from above with -q
-	@mkdir -p $(DOCKEROUT)/
-	# need to get source packages FIXME
-	docker cp $(CONTAINER):catena/*deb $(DOCKEROUT)
-
-# Used by Dockerfile
-docker-debbin:
-	@mkdir -p $(OUT)/deb
-	debuild -uc -us
 
 debsrc:
 	dpkg-source --build .
@@ -122,6 +107,11 @@ debsrc:
 debbin: debsrc
 	@mkdir -p $(OUT)/deb
 	sudo pbuilder build --buildresult $(OUT)/deb ../*dsc
+
+# Used internally by Dockerfile
+docker-debbin:
+	@mkdir -p $(OUT)/deb
+	debuild -uc -us
 
 clean:
 	rm -rf $(OUT) $(TAGS)
