@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <capnp/common.h>
+#include <nlohmann/json.hpp>
 #include <libcatena/utility.h>
 
 namespace Catena {
@@ -183,6 +185,45 @@ void FDSetNonblocking(int fd) {
 	if(0 != fcntl(fd, F_SETFL, flags)){
 		throw SystemException("couldn't set fd flags");
 	}
+}
+
+std::string GetLibcID(){
+	std::stringstream ss;
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
+	ss << "GNU glibc " << gnu_get_libc_version();
+#elif defined(__UCLIBC__)
+	ss << "µClibc " << __UCLIBC_MAJOR__ << "." << __UCLIBC_MINOR__ << "."
+		<< __UCLIBC_SUBLEVEL__;
+#elif defined(__BIONIC__)
+	ss << "Google Bionic";
+#else
+#error "couldn't determine libc versioning"
+#endif
+	return ss.str();
+}
+
+std::string GetCompilerID(){
+#if defined(__GNUC__) && !defined(__clang__)
+	return std::string("GNU C++ ") + __VERSION__;
+#elif defined(__clang__)
+	return __VERSION__;
+#else
+#error "couldn't determine c++ compiler"
+#endif
+}
+
+std::string GetCapnProtoID() {
+  return std::string("Cap'n Proto ") +
+    std::to_string(CAPNP_VERSION_MAJOR) + '.' +
+    std::to_string(CAPNP_VERSION_MINOR) + '.' +
+    std::to_string(CAPNP_VERSION_MICRO);
+}
+
+std::string GetLibjsonID() {
+  return std::string("JSON for Modern C++ ") +
+		std::to_string(NLOHMANN_JSON_VERSION_MAJOR) + "." +
+		std::to_string(NLOHMANN_JSON_VERSION_MINOR) + "." +
+		std::to_string(NLOHMANN_JSON_VERSION_PATCH);
 }
 
 }
