@@ -117,7 +117,7 @@ void EnqueueCall(std::vector<unsigned char>&& call) override {
 
 bool Callback(RPCService& rpc) override {
   struct epoll_event ev = {
-    .events = EPOLLRDHUP,
+    .events = EPOLLRDHUP | EPOLLIN,
     .data = { .ptr = &*this, },
   };
 	if(accepting){
@@ -129,10 +129,10 @@ bool Callback(RPCService& rpc) override {
 			auto oerr = SSL_get_error(ssl, ra);
 			// FIXME handle partial SSL_accept()
 			if(oerr == SSL_ERROR_WANT_READ){
-        ev.events |= EPOLLIN;
 				rpc.EpollMod(sd, &ev);
 			}else if(oerr == SSL_ERROR_WANT_WRITE){
         ev.events |= EPOLLOUT;
+        ev.events &= ~EPOLLIN;
 				rpc.EpollMod(sd, &ev);
 			}else{
 				std::cerr << "error accepting TLS" << std::endl;
@@ -140,9 +140,9 @@ bool Callback(RPCService& rpc) override {
 			}
       return false;
 		}
-    ev.events |= EPOLLIN | EPOLLOUT,
     SetName(SSLPeerName(ssl));
     accepting = false;
+    ev.events |= EPOLLOUT,
     rpc.EpollMod(sd, &ev);
 	}
   // post-handshake, rw path
@@ -269,6 +269,14 @@ void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
         .data = { .ptr = &*this, },
       };
       rpc.EpollMod(sd, &ev);
+      break;
+    }case Proto::METHOD_ADVERTISE_NODES:{
+      auto pload = nodeAd.getParams();
+      if(!pload.hasContent()){
+        throw NetworkException("NodeAdvertises was missing payload");
+      }
+      auto r = pload.getContent().getAs<Proto::AdvertiseNodes>();
+      rpc.HandleAdvertiseNodes(r);
       break;
     }default:
       throw NetworkException("unknown rpc");
@@ -620,6 +628,9 @@ void RPCService::NodesAdvertisementFill(Proto::AdvertiseNodes::Builder& builder)
   for(auto i = 0u ; i < peers.size() ; ++i){
     auto ads = lnodes[i].initAds(1);
     ads.set(0, peers[i].address);
+    auto bname = lnodes[i].initName();
+    bname.setIssuerCN("erp");
+    bname.setSubjectCN("erp");
   }
 }
 
@@ -656,6 +667,15 @@ void RPCService::HandleAdvertiseNode(const Proto::AdvertiseNode::Reader& reader)
   auto rname = reader.getName();
   // FIXME get ads
   std::cout << "advertised from " << rname.getIssuerCN().cStr() << "::" << rname.getSubjectCN().cStr() << std::endl;
+}
+
+void RPCService::HandleAdvertiseNodes(const Proto::AdvertiseNodes::Reader& reader) {
+  if(!reader.hasNodes()){
+    throw NetworkException("NodeAdvertises was missing nodes");
+  }
+  for(auto nreader : reader.getNodes()){
+    HandleAdvertiseNode(nreader);
+  }
 }
 
 }

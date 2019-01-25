@@ -100,6 +100,7 @@ void EpollDel(int fd);
 
 // Handle incoming RPCs
 void HandleAdvertiseNode(const Catena::Proto::AdvertiseNode::Reader& reader);
+void HandleAdvertiseNodes(const Catena::Proto::AdvertiseNodes::Reader& reader);
 
 // Supply outgoing RPCs
 void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
