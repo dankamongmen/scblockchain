@@ -1,3 +1,9 @@
+catena (0.0.4~pre) UNRELEASED; urgency=medium
+
+  * 
+
+ -- nick black <dankamongmen@gmail.com>  Fri, 25 Jan 2019 02:21:42 -0500
+
 catena (0.0.3) unstable; urgency=medium
 
   * Better Docker support
