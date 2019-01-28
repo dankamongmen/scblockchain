@@ -90,7 +90,7 @@ check: test
 
 $(VERSIONH): debian/changelog
 	@mkdir -p $(@D)
-	echo "#ifndef CATENA_CATENA_VERSION\n#define CATENA_CATENA_VERSION\nnamespace CatenaAgent{constexpr const char VERSION[] = \"$(VERSION)\";}\n#endif" > $@
+	/bin/echo -e "#ifndef CATENA_CATENA_VERSION\n#define CATENA_CATENA_VERSION\nnamespace CatenaAgent{constexpr const char VERSION[] = \"$(VERSION)\";}\n#endif" > $@
 
 test: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(BINOUT)/catenatest
