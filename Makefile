@@ -101,17 +101,17 @@ valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 docker: $(DOCKERFILE)
 	docker build -f $< .
 
+# Used internally by Dockerfile
+docker-apk:
+	@mkdir -p $(OUT)/deb
+	abuild -p $(OUT)/deb
+
 debsrc:
 	dpkg-source -I -I$(OUT) --build .
 
 debbin: debsrc
 	@mkdir -p $(OUT)/deb
 	sudo pbuilder build --buildresult $(OUT)/deb ../*dsc
-
-# Used internally by Dockerfile
-docker-debbin:
-	@mkdir -p $(OUT)/deb
-	debuild -uc -us
 
 clean:
 	rm -rf $(OUT) $(TAGS)
