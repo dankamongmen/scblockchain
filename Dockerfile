@@ -5,7 +5,7 @@ RUN apk add --update alpine-sdk libmicrohttpd-dev openssl-dev ctags \
 WORKDIR /catena
 # Send source directory (minus .dockerignores) to $WORKDIR
 COPY . ./
-RUN make docker-debbin
+RUN make docker-apk
 
 # This one builds a production image, and installs the binary package
 FROM alpine:latest
