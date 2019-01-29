@@ -7,7 +7,7 @@ url="https://github.com/headwayplatform/scblockchain"
 arch="all"
 license="Apache-2.0"
 depends="openssl capnproto"
-makedepends="ctags nlohmann-json-dev readline-dev"
+makedepends="ctags nlohmann-json-dev readline-dev libmicrohttpd-dev"
 subpackages="$pkgname-dev"
 source="https://github.com/Sharecare/scblockchain/archive/v"$pkgver".tar.gz"
 
