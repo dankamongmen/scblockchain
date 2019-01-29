@@ -155,7 +155,6 @@ inline TLSName SSLPeerName(SSL* s) {
 void FDSetNonblocking(int fd);
 
 std::string GetCompilerID();
-std::string GetLibcID();
 std::string GetLibjsonID();
 std::string GetCapnProtoID();
 
