@@ -61,7 +61,6 @@ std::ostream& HTTPDServer::JSONtoHTML(std::ostream& ss, const nlohmann::json& js
 std::ostream& HTTPDServer::HTMLSysinfo(std::ostream& ss) const {
 	ss << "<h3>system</h3><table>";
 	ss << "<tr><td>cxx</td><td>" << Catena::GetCompilerID() << "</td></tr>";
-	ss << "<tr><td>libc</td><td>" << Catena::GetLibcID() << "</td></tr>";
 	ss << "<tr><td>json</td><td>" << Catena::GetLibjsonID() << "</td></tr>";
 	ss << "<tr><td>crypto</td><td>" <<
 		SSLeay_version(SSLEAY_VERSION) << "</td></tr>";

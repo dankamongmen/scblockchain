@@ -110,7 +110,6 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
   std::cout << "catena v" << VERSION << " on " << Catena::Hostname() << "\n";
   std::cout << "\n";
 	std::cout << "cxx: " << Catena::GetCompilerID() << "\n";
-	std::cout << "libc: " << Catena::GetLibcID() << "\n";
 	std::cout << "json: " << Catena::GetLibjsonID() << "\n";
 	std::cout << "crypto: " << SSLeay_version(SSLEAY_VERSION) << "\n";
   std::cout << "capnp: " << Catena::GetCapnProtoID();
