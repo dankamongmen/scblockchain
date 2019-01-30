@@ -187,21 +187,6 @@ void FDSetNonblocking(int fd) {
 	}
 }
 
-std::string GetLibcID(){
-	std::stringstream ss;
-#if defined(__GLIBC__) && !defined(__UCLIBC__)
-	ss << "GNU glibc " << gnu_get_libc_version();
-#elif defined(__UCLIBC__)
-	ss << "µClibc " << __UCLIBC_MAJOR__ << "." << __UCLIBC_MINOR__ << "."
-		<< __UCLIBC_SUBLEVEL__;
-#elif defined(__BIONIC__)
-	ss << "Google Bionic";
-#else
-#error "couldn't determine libc versioning"
-#endif
-	return ss.str();
-}
-
 std::string GetCompilerID(){
 #if defined(__GNUC__) && !defined(__clang__)
 	return std::string("GNU C++ ") + __VERSION__;

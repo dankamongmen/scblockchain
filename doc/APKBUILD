@@ -1,0 +1,28 @@
+# Contributor: Nick Black <dankamongmen@gmail.com>
+pkgname=catena
+pkgver=0.0.3
+pkgrel=1
+pkgdesc="Distributed ledger for health records"
+url="https://github.com/headwayplatform/scblockchain"
+arch="all"
+license="Apache-2.0"
+depends="openssl capnproto"
+makedepends="ctags nlohmann-json-dev readline-dev libmicrohttpd-dev"
+subpackages="$pkgname-dev"
+source="https://github.com/Sharecare/scblockchain/archive/v"$pkgver".tar.gz"
+
+build() {
+	cd "$builddir"
+	make
+}
+
+check() {
+	cd "$builddir"
+	make check
+}
+
+package() {
+	cd "$builddir"
+	make install DESTDIR="$pkgdir"
+}
+

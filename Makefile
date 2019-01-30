@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-.PHONY: all bin valgrind check test docker docker-debbin debsrc debbin clean
+.PHONY: all bin valgrind check test docker docker-apk debsrc debbin clean
 .DEFAULT_GOAL:=all
 
 VERSION:=$(shell dpkg-parsechangelog -SVersion)
@@ -90,7 +90,7 @@ check: test
 
 $(VERSIONH): debian/changelog
 	@mkdir -p $(@D)
-	echo "#ifndef CATENA_CATENA_VERSION\n#define CATENA_CATENA_VERSION\nnamespace CatenaAgent{constexpr const char VERSION[] = \"$(VERSION)\";}\n#endif" > $@
+	/bin/echo -e "#ifndef CATENA_CATENA_VERSION\n#define CATENA_CATENA_VERSION\nnamespace CatenaAgent{constexpr const char VERSION[] = \"$(VERSION)\";}\n#endif" > $@
 
 test: $(TAGS) $(TESTBIN) $(TESTDATA)
 	$(BINOUT)/catenatest
@@ -101,17 +101,17 @@ valgrind: $(TAGS) $(TESTBIN) $(TESTDATA)
 docker: $(DOCKERFILE)
 	docker build -f $< .
 
+# Used internally by Dockerfile
+docker-apk:
+	@mkdir -p $(OUT)/deb
+	abuild -r -p $(OUT)/deb
+
 debsrc:
-	dpkg-source --build .
+	dpkg-source -I -I$(OUT) --build .
 
 debbin: debsrc
 	@mkdir -p $(OUT)/deb
 	sudo pbuilder build --buildresult $(OUT)/deb ../*dsc
-
-# Used internally by Dockerfile
-docker-debbin:
-	@mkdir -p $(OUT)/deb
-	debuild -uc -us
 
 clean:
 	rm -rf $(OUT) $(TAGS)
