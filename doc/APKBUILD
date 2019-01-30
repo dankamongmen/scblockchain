@@ -1,7 +1,7 @@
 # Contributor: Nick Black <dankamongmen@gmail.com>
 pkgname=catena
-pkgver=0.0.3
-pkgrel=1
+pkgver=0.0.4
+pkgrel=0
 pkgdesc="Distributed ledger for health records"
 url="https://github.com/headwayplatform/scblockchain"
 arch="all"
@@ -23,6 +23,8 @@ check() {
 
 package() {
 	cd "$builddir"
-	make install DESTDIR="$pkgdir"
+	install -D -m755 "$srcdir"/doc/$pkgname.initd "$pkgdir"/etc/init.d/$pkgname
+	install -D -m644 "$srcdir"/doc/$pkgname.confd "$pkgdir"/etc/conf.d/$pkgname
+  install -D -m755 "$srcdir"/.out/src/catena/catena "$pkgdir"/usr/bin
 }
 

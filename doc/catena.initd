@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+# OpenRC catena script for use on Alpine Linux
+# https://github.com/OpenRC/openrc/blob/master/service-script-guide.md
+# https://wiki.alpinelinux.org/wiki/Writing_Init_Scripts
+
+command="/usr/bin/catena"
+# Have OpenRC manage a PIDfile and place the process in the background
+command_background=true
+command_args="-d $CATENA_OPTS"
+pidfile="/run/${RC_SVNAME}.pid"
+
+# We do *not* use "need net", since we're happy binding to wildcards
+depend() {
+  need localmount
+  after bootmisc
+}
