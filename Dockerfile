@@ -1,7 +1,7 @@
 # This one builds the Alpine binary package...
 FROM alpine:edge as builder
-RUN apk add --update alpine-sdk libmicrohttpd-dev openssl-dev ctags \
-  ncurses-dev readline-dev
+# remaining build dependencies are automatically installed by abuild -r
+RUN apk add --update alpine-sdk
 WORKDIR /catena
 # Send source directory (minus .dockerignores) to $WORKDIR
 COPY . ./
