@@ -25,6 +25,7 @@ package() {
 	cd "$builddir"
 	install -D -m755 "$srcdir"/doc/$pkgname.initd "$pkgdir"/etc/init.d/$pkgname
 	install -D -m644 "$srcdir"/doc/$pkgname.confd "$pkgdir"/etc/conf.d/$pkgname
-  install -D -m755 "$srcdir"/.out/src/catena/catena "$pkgdir"/usr/bin
+	install -D -m755 "$srcdir"/.out/src/catena/catena "$pkgdir"/usr/bin
+	install -D -m644 "$srcdir"/genesisblock "$pkgdir"/var/lib/catena/ledger
 }
 
