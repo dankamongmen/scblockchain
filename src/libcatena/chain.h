@@ -148,6 +148,8 @@ void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload);
 void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 				int stype, const nlohmann::json& payload);
 
+void AddTransaction(std::unique_ptr<Transaction> tx);
+
 // Return a JSON object containing details regarding the specified block range.
 // Pass -1 for end to specify only the start of the range.
 nlohmann::json InspectJSON(int start, int end) const;
@@ -207,7 +209,6 @@ std::unique_ptr<RPCService> rpcnet;
 std::mutex lock;
 
 void LoadBuiltinKeys();
-void AddTransaction(std::unique_ptr<Transaction> tx);
 };
 
 }
