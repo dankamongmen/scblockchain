@@ -6,7 +6,8 @@ After=network.target
 Type=simple
 User=catena
 Group=catena
-ExecStart=/usr/bin/catena -l /var/lib/catena/ledger -d
+ExecStart=/usr/bin/catena -l /var/lib/catena/ledger \
+ -P /usr/share/catena/seedpeers -d
 Restart=on-failure
 ProtectSystem=full
 NoNewPrivileges=yes
