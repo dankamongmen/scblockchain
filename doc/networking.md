@@ -214,4 +214,6 @@ instead accepting only certificates terminating in the HCN root CA.
 ## RPC protocol
 
 Each message is a 64-bit NBO length in bytes, followed by a Cap'n Proto
-rpc::Call message of that size. See src/proto/rpc.capnp for details.
+rpc::Call message of that size. See [catena.capnp](src/proto/catena.capnp) for
+details of the Catena messages, and [rpc.capnp.h](https://github.com/capnproto/capnproto/blob/master/c%2B%2B/src/capnp/rpc.capnp.h)
+for details of the Cap'n Proto RPC .

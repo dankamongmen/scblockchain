@@ -134,7 +134,8 @@ void AddPrivateKey(const KeyLookup& kl, const Keypair& kp) {
 // Throws InvalidTXSpec if no such user exists.
 nlohmann::json UserStatus(const TXSpec& uspec, unsigned stype) const;
 
-// Generate and sign new transactions, to be added to the ledger.
+// Generate and sign new transactions, to be added to the ledger. Each of these
+// will result in a new outstanding transaction, plus a broadcast.
 void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
 				size_t plen, const nlohmann::json& payload);
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
@@ -176,23 +177,23 @@ int RPCPort() const;
 
 std::vector<std::string> AdvertisedAddresses() const {
   if(rpcnet){
-    return rpcnet.get()->Advertisement();
+    return rpcnet->Advertisement();
   }
   return std::vector<std::string>{};
 }
 
 // Safe to call only if RPC networking has been enabled (RPCPort() != 0)
 void PeerCount(int* defined, int* maxactive) const {
-	return rpcnet.get()->PeerCount(defined, maxactive);
+	return rpcnet->PeerCount(defined, maxactive);
 }
 
 int ActiveConnCount() const {
-	return rpcnet.get()->ActiveConnCount();
+	return rpcnet->ActiveConnCount();
 }
 
 // Get the node's RPC name. Safe to call only if RPC networking has been enabled.
 std::pair<std::string, std::string> RPCName() const {
-	return rpcnet.get()->Name();
+	return rpcnet->Name();
 }
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
@@ -206,6 +207,7 @@ std::unique_ptr<RPCService> rpcnet;
 std::mutex lock;
 
 void LoadBuiltinKeys();
+void AddTransaction(std::unique_ptr<Transaction> tx);
 };
 
 }
