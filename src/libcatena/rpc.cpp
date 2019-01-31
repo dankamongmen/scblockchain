@@ -639,7 +639,7 @@ void RPCService::BroadcastTX(const Transaction& tx) {
       e.second->EnqueueCall(PrepCall<Proto::BroadcastTX, decltype(cb)>(Proto::METHOD_BROADCAST_T_X, cb));
       struct epoll_event ev = {
         .events = EPOLLRDHUP | EPOLLIN | EPOLLOUT,
-        .data = { .ptr = &e.second, },
+        .data = { .ptr = e.second.get(), },
       };
       EpollMod(e.second->FD(), &ev);
     }
