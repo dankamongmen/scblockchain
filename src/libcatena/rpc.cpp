@@ -627,6 +627,25 @@ std::vector<ConnInfo> RPCService::Conns() const {
 	return ret;
 }
 
+// Iterate over the connections, and enqueue the transaction to each one.
+void RPCService::BroadcastTX(const Transaction& tx) {
+  auto serialtx = tx.Serialize();
+  std::lock_guard<std::mutex> guard(lock);
+  for(auto& e : epolls){
+    if(e.second->IsConnection()){
+      auto cb = [&serialtx](Proto::BroadcastTX::Builder& builder) -> void {
+        builder.setTx(kj::arrayPtr(serialtx.first.get(), serialtx.second));
+      };
+      e.second->EnqueueCall(PrepCall<Proto::BroadcastTX, decltype(cb)>(Proto::METHOD_BROADCAST_T_X, cb));
+      struct epoll_event ev = {
+        .events = EPOLLRDHUP | EPOLLIN | EPOLLOUT,
+        .data = { .ptr = &e.second, },
+      };
+      EpollMod(e.second->FD(), &ev);
+    }
+  }
+}
+
 void RPCService::NodesAdvertisementFill(Proto::AdvertiseNodes::Builder& builder) const {
   auto peers = Peers(); // locks and unlocks, we use returned copy unlocked
   auto lnodes = builder.initNodes(peers.size());

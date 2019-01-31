@@ -15,6 +15,7 @@
 #include <proto/catena.capnp.h>
 #include <libcatena/peer.h>
 #include <libcatena/tls.h>
+#include <libcatena/tx.h>
 
 namespace Catena {
 
@@ -105,6 +106,7 @@ void HandleAdvertiseNodes(const Catena::Proto::AdvertiseNodes::Reader& reader);
 // Supply outgoing RPCs
 void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
 void NodesAdvertisementFill(Catena::Proto::AdvertiseNodes::Builder& builder) const;
+void BroadcastTX(const Transaction& tx);
 
 private:
 int port;
