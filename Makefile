@@ -20,6 +20,19 @@ SSLLIBS:=$(shell pkg-config --libs openssl)
 SSLCFLAGS:=$(shell pkg-config --cflags openssl)
 READLINELIBS:=-lreadline
 
+# GoogleTest is sometimes shipped as a shared library, along with pkg-config
+# support (e.g. Alpine's gtest-dev), and sometimes shipped as a static library,
+# with no pkg-config support (e.g. Debian's libgtest-dev). Check for libs from
+# pkg-config, and if they're not there, assume we're using the static library
+# (or missing the dependency entirely).
+GTESTLIBS:=$(shell pkg-config --libs gtest 2>/dev/null)
+ifeq ($(GTESTLIBS),)
+# FIXME detect this, or let it be specified
+GTESTLIBS:=/usr/lib/x86_64-linux-gnu/libgtest.a
+else
+GTESTCFLAGS:=$(shell pkg-config --cflags gtest) -DGTEST_LINKED_AS_SHARED_LIBRARY=1
+endif
+
 CPPSRCDIRS:=$(wildcard $(SRC)/*)
 CPPSRC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.cpp -print)
 CPPINC:=$(shell find $(CPPSRCDIRS) -type f -iname \*.h -print)
@@ -51,9 +64,6 @@ CXXFLAGS:=-pipe -std=c++17 -pthread
 EXTCPPFLAGS:=$(SSLCFLAGS) $(HTTPDCFLAGS) $(CAPNPCFLAGS)
 CXXFLAGS:=$(CXXFLAGS) $(WFLAGS) $(OFLAGS) $(CPPFLAGS) $(EXTCPPFLAGS)
 
-# FIXME detect this, or let it be specified
-LDLIBSGTEST:=/usr/lib/x86_64-linux-gnu/libgtest.a
-
 all: $(TAGS) $(BIN) $(TESTBIN)
 
 $(BINOUT)/catena: $(CATENAOBJ)
@@ -62,7 +72,7 @@ $(BINOUT)/catena: $(CATENAOBJ)
 
 $(BINOUT)/catenatest: $(CATENATESTOBJ)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS) $(CAPNPLIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBSGTEST) $(SSLLIBS) $(CAPNPLIBS) $(GTESTLIBS)
 
 $(OUT)/$(SRC)/catena/%.o: $(SRC)/catena/%.cpp $(CATENAINC) $(VERSIONH)
 	@mkdir -p $(@D)
@@ -70,7 +80,7 @@ $(OUT)/$(SRC)/catena/%.o: $(SRC)/catena/%.cpp $(CATENAINC) $(VERSIONH)
 
 $(OUT)/$(SRC)/test/%.o: $(SRC)/test/%.cpp $(CATENATESTINC)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(GTESTCFLAGS) $(CXXFLAGS) -c $< -o $@
 
 $(OUT)/$(SRC)/libcatena/%.o: $(SRC)/libcatena/%.cpp $(LIBCATENAINC)
 	@mkdir -p $(@D)

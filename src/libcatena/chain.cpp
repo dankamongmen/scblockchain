@@ -87,6 +87,13 @@ void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<ConsortiumMemberTX>(new ConsortiumMemberTX());
 	tx.get()->Extract(txbuf.data(), totlen);
+	AddTransaction(std::move(tx));
+}
+
+void Chain::AddTransaction(std::unique_ptr<Transaction> tx) {
+  if(rpcnet){
+    rpcnet->BroadcastTX(*tx);
+  }
 	outstanding.AddTransaction(std::move(tx));
 }
 
@@ -126,7 +133,7 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<LookupAuthReqTX>(new LookupAuthReqTX());
 	tx.get()->Extract(txbuf.data(), totlen);
-	outstanding.AddTransaction(std::move(tx));
+  AddTransaction(std::move(tx));
 }
 
 void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
@@ -154,7 +161,7 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<ExternalLookupTX>(new ExternalLookupTX());
 	tx->Extract(txbuf.data(), totlen);
-	outstanding.AddTransaction(std::move(tx));
+  AddTransaction(std::move(tx));
 }
 
 void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
@@ -186,7 +193,7 @@ void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
 	memcpy(targ, buf.data(), len); // signed payload (pkeylen, pkey, ciphertext)
 	auto tx = std::unique_ptr<UserTX>(new UserTX());
 	tx.get()->Extract(txbuf.data(), totlen);
-	outstanding.AddTransaction(std::move(tx));
+  AddTransaction(std::move(tx));
 }
 
 // FIXME can only work with AES256 (keytype 1) currently
@@ -219,7 +226,7 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
 	memcpy(targ, etext.first.get(), etext.second); // signed, encrypted payload
 	auto tx = std::unique_ptr<LookupAuthTX>(new LookupAuthTX());
 	tx.get()->Extract(txbuf.data(), totlen);
-	outstanding.AddTransaction(std::move(tx));
+  AddTransaction(std::move(tx));
 }
 
 void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload){
@@ -248,7 +255,7 @@ void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload){
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<UserStatusTX>(new UserStatusTX());
 	tx.get()->Extract(txbuf.data(), totlen);
-	outstanding.AddTransaction(std::move(tx));
+  AddTransaction(std::move(tx));
 }
 
 void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
@@ -277,7 +284,7 @@ void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 	memcpy(targ, buf.data(), len);
 	auto tx = std::unique_ptr<UserStatusDelegationTX>(new UserStatusDelegationTX());
 	tx.get()->Extract(txbuf.data(), totlen);
-	outstanding.AddTransaction(std::move(tx));
+  AddTransaction(std::move(tx));
 }
 
 nlohmann::json Chain::UserStatus(const TXSpec& uspec, unsigned stype) const {

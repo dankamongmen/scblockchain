@@ -13,6 +13,7 @@
 #include <proto/catena.capnp.h>
 #include <libcatena/utility.h>
 #include <libcatena/proto.h>
+#include <libcatena/chain.h>
 #include <libcatena/rpc.h>
 
 namespace Catena {
@@ -36,6 +37,7 @@ PolledFD(int sd) :
 // If Callback() returns true, the PolledFD will be deleted in the epoll loop.
 virtual bool Callback(RPCService& rpc) = 0;
 
+virtual bool SeenTX(const CatenaHash& ch) = 0;
 virtual bool IsConnection() const = 0;
 virtual bool IsOutgoing() const = 0;
 virtual std::string IPName() const = 0;
@@ -108,6 +110,12 @@ TLSName Name() const override {
 
 void SetName(const TLSName& tname) {
   name = tname;
+}
+
+// Have we seen this transaction from this pfd?
+bool SeenTX(const CatenaHash& ch) override {
+  auto ret = txsSeen.insert(ch);
+  return !ret.second;
 }
 
 // Always ensure that we're checking for POLLOUT after use!
@@ -225,6 +233,7 @@ unsigned haveRead;
 bool readingMsg;
 std::vector<unsigned char> readbuf;
 std::queue<std::vector<unsigned char>> writeq;
+std::set<CatenaHash> txsSeen;
 
 // meant to be called by the two more specific constructors, don't use directly
 PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
@@ -275,6 +284,14 @@ void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
       auto r = pload.getContent().getAs<Proto::AdvertiseNodes>();
       rpc.HandleAdvertiseNodes(r);
       break;
+    }case Proto::METHOD_BROADCAST_T_X:{
+      auto pload = nodeAd.getParams();
+      if(!pload.hasContent()){
+        throw NetworkException("BroadcastTX was missing payload");
+      }
+      auto r = pload.getContent().getAs<Proto::BroadcastTX>();
+      rpc.HandleBroadcastTX(r);
+      break;
     }default:
       throw NetworkException("unknown rpc");
   }
@@ -316,6 +333,11 @@ bool IsOutgoing() const override { return false; }
 
 std::string IPName() const override {
   return "fixme[l3+l4]"; // FIXME
+}
+
+bool SeenTX(const CatenaHash& ch) override {
+  (void)ch;
+  throw NetworkException("called SeenTX on acceptor");
 }
 
 TLSName Name() const override {
@@ -511,7 +533,6 @@ void RPCService::LaunchNewConns() {
 }
 
 void RPCService::Epoller() {
-	(void)ledger;
 	while(1) {
 		if(cancelled.load()){
 			return;
@@ -627,6 +648,30 @@ std::vector<ConnInfo> RPCService::Conns() const {
 	return ret;
 }
 
+// Iterate over the connections, and enqueue the transaction to each one.
+void RPCService::BroadcastTX(const Transaction& tx) {
+  auto serialtx = tx.Serialize();
+  CatenaHash ch;
+  catenaHash(serialtx.first.get(), serialtx.second, ch);
+  std::lock_guard<std::mutex> guard(lock);
+  for(auto& e : epolls){
+    if(e.second->IsConnection()){
+      if(e.second->SeenTX(ch)){
+        continue;
+      }
+      auto cb = [&serialtx](Proto::BroadcastTX::Builder& builder) -> void {
+        builder.setTx(kj::arrayPtr(serialtx.first.get(), serialtx.second));
+      };
+      e.second->EnqueueCall(PrepCall<Proto::BroadcastTX, decltype(cb)>(Proto::METHOD_BROADCAST_T_X, cb));
+      struct epoll_event ev = {
+        .events = EPOLLRDHUP | EPOLLIN | EPOLLOUT,
+        .data = { .ptr = e.second.get(), },
+      };
+      EpollMod(e.second->FD(), &ev);
+    }
+  }
+}
+
 void RPCService::NodesAdvertisementFill(Proto::AdvertiseNodes::Builder& builder) const {
   auto peers = Peers(); // locks and unlocks, we use returned copy unlocked
   auto lnodes = builder.initNodes(peers.size());
@@ -681,6 +726,13 @@ void RPCService::HandleAdvertiseNodes(const Proto::AdvertiseNodes::Reader& reade
   for(auto nreader : reader.getNodes()){
     HandleAdvertiseNode(nreader);
   }
+}
+
+void RPCService::HandleBroadcastTX(const Proto::BroadcastTX::Reader& reader) {
+  auto b = reader.getTx().asBytes();
+  CatenaHash ch; // FIXME don't know the block hash yet!
+  auto tx = Transaction::LexTX(b.begin(), b.size(), ch, 0); // FIXME see above
+  ledger.AddTransaction(std::move(tx));
 }
 
 }

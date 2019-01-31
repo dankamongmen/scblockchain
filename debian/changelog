@@ -1,6 +1,7 @@
 catena (0.0.4~pre) UNRELEASED; urgency=medium
 
-  * 
+  * Move to Alpine:Edge for Docker
+  * Install seedpeers file to /usr/share/catena
 
  -- nick black <dankamongmen@gmail.com>  Fri, 25 Jan 2019 02:21:42 -0500
 
