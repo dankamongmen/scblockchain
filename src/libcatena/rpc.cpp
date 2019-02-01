@@ -37,7 +37,6 @@ PolledFD(int sd) :
 // If Callback() returns true, the PolledFD will be deleted in the epoll loop.
 virtual bool Callback(RPCService& rpc) = 0;
 
-virtual bool SeenTX(const CatenaHash& ch) = 0;
 virtual bool IsConnection() const = 0;
 virtual bool IsOutgoing() const = 0;
 virtual std::string IPName() const = 0;
@@ -110,12 +109,6 @@ TLSName Name() const override {
 
 void SetName(const TLSName& tname) {
   name = tname;
-}
-
-// Have we seen this transaction from this pfd?
-bool SeenTX(const CatenaHash& ch) override {
-  auto ret = txsSeen.insert(ch);
-  return !ret.second;
 }
 
 // Always ensure that we're checking for POLLOUT after use!
@@ -333,11 +326,6 @@ bool IsOutgoing() const override { return false; }
 
 std::string IPName() const override {
   return "fixme[l3+l4]"; // FIXME
-}
-
-bool SeenTX(const CatenaHash& ch) override {
-  (void)ch;
-  throw NetworkException("called SeenTX on acceptor");
 }
 
 TLSName Name() const override {
@@ -649,18 +637,14 @@ std::vector<ConnInfo> RPCService::Conns() const {
 }
 
 // Iterate over the connections, and enqueue the transaction to each one.
-void RPCService::BroadcastTX(const Transaction& tx) {
-  auto serialtx = tx.Serialize();
+void RPCService::BroadcastTX(const unsigned char* data, size_t len) {
   CatenaHash ch;
-  catenaHash(serialtx.first.get(), serialtx.second, ch);
+  catenaHash(data, len, ch);
   std::lock_guard<std::mutex> guard(lock);
   for(auto& e : epolls){
     if(e.second->IsConnection()){
-      if(e.second->SeenTX(ch)){
-        continue;
-      }
-      auto cb = [&serialtx](Proto::BroadcastTX::Builder& builder) -> void {
-        builder.setTx(kj::arrayPtr(serialtx.first.get(), serialtx.second));
+      auto cb = [data, len](Proto::BroadcastTX::Builder& builder) -> void {
+        builder.setTx(kj::arrayPtr(data, len));
       };
       e.second->EnqueueCall(PrepCall<Proto::BroadcastTX, decltype(cb)>(Proto::METHOD_BROADCAST_T_X, cb));
       struct epoll_event ev = {
@@ -732,7 +716,11 @@ void RPCService::HandleBroadcastTX(const Proto::BroadcastTX::Reader& reader) {
   auto b = reader.getTx().asBytes();
   CatenaHash ch; // FIXME don't know the block hash yet!
   auto tx = Transaction::LexTX(b.begin(), b.size(), ch, 0); // FIXME see above
-  ledger.AddTransaction(std::move(tx));
+  try{
+    ledger.AddTransaction(std::move(tx));
+  }catch(TransactionException& e){
+    std::cerr << "already had transaction, dropping it" << std::endl;
+  }
 }
 
 }
