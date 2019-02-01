@@ -294,6 +294,7 @@ void Block::AddTransaction(std::unique_ptr<Transaction> tx){
 
 // Toss any transactions, resetting the block
 void Block::Flush(){
+  hashes.clear();
 	transactions.clear();
 }
 
