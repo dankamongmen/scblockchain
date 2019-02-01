@@ -107,7 +107,7 @@ void HandleBroadcastTX(const Proto::BroadcastTX::Reader& reader);
 // Supply outgoing RPCs
 void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
 void NodesAdvertisementFill(Catena::Proto::AdvertiseNodes::Builder& builder) const;
-void BroadcastTX(const Transaction& tx);
+void BroadcastTX(const unsigned char* data, size_t len);
 
 private:
 int port;

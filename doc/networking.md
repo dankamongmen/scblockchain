@@ -216,4 +216,13 @@ instead accepting only certificates terminating in the HCN root CA.
 Each message is a 64-bit NBO length in bytes, followed by a Cap'n Proto
 rpc::Call message of that size. See [catena.capnp](src/proto/catena.capnp) for
 details of the Catena messages, and [rpc.capnp.h](https://github.com/capnproto/capnproto/blob/master/c%2B%2B/src/capnp/rpc.capnp.h)
-for details of the Cap'n Proto RPC .
+for details of the Cap'n Proto RPC protocol.
+
+### Transaction broadcasting
+
+Upon receiving a newly admitted transaction from any input -- RPC, JSON, or
+console -- the node ought broadcast the transaction to all nodes to which it is
+connected. Ideally, it will not send an RPC-borne transaction to the node from
+which it was received, but since nodes must guard against duplicate
+transactions, it doesn't matter. Transactions are broadcast in BroadcastTX RPCs.
+There is no application-layer acknowledgement or non-acknowledgement.

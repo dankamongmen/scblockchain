@@ -282,11 +282,19 @@ Block::SerializeBlock(CatenaHash& prevhash) const {
 }
 
 void Block::AddTransaction(std::unique_ptr<Transaction> tx){
+  CatenaHash ch;
+  auto txser = tx->Serialize();
+  catenaHash(txser.first.get(), txser.second, ch);
+  auto ins = hashes.insert(ch);
+  if(ins.second == false){
+    throw TransactionException("already have hash");
+  }
 	transactions.push_back(std::move(tx));
 }
 
 // Toss any transactions, resetting the block
 void Block::Flush(){
+  hashes.clear();
 	transactions.clear();
 }
 

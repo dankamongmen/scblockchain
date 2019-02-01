@@ -91,10 +91,11 @@ void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey
 }
 
 void Chain::AddTransaction(std::unique_ptr<Transaction> tx) {
-  if(rpcnet){
-    rpcnet->BroadcastTX(*tx);
-  }
+  auto bcast = tx->Serialize();
 	outstanding.AddTransaction(std::move(tx));
+  if(rpcnet){
+    rpcnet->BroadcastTX(bcast.first.get(), bcast.second);
+  }
 }
 
 // Get full block information about the specified range
