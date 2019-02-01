@@ -9,7 +9,8 @@ license="Apache-2.0"
 depends="openssl capnproto"
 makedepends="ctags nlohmann-json-dev readline-dev libmicrohttpd-dev"
 subpackages="$pkgname-dev"
-source="https://github.com/Sharecare/scblockchain/archive/v"$pkgver".tar.gz"
+source="scblockchain-$pkgver.tar.gz::https://github.com/Sharecare/scblockchain/archive/v"$pkgver".tar.gz"
+builddir="$srcdir/scblockchain-$pkgver"
 
 build() {
 	cd "$builddir"
@@ -27,6 +28,7 @@ package() {
 	install -D -m644 "$srcdir"/doc/$pkgname.confd "$pkgdir"/etc/conf.d/$pkgname
 	install -D -m755 "$srcdir"/.out/src/catena/catena "$pkgdir"/usr/bin
 	install -D -m644 "$srcdir"/genesisblock "$pkgdir"/var/lib/catena/ledger
-  install -D -m644 "$srcdir"/doc/seedpeers "$pkgdir"/var/lib/catena/seedpeers
+	install -D -m644 "$srcdir"/doc/seedpeers "$pkgdir"/var/lib/catena/seedpeers
 }
 
+sha512sums="505888f1e0fe39f7e60cd3b08a947ce64d62a568b77ed4644816cc6d37e789a2b68375bd416e4c8c737dc47f0edaadd638a4e658e376871516da9e0b6ebddbe5  scblockchain-0.0.4.tar.gz"
