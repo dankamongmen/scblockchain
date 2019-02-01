@@ -6,7 +6,7 @@ pkgdesc="Distributed ledger for health records"
 url="https://github.com/headwayplatform/scblockchain"
 arch="all"
 license="Apache-2.0"
-depends="openssl capnproto"
+depends="openssl capnproto readline libmicrohttpd"
 makedepends="ctags nlohmann-json-dev readline-dev libmicrohttpd-dev"
 source="scblockchain-$pkgver.tar.gz::https://github.com/Sharecare/scblockchain/archive/v"$pkgver".tar.gz"
 builddir="$srcdir/scblockchain-$pkgver"
@@ -25,7 +25,7 @@ package() {
 	cd "$builddir"
 	install -D -m755 "$builddir"/doc/$pkgname.initd "$pkgdir"/etc/init.d/$pkgname
 	install -D -m644 "$builddir"/doc/$pkgname.confd "$pkgdir"/etc/conf.d/$pkgname
-	install -D -m755 "$builddir"/.out/catena "$pkgdir"/usr/bin
+	install -D -m755 "$builddir"/.out/catena "$pkgdir"/usr/bin/catena
 	install -D -m644 "$builddir"/genesisblock "$pkgdir"/var/lib/catena/ledger
 	install -D -m644 "$builddir"/doc/seedpeers "$pkgdir"/var/lib/catena/seedpeers
 }
