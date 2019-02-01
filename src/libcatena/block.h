@@ -145,6 +145,7 @@ int TransactionCount() const {
 	return transactions.size();
 }
 
+// If we already have the transaction (by hash), TransactionException is thrown
 void AddTransaction(std::unique_ptr<Transaction> tx);
 
 void Flush();
@@ -153,6 +154,7 @@ friend std::ostream& operator<<(std::ostream& stream, const Block& b);
 
 private:
 std::vector<std::unique_ptr<Transaction>> transactions;
+std::set<CatenaHash> hashes; // FIXME could use unordered_set
 };
 
 }
