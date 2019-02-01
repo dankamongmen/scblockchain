@@ -1,7 +1,8 @@
-catena (0.0.4~pre) UNRELEASED; urgency=medium
+catena (0.0.4) unstable; urgency=medium
 
   * Move to Alpine:Edge for Docker
   * Install seedpeers file to /usr/share/catena
+  * Transaction flooding through P2P network
 
  -- nick black <dankamongmen@gmail.com>  Fri, 25 Jan 2019 02:21:42 -0500
 
