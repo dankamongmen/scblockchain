@@ -10,6 +10,9 @@ const methodAdvertiseNode  :UInt16 = 1; # uses AdvertiseNode, no return
 const methodDiscoverNodes  :UInt16 = 2; # uses void, returns methodAdvertiseNodes
 const methodAdvertiseNodes :UInt16 = 3; # uses AdvertiseNodes, no return
 const methodBroadcastTX    :UInt16 = 4; # uses BroadcastTX, no return
+const methodDownloadTXs    :UInt16 = 5; # uses void, returns methodOutstandingTXs
+const methodOutstandingTXs :UInt16 = 6; # uses OutstandingTXs, no return
+const methodBroadcastBlock :Uint16 = 7; # uses BroadcastBlock, no return
 
 struct TLSName {
   subjectCN @0 :Text;
@@ -29,5 +32,15 @@ struct AdvertiseNodes {
 
 # Sent with methodBroadcastTX
 struct BroadcastTX {
-  tx @0: Data;
+  tx @0 :Data;
+}
+
+# Sent with methodOutstandingTXs
+struct OutstandingTXs {
+  txs @0 :List(Data);
+}
+
+# Sent with methodBroadcastBlock
+struct BroadcastBlock {
+  block @0 :Data;
 }
