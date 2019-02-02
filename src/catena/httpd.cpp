@@ -109,6 +109,7 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
     auto stats = chain.RPCStats();
 		ss << "<tr><td>incoming TLS</td><td>" << stats.in_handshakes << "</td></tr>";
 		ss << "<tr><td>outgoing TLS</td><td>" << stats.out_handshakes << "</td></tr>";
+		ss << "<tr><td>outgoing fails</td><td>" << stats.out_failures << "</td></tr>";
     ss << "<tr><td>rpcs sent</td><td>" << stats.rpcs_sent << "</td></tr>";
     ss << "<tr><td>rpcs dispatched</td><td>" << stats.rpcs_dispatched << "</td></tr>";
     ss << "<tr><td>protocol errors</td><td>" << stats.protocol_errors << "</td></tr>";
@@ -120,6 +121,7 @@ std::ostream& HTTPDServer::HTMLNetwork(std::ostream& ss) const {
 		ss << "<tr><td>max active conns</td><td>n/a</td></tr>";
 		ss << "<tr><td>incoming TLS</td><td>n/a</td></tr>";
 		ss << "<tr><td>outgoing TLS</td><td>n/a</td></tr>";
+		ss << "<tr><td>outgoing fails</td><td>n/a</td></tr>";
     ss << "<tr><td>rpcs sent</td><td>n/a</td></tr>";
     ss << "<tr><td>rpcs dispatched</td><td>n/a</td></tr>";
     ss << "<tr><td>protocol errors</td><td>n/a</td></tr>";

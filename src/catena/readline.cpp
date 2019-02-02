@@ -140,6 +140,7 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
     auto stats = chain.RPCStats();
     std::cout << "incoming TLS: " << stats.in_handshakes << "\n";
     std::cout << "outgoing TLS: " << stats.out_handshakes << "\n";
+    std::cout << "outgoing fails: " << stats.out_failures << "\n";
     std::cout << "rpcs sent: " << stats.rpcs_sent << "\n";
     std::cout << "rpcs dispatched: " << stats.rpcs_dispatched << "\n";
     std::cout << "protocol errors: " << stats.protocol_errors << "\n";
@@ -151,6 +152,7 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		std::cout << "max active peers: n/a\n";
     std::cout << "incoming TLS: n/a\n";
     std::cout << "outgoing TLS: n/a\n";
+    std::cout << "outgoing fails: n/a\n";
     std::cout << "rpcs sent: n/a\n";
     std::cout << "rpcs dispatched: n/a\n";
     std::cout << "protocol errors: n/a\n";
