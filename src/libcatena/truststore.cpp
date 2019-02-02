@@ -139,4 +139,18 @@ TrustStore::DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const {
 	return kit1->second.DeriveSymmetricKey(kit2->second);
 }
 
+SymmetricKey
+TrustStore::DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2,
+    const unsigned char* pkey, size_t plen) const {
+	auto kit1 = keys.find(k1);
+	auto kit2 = keys.find(k2);
+	if(kit1 == keys.end() || kit2 == keys.end()){
+		throw SigningException("key not found for derivation");
+	}
+  Keypair kp(kit2->second);
+  Keypair kpp = Keypair::PrivateKeypair(pkey, plen);
+  kp.Merge(kpp); // make sure private key matches public key in truststore
+	return kit1->second.DeriveSymmetricKey(kp);
+}
+
 }
