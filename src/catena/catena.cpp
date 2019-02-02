@@ -3,8 +3,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <libcatena/rpc.h>
-#include <libcatena/sig.h>
 #include <libcatena/chain.h>
+#include <libcatena/keypair.h>
 #include <libcatena/utility.h>
 #include "catena/readline.h"
 #include "catena/httpd.h"

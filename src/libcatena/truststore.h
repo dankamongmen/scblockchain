@@ -5,8 +5,8 @@
 #include <cstring>
 #include <unordered_map>
 #include <libcatena/ledgermap.h>
+#include <libcatena/keypair.h>
 #include <libcatena/hash.h>
-#include <libcatena/sig.h>
 
 namespace Catena {
 

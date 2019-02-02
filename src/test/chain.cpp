@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <libcatena/externallookuptx.h>
+#include <libcatena/keypair.h>
 #include <libcatena/chain.h>
-#include <libcatena/sig.h>
 #include "test/defs.h"
 
 TEST(CatenaChain, ChainGenesisBlock){

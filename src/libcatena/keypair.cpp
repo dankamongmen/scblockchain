@@ -5,7 +5,7 @@
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include "libcatena/truststore.h"
-#include "libcatena/sig.h"
+#include "libcatena/keypair.h"
 
 namespace Catena {
 

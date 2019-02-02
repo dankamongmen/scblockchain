@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <libcatena/truststore.h>
+#include <libcatena/keypair.h>
 #include <libcatena/hash.h>
-#include <libcatena/sig.h>
 
 namespace Catena {
 

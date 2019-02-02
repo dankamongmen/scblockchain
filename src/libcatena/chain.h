@@ -8,10 +8,11 @@
 #include <libcatena/exceptions.h>
 #include <libcatena/block.h>
 #include <libcatena/peer.h>
-#include <libcatena/sig.h>
 #include <libcatena/rpc.h>
 
 namespace Catena {
+
+class Keypair;
 
 // The ledger (one or more CatenaBlocks on disk) as indexed in memory. The
 // Chain can have blocks added to it, either produced locally or received over

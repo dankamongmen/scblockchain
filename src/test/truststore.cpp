@@ -3,8 +3,8 @@
 #include <libcatena/truststore.h>
 #include <libcatena/utility.h>
 #include <libcatena/builtin.h>
+#include <libcatena/keypair.h>
 #include <libcatena/hash.h>
-#include <libcatena/sig.h>
 #include "test/defs.h"
 
 TEST(CatenaTrustStore, BuiltinKeys){
