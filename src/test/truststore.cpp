@@ -159,3 +159,21 @@ TEST(CatenaTrustStore, KeyDerivation){
 }
 
 // FIXME test KDF against builtin key
+
+TEST(CatenaTrustStore, SignSuppliedKey){
+	Catena::TrustStore tstore;
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::KeyLookup kl;
+	RAND_bytes(kl.first.data(), kl.first.size());
+	kl.second = 5;
+	tstore.AddKey(&kp, kl);
+  size_t len;
+  auto res = Catena::ReadBinaryFile(ECDSAKEY, &len);
+  ASSERT_NE(res.get(), nullptr);
+	for(auto t = tests ; *t ; ++t){
+		auto sig = tstore.Sign(reinterpret_cast<const unsigned char*>(*t),
+					                 strlen(*t), kl, res.get(), len);
+		EXPECT_FALSE(tstore.Verify(kl, reinterpret_cast<const unsigned char*>(*t),
+					strlen(*t), sig.first.get(), sig.second));
+	}
+}
