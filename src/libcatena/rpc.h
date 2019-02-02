@@ -45,6 +45,15 @@ struct RPCServiceOptions {
   std::vector<std::string> addresses; // addresses to advertise, may be empty
 };
 
+struct RPCServiceStats {
+  unsigned out_handshakes; // completed TLS handshakes from outgoing connects
+  unsigned in_handshakes; // completed TLS handshakes from incoming accepts
+
+  RPCServiceStats() :
+    out_handshakes(0),
+    in_handshakes(0) {}
+};
+
 class RPCService {
 public:
 RPCService() = delete;
@@ -96,6 +105,7 @@ std::vector<ConnInfo> Conns() const;
 
 // Should only be called from within an epoll loop callback
 int EpollMod(int sd, struct epoll_event* ev);
+int EpollModNewAccept(int sd, struct epoll_event* ev); // increments stats.in_handshakes
 void EpollAdd(int fd, struct epoll_event* ev, std::unique_ptr<PolledFD> pfd);
 void EpollDel(int fd);
 
@@ -108,6 +118,11 @@ void HandleBroadcastTX(const Proto::BroadcastTX::Reader& reader);
 void NodeAdvertisementFill(Catena::Proto::AdvertiseNode::Builder& builder) const;
 void NodesAdvertisementFill(Catena::Proto::AdvertiseNodes::Builder& builder) const;
 void BroadcastTX(const unsigned char* data, size_t len);
+
+RPCServiceStats Stats() const {
+  std::lock_guard<std::mutex> guard(lock);
+  return stats;
+}
 
 private:
 int port;
@@ -123,6 +138,7 @@ std::shared_ptr<SSLCtxRAII> clictx; // shared with Peers
 TLSName name;
 std::shared_ptr<PeerQueue> connqueue;
 std::vector<std::string> advertised;
+RPCServiceStats stats;
 mutable std::mutex lock;
 
 void Epoller(); // launched as epoller thread, joined in destructor
