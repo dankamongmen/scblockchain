@@ -211,4 +211,30 @@ std::string GetLibjsonID() {
 		std::to_string(NLOHMANN_JSON_VERSION_PATCH);
 }
 
+EVP_PKEY* ExtractPublicKey(const EC_KEY* ec) {
+	auto group = EC_KEY_get0_group(ec);
+	auto pub = EC_POINT_new(group);
+	auto bn = EC_KEY_get0_private_key(ec);
+	if(1 != EC_POINT_mul(group, pub, bn, NULL, NULL, NULL)){
+		EC_POINT_free(pub);
+		throw KeypairException("error extracting public key");
+	}
+	auto ec2 = EC_KEY_new_by_curve_name(NID_secp256k1);
+	EC_KEY_set_public_key(ec2, pub);
+	if(1 != EC_KEY_check_key(ec2)){
+    EC_KEY_free(ec2);
+		EC_POINT_free(pub);
+		throw KeypairException("error verifying PEM public key");
+	}
+	auto pubkey = EVP_PKEY_new();
+	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec2)){
+    EC_KEY_free(ec2);
+		EC_POINT_free(pub);
+		EVP_PKEY_free(pubkey);
+		throw KeypairException("error binding EC pubkey");
+	}
+	EC_POINT_free(pub);
+  return pubkey;
+}
+
 }
