@@ -137,12 +137,17 @@ int ReadlineUI::Summary(const Iterator start, const Iterator end){
 		std::cout << "configured peers: " << peersDefined << "\n";
 		std::cout << "active conns: " << chain.ActiveConnCount() << "\n";
 		std::cout << "max active conns: " << connsMax << "\n";
+    auto stats = chain.RPCStats();
+    std::cout << "incoming TLS: " << stats.in_handshakes << "\n";
+    std::cout << "outgoing TLS: " << stats.out_handshakes << "\n";
 	}else{
 		std::cout << "rpc port: not configured\n";
 		std::cout << "rpc name: n/a\n";
 		std::cout << "configured peers: n/a\n";
 		std::cout << "active peers: n/a\n";
 		std::cout << "max active peers: n/a\n";
+    std::cout << "incoming TLS: n/a\n";
+    std::cout << "outgoing TLS: n/a\n";
 	}
   auto ads = chain.AdvertisedAddresses();
   std::cout << "advertisements: " << ads.size();
