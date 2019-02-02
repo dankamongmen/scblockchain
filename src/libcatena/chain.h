@@ -198,6 +198,10 @@ std::pair<std::string, std::string> RPCName() const {
 	return rpcnet->Name();
 }
 
+RPCServiceStats RPCStats() const {
+  return rpcnet->Stats();
+}
+
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
 
 private:
