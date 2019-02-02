@@ -6,8 +6,28 @@
 #include <openssl/evp.h>
 #include "libcatena/truststore.h"
 #include "libcatena/keypair.h"
+#include "libcatena/utility.h"
 
 namespace Catena {
+
+Keypair Keypair::PrivateKeypair(const void* pkey, size_t plen) {
+  BIO* bio = BIO_new_mem_buf(pkey, plen);
+  EC_KEY* ec = PEM_read_bio_ECPrivateKey(bio, NULL, NULL, NULL);
+  BIO_free(bio);
+  if(ec == nullptr){
+		throw KeypairException("error extracting PEM privkey");
+  }
+	if(1 != EC_KEY_check_key(ec)){
+		throw KeypairException("error verifying PEM privkey");
+	}
+  Keypair ret;
+	ret.privkey = EVP_PKEY_new();
+	if(1 != EVP_PKEY_assign_EC_KEY(ret.privkey, ec)){
+		throw KeypairException("error binding EC privkey");
+	}
+  ret.pubkey = ExtractPublicKey(ec);
+  return ret;
+}
 
 Keypair::Keypair(const std::string& privfile){
 	std::string privstr = privfile;
@@ -30,29 +50,12 @@ Keypair::Keypair(const std::string& privfile){
 		EVP_PKEY_free(privkey);
 		throw KeypairException("error binding EC privkey " + privstr);
 	}
-	auto group = EC_KEY_get0_group(ec);
-	auto pub = EC_POINT_new(group);
-	auto bn = EC_KEY_get0_private_key(ec);
-	if(1 != EC_POINT_mul(group, pub, bn, NULL, NULL, NULL)){
-		EC_POINT_free(pub);
+  try{
+    pubkey = ExtractPublicKey(ec);
+  }catch(...){
 		EVP_PKEY_free(privkey);
-		throw KeypairException("error getting pubkey from " + privstr);
-	}
-	EC_KEY* ec2 = EC_KEY_new_by_curve_name(NID_secp256k1);
-	EC_KEY_set_public_key(ec2, pub);
-	if(1 != EC_KEY_check_key(ec2)){
-		EC_POINT_free(pub);
-		EVP_PKEY_free(privkey);
-		throw KeypairException("error verifying PEM pubkey from " + privstr);
-	}
-	pubkey = EVP_PKEY_new();
-	if(1 != EVP_PKEY_assign_EC_KEY(pubkey, ec2)){
-		EC_POINT_free(pub);
-		EVP_PKEY_free(pubkey);
-		EVP_PKEY_free(privkey);
-		throw KeypairException("error binding EC pubkey");
-	}
-	EC_POINT_free(pub);
+    throw;
+  }
 }
 
 Keypair::Keypair(const unsigned char* pubblob, size_t len){

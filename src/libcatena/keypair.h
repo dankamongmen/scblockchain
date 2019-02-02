@@ -21,8 +21,13 @@ Keypair() :
   privkey(nullptr) {}
 
 Keypair(const std::string& privfile);
-// Instantiate a verification-only keypair from memory
+
+// Instantiate a verification-only keypair from memory. For a private keypair
+// constructed from memory, use class static PrivateKeypair().
 Keypair(const unsigned char* pubblob, size_t len);
+
+// Create a keypair from a private key blob
+static Keypair PrivateKeypair(const void* in, size_t len);
 
 Keypair(const Keypair& kp) :
   pubkey(kp.pubkey),
@@ -37,6 +42,15 @@ Keypair& operator=(Keypair kp){
 	std::swap(privkey, kp.privkey);
 	std::swap(pubkey, kp.pubkey);
 	return *this;
+}
+
+inline bool operator==(const Keypair& x) const {
+  if(pubkey && x.pubkey){
+    return EVP_PKEY_cmp(pubkey, x.pubkey) == 1;
+  }else if(pubkey || x.pubkey){
+    return false;
+  }
+  return true;
 }
 
 ~Keypair();
