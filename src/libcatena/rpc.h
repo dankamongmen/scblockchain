@@ -51,13 +51,15 @@ struct RPCServiceStats {
   unsigned out_failures; // failed attempts to connect
   unsigned rpcs_sent; // how many RPCs we have transmitted
   unsigned rpcs_dispatched; // how many RPCs we received and called back on
+  unsigned protocol_errors; // how many times we've hung up on malformed data
 
   RPCServiceStats() :
     out_handshakes(0),
     in_handshakes(0),
     out_failures(0),
     rpcs_sent(0),
-    rpcs_dispatched(0) {}
+    rpcs_dispatched(0),
+    protocol_errors(0) {}
 };
 
 class RPCService {
@@ -133,6 +135,11 @@ RPCServiceStats Stats() const {
 void IncStatRPCsDispatched(int dispatched) {
   std::lock_guard<std::mutex> guard(lock);
   stats.rpcs_dispatched += dispatched;
+}
+
+void IncStatProtocolErrors() {
+  std::lock_guard<std::mutex> guard(lock);
+  ++stats.protocol_errors;
 }
 
 private:

@@ -185,6 +185,7 @@ bool Callback(RPCService& rpc) override {
       if(readingMsg == false){ // we were reading the length
         wantRead = nbo_to_ulong(readbuf.data(), MSGLEN_PREFACE_BYTES);
         if(wantRead > MSGLEN_MAX){
+          rpc.IncStatProtocolErrors();
           throw NetworkException("message too large");
         }
         readbuf.reserve(wantRead);
@@ -193,6 +194,7 @@ bool Callback(RPCService& rpc) override {
         try{
           Dispatch(rpc, readbuf.data(), wantRead);
         }catch(::kj::Exception &e){
+          rpc.IncStatProtocolErrors();
           throw NetworkException(e.getDescription());
         }
         wantRead = MSGLEN_PREFACE_BYTES;
@@ -287,6 +289,7 @@ void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
       rpc.HandleBroadcastTX(r);
       break;
     }default:
+      rpc.IncStatProtocolErrors();
       throw NetworkException("unknown rpc");
   }
   rpc.IncStatRPCsDispatched(1);
