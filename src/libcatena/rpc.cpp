@@ -244,6 +244,7 @@ PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
 
 void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
   // FIXME alignment requirements!?!
+  // FIXME check that there are no excess bytes?
   const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(buf),
         reinterpret_cast<const capnp::word*>(buf + len));
@@ -288,6 +289,7 @@ void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
     }default:
       throw NetworkException("unknown rpc");
   }
+  rpc.IncStatRPCsDispatched(1);
 }
 
 void NameFDPeer() {
@@ -500,6 +502,9 @@ void RPCService::HandleCompletedConns() {
         lock.unlock();
       }
     }catch(NetworkException& e){
+        lock.lock();
+        ++stats.out_failures;
+        lock.unlock();
       std::cerr << e.what() << " connecting to " << c.first->Address()
         << ":" << c.first->Port() << std::endl;
     }

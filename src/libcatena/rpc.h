@@ -48,10 +48,16 @@ struct RPCServiceOptions {
 struct RPCServiceStats {
   unsigned out_handshakes; // completed TLS handshakes from outgoing connects
   unsigned in_handshakes; // completed TLS handshakes from incoming accepts
+  unsigned out_failures; // failed attempts to connect
+  unsigned rpcs_sent; // how many RPCs we have transmitted
+  unsigned rpcs_dispatched; // how many RPCs we received and called back on
 
   RPCServiceStats() :
     out_handshakes(0),
-    in_handshakes(0) {}
+    in_handshakes(0),
+    out_failures(0),
+    rpcs_sent(0),
+    rpcs_dispatched(0) {}
 };
 
 class RPCService {
@@ -122,6 +128,11 @@ void BroadcastTX(const unsigned char* data, size_t len);
 RPCServiceStats Stats() const {
   std::lock_guard<std::mutex> guard(lock);
   return stats;
+}
+
+void IncStatRPCsDispatched(int dispatched) {
+  std::lock_guard<std::mutex> guard(lock);
+  stats.rpcs_dispatched += dispatched;
 }
 
 private:
