@@ -191,8 +191,13 @@ TEST(CatenaRPC, TestStats){
 	Catena::Chain chain;
 	Catena::RPCService rpc(chain, opts);
   constexpr auto dispatched = 2;
+  constexpr auto sent = 42;
   rpc.IncStatRPCsDispatched(dispatched);
+  rpc.IncStatProtocolErrors();
+  rpc.IncStatRPCsSent(sent);
   auto stats = rpc.Stats();
+  EXPECT_EQ(stats.rpcs_sent, sent);
   EXPECT_EQ(stats.rpcs_dispatched, dispatched);
+  EXPECT_EQ(stats.protocol_errors, 1);
 }
 

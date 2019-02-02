@@ -137,6 +137,11 @@ void IncStatRPCsDispatched(int dispatched) {
   stats.rpcs_dispatched += dispatched;
 }
 
+void IncStatRPCsSent(int sent) {
+  std::lock_guard<std::mutex> guard(lock);
+  stats.rpcs_sent += sent;
+}
+
 void IncStatProtocolErrors() {
   std::lock_guard<std::mutex> guard(lock);
   ++stats.protocol_errors;

@@ -164,6 +164,7 @@ bool Callback(RPCService& rpc) override {
     ++wrote;
   }
   if(wrote){
+    rpc.IncStatRPCsSent(wrote);
     ev.events &= ~EPOLLOUT;
     rpc.EpollMod(sd, &ev);
   }
