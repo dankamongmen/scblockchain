@@ -180,3 +180,24 @@ TEST(CatenaRPC, BadPeerfile){
 	// Throw it some crap
 	EXPECT_THROW(rpc.AddPeers(MOCKLEDGER), Catena::ConvertInputException);
 }
+
+TEST(CatenaRPC, TestStats){
+  const Catena::RPCServiceOptions opts = {
+    .port = Catena::DefaultRPCPort,
+    .chainfile = TEST_X509_CHAIN,
+    .keyfile = TEST_NODEKEY,
+    .addresses = {},
+  };
+	Catena::Chain chain;
+	Catena::RPCService rpc(chain, opts);
+  constexpr auto dispatched = 2;
+  constexpr auto sent = 42;
+  rpc.IncStatRPCsDispatched(dispatched);
+  rpc.IncStatProtocolErrors();
+  rpc.IncStatRPCsSent(sent);
+  auto stats = rpc.Stats();
+  EXPECT_EQ(stats.rpcs_sent, sent);
+  EXPECT_EQ(stats.rpcs_dispatched, dispatched);
+  EXPECT_EQ(stats.protocol_errors, 1);
+}
+

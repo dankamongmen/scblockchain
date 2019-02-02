@@ -39,6 +39,19 @@ TrustStore::Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer)
 	return it->second.Sign(in, inlen);
 }
 
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+TrustStore::Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer,
+      const unsigned char* pkey, size_t plen) const {
+	const auto& it = keys.find(signer);
+	if(it == keys.end()){
+		throw SigningException("no such entry in truststore");
+	}
+  Keypair kp(it->second);
+  Keypair kpp = Keypair::PrivateKeypair(pkey, plen);
+  kp.Merge(kpp); // make sure private key matches public key in truststore
+	return kp.Sign(in, inlen);
+}
+
 // Returned ciphertext includes 128 bits of random AES IV, so size >= IVSIZE
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 TrustStore::Encrypt(const void* in, size_t len, const SymmetricKey& key) const {
@@ -124,6 +137,20 @@ TrustStore::DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const {
 		throw SigningException("key not found for derivation");
 	}
 	return kit1->second.DeriveSymmetricKey(kit2->second);
+}
+
+SymmetricKey
+TrustStore::DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2,
+    const unsigned char* pkey, size_t plen) const {
+	auto kit1 = keys.find(k1);
+	auto kit2 = keys.find(k2);
+	if(kit1 == keys.end() || kit2 == keys.end()){
+		throw SigningException("key not found for derivation");
+	}
+  Keypair kp(kit2->second);
+  Keypair kpp = Keypair::PrivateKeypair(pkey, plen);
+  kp.Merge(kpp); // make sure private key matches public key in truststore
+	return kit1->second.DeriveSymmetricKey(kp);
 }
 
 }

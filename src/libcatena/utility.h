@@ -165,6 +165,9 @@ inline std::string Hostname() {
 	return hname;
 }
 
+// Extract the public key from a loaded private key
+EVP_PKEY* ExtractPublicKey(const EC_KEY* ec);
+
 }
 
 #endif

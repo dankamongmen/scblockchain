@@ -5,8 +5,8 @@
 #include <cstring>
 #include <unordered_map>
 #include <libcatena/ledgermap.h>
+#include <libcatena/keypair.h>
 #include <libcatena/hash.h>
-#include <libcatena/sig.h>
 
 namespace Catena {
 
@@ -35,8 +35,17 @@ int PubkeyCount() const {
 	return keys.size();
 }
 
+// Sign the provided blob with the specified key. The private component of the
+// specified key must have already been loaded into the truststore.
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer) const;
+
+// Sign the provided blob with the provided private key. The public component
+// of the specified key must have already been loaded into the truststore, and
+// match the provided private key.
+std::pair<std::unique_ptr<unsigned char[]>, size_t>
+Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer,
+      const unsigned char* pkey, size_t plen) const;
 
 // Returned ciphertext includes 128 bits of random AES IV, so size >= 16
 // Throws EncryptException on error.
@@ -49,8 +58,13 @@ std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Decrypt(const void* in, size_t len, const SymmetricKey& key) const;
 
 // At least one KeyLookup must map to a Keypair with a private key, and both
-// KeyLookups must map to valid
+// KeyLookups must map to valid public keys.
 SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const;
+
+// Both KeyLookups must map to valid public keys, and k2 must match the
+// provided private key.
+SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2,
+    const unsigned char* pkey, size_t plen) const;
 
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 

@@ -202,7 +202,7 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
 	const auto& lar = lmap.LookupReq(larspec);
 	TXSpec elspec = lar.ELSpec();
 	TXSpec cmspec = lar.CMSpec();
-	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(elspec, cmspec);
+	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(cmspec, elspec);
 	// Encrypted payload is User TXSpec, 16-bit keytype, key
 	auto plainlen = symkey.size() + 2 + uspec.first.size() + 4;
   std::vector<unsigned char> plaintext;

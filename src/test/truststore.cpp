@@ -3,8 +3,8 @@
 #include <libcatena/truststore.h>
 #include <libcatena/utility.h>
 #include <libcatena/builtin.h>
+#include <libcatena/keypair.h>
 #include <libcatena/hash.h>
-#include <libcatena/sig.h>
 #include "test/defs.h"
 
 TEST(CatenaTrustStore, BuiltinKeys){
@@ -158,4 +158,39 @@ TEST(CatenaTrustStore, KeyDerivation){
 	EXPECT_EQ(key1, key2); // Both sides ought derive the same key
 }
 
+TEST(CatenaTrustStore, SuppliedKeyDerivation){
+	Catena::TrustStore tstore;
+	Catena::Keypair kv(reinterpret_cast<const unsigned char*>(PUBLICKEY), strlen(PUBLICKEY));
+	Catena::Keypair peer(reinterpret_cast<const unsigned char*>(ELOOK_TEST_PUBKEY), strlen(ELOOK_TEST_PUBKEY));
+	Catena::KeyLookup kl1, kl2;
+	RAND_bytes(kl1.first.data(), kl1.first.size());
+	RAND_bytes(kl2.first.data(), kl2.first.size());
+	kl1.second = kl2.second = 0;
+	tstore.AddKey(&kv, kl1);
+	tstore.AddKey(&peer, kl2);
+  size_t len;
+  auto res = Catena::ReadBinaryFile(ECDSAKEY, &len);
+  ASSERT_NE(res.get(), nullptr);
+	EXPECT_THROW(tstore.DeriveSymmetricKey(kl2, kl1), Catena::SigningException);
+	tstore.DeriveSymmetricKey(kl2, kl1, res.get(), len); // works with key
+}
+
 // FIXME test KDF against builtin key
+
+TEST(CatenaTrustStore, SignSuppliedKey){
+	Catena::TrustStore tstore;
+	Catena::Keypair kp(ECDSAKEY);
+	Catena::KeyLookup kl;
+	RAND_bytes(kl.first.data(), kl.first.size());
+	kl.second = 5;
+	tstore.AddKey(&kp, kl);
+  size_t len;
+  auto res = Catena::ReadBinaryFile(ECDSAKEY, &len);
+  ASSERT_NE(res.get(), nullptr);
+	for(auto t = tests ; *t ; ++t){
+		auto sig = tstore.Sign(reinterpret_cast<const unsigned char*>(*t),
+					                 strlen(*t), kl, res.get(), len);
+		EXPECT_FALSE(tstore.Verify(kl, reinterpret_cast<const unsigned char*>(*t),
+					strlen(*t), sig.first.get(), sig.second));
+	}
+}

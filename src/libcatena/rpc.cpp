@@ -144,7 +144,7 @@ bool Callback(RPCService& rpc) override {
     SetName(SSLPeerName(ssl));
     accepting = false;
     ev.events |= EPOLLOUT,
-    rpc.EpollMod(sd, &ev);
+    rpc.EpollModNewAccept(sd, &ev);
 	}
   // post-handshake, rw path
   // write state machine: for now, just send, and expect to be able to FIXME
@@ -164,6 +164,7 @@ bool Callback(RPCService& rpc) override {
     ++wrote;
   }
   if(wrote){
+    rpc.IncStatRPCsSent(wrote);
     ev.events &= ~EPOLLOUT;
     rpc.EpollMod(sd, &ev);
   }
@@ -185,6 +186,7 @@ bool Callback(RPCService& rpc) override {
       if(readingMsg == false){ // we were reading the length
         wantRead = nbo_to_ulong(readbuf.data(), MSGLEN_PREFACE_BYTES);
         if(wantRead > MSGLEN_MAX){
+          rpc.IncStatProtocolErrors();
           throw NetworkException("message too large");
         }
         readbuf.reserve(wantRead);
@@ -193,6 +195,7 @@ bool Callback(RPCService& rpc) override {
         try{
           Dispatch(rpc, readbuf.data(), wantRead);
         }catch(::kj::Exception &e){
+          rpc.IncStatProtocolErrors();
           throw NetworkException(e.getDescription());
         }
         wantRead = MSGLEN_PREFACE_BYTES;
@@ -244,6 +247,7 @@ PolledTLSFD(int sd, const TLSName& name, SSL* ssl, BIO* bio, bool accepting) :
 
 void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
   // FIXME alignment requirements!?!
+  // FIXME check that there are no excess bytes?
   const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(buf),
         reinterpret_cast<const capnp::word*>(buf + len));
@@ -286,8 +290,10 @@ void Dispatch(RPCService& rpc, const unsigned char* buf, size_t len) {
       rpc.HandleBroadcastTX(r);
       break;
     }default:
+      rpc.IncStatProtocolErrors();
       throw NetworkException("unknown rpc");
   }
+  rpc.IncStatRPCsDispatched(1);
 }
 
 void NameFDPeer() {
@@ -495,8 +501,14 @@ void RPCService::HandleCompletedConns() {
           epolls.erase(mapins.first);
           throw NetworkException("couldn't epoll-r on new sd");
         }
+        lock.lock();
+        ++stats.out_handshakes;
+        lock.unlock();
       }
     }catch(NetworkException& e){
+        lock.lock();
+        ++stats.out_failures;
+        lock.unlock();
       std::cerr << e.what() << " connecting to " << c.first->Address()
         << ":" << c.first->Port() << std::endl;
     }
@@ -603,7 +615,14 @@ void RPCService::EpollAdd(int fd, struct epoll_event* ev, std::unique_ptr<Polled
 }
 
 int RPCService::EpollMod(int fd, struct epoll_event* ev) {
-	return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, ev);
+	return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, ev); // FIXME throw?
+}
+
+int RPCService::EpollModNewAccept(int fd, struct epoll_event* ev) {
+  lock.lock();
+  ++stats.in_handshakes;
+  lock.unlock();
+  return EpollMod(fd, ev);
 }
 
 void RPCService::EpollDel(int fd) {

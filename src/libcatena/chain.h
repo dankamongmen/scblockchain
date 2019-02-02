@@ -8,10 +8,11 @@
 #include <libcatena/exceptions.h>
 #include <libcatena/block.h>
 #include <libcatena/peer.h>
-#include <libcatena/sig.h>
 #include <libcatena/rpc.h>
 
 namespace Catena {
+
+class Keypair;
 
 // The ledger (one or more CatenaBlocks on disk) as indexed in memory. The
 // Chain can have blocks added to it, either produced locally or received over
@@ -196,6 +197,10 @@ int ActiveConnCount() const {
 // Get the node's RPC name. Safe to call only if RPC networking has been enabled.
 std::pair<std::string, std::string> RPCName() const {
 	return rpcnet->Name();
+}
+
+RPCServiceStats RPCStats() const {
+  return rpcnet->Stats();
 }
 
 friend std::ostream& operator<<(std::ostream& stream, const Chain& chain);
