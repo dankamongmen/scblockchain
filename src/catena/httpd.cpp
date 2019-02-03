@@ -686,7 +686,7 @@ int HTTPDServer::UserTXReq(struct PostState* ps, const char* upload) const {
 }
 
 int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload) const {
-	(void)ps;
+	(void)ps; // FIXME
 	(void)upload;
 	return MHD_NO;
 }
@@ -747,7 +747,7 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 }
 
 int HTTPDServer::UserDelegationTXReq(struct PostState* ps, const char* upload) const {
-	(void)ps;
+	(void)ps; // FIXME
 	(void)upload;
 	return MHD_NO;
 }
@@ -757,6 +757,7 @@ int HTTPDServer::UserStatusTXReq(struct PostState* ps, const char* upload) const
 		auto json = nlohmann::json::parse(upload);
 		auto payload = json.find("payload");
 		auto usdspec = json.find("usdspec");
+    auto privkey = json.find("privkey"); // optional
 		if(payload == json.end() || usdspec == json.end()){
 			std::cerr << "missing necessary elements from NewUserStatusTX" << std::endl;
 			return MHD_NO;
@@ -769,10 +770,19 @@ int HTTPDServer::UserStatusTXReq(struct PostState* ps, const char* upload) const
 			std::cerr << "usdspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto usdspecstr = (*usdspec).get<std::string>();
 		try{
 			auto psdkl = Catena::TXSpec::StrToTXSpec(usdspecstr);
-			chain.AddUserStatus(psdkl, *payload);
+      if(privkey == json.end()){
+			  chain.AddUserStatus(psdkl, *payload);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+			  chain.AddUserStatus(psdkl, *payload, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
