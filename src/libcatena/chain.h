@@ -165,7 +165,15 @@ void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
   AddLookupAuthReq(cmspec, elspec, payload, nullptr, 0);
 }
 
-void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey);
+// Wants the private key corresponding to the *elspec* referenced by the
+// specified *larspec* for signing and derivation+encryption.
+void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey,
+    const void* privkey, size_t privlen);
+
+void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey) {
+  AddLookupAuth(larspec, uspec, symkey, nullptr, 0);
+}
+
 void AddUser(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
 		const SymmetricKey& symkey, const nlohmann::json& payload);
 void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload);

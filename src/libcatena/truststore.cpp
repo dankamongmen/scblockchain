@@ -141,7 +141,7 @@ TrustStore::DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const {
 
 SymmetricKey
 TrustStore::DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2,
-    const unsigned char* pkey, size_t plen) const {
+    const void* pkey, size_t plen) const {
 	auto kit1 = keys.find(k1);
 	auto kit2 = keys.find(k2);
 	if(kit1 == keys.end() || kit2 == keys.end()){

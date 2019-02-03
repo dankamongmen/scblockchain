@@ -64,7 +64,7 @@ SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2) const;
 // Both KeyLookups must map to valid public keys, and k2 must match the
 // provided private key.
 SymmetricKey DeriveSymmetricKey(const KeyLookup& k1, const KeyLookup& k2,
-    const unsigned char* pkey, size_t plen) const;
+    const void* pkey, size_t plen) const;
 
 friend std::ostream& operator<<(std::ostream& s, const TrustStore& ts);
 

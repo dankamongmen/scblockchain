@@ -184,7 +184,7 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey
 
 void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
 			size_t plen, const SymmetricKey& symkey,
-			const nlohmann::json& payload){
+			const nlohmann::json& payload) {
 	// FIXME verify that pkey is a valid public key
 	auto serialjson = payload.dump(); // Only the JSON payload is encrypted
 	auto etext = tstore.Encrypt(serialjson.data(), serialjson.length(), symkey);
@@ -215,11 +215,17 @@ void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
 }
 
 // FIXME can only work with AES256 (keytype 1) currently
-void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey){
+void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec,
+    const SymmetricKey& symkey, const void* privkey, size_t privlen) {
 	const auto& lar = lmap.LookupReq(larspec);
 	TXSpec elspec = lar.ELSpec();
 	TXSpec cmspec = lar.CMSpec();
-	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(cmspec, elspec);
+	SymmetricKey derivedkey;
+  if(privkey){
+    derivedkey = tstore.DeriveSymmetricKey(cmspec, elspec, privkey, privlen);
+  }else{
+    derivedkey = tstore.DeriveSymmetricKey(cmspec, elspec);
+  }
 	// Encrypted payload is User TXSpec, 16-bit keytype, key
 	auto plainlen = symkey.size() + 2 + uspec.first.size() + 4;
   std::vector<unsigned char> plaintext;
@@ -231,7 +237,12 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
 	targ = ulong_to_nbo(static_cast<unsigned>(LookupAuthTX::Keytype::AES256), targ, 2);
 	memcpy(targ, symkey.data(), symkey.size());
 	auto etext = tstore.Encrypt(plaintext.data(), plainlen, derivedkey);
-	auto sig = tstore.Sign(etext.first.get(), etext.second, elspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(etext.first.get(), etext.second, elspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(etext.first.get(), etext.second, elspec);
+  }
 	size_t totlen = etext.second + sig.second + 4 + larspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
