@@ -264,7 +264,8 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec,
   AddTransaction(std::move(tx));
 }
 
-void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload) {
+void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload,
+    const void* privkey, size_t privlen) {
 	const auto& psd = lmap.LookupDelegation(usdspec);
 	TXSpec cmspec = psd.CMSpec();
 	auto serialjson = payload.dump();
@@ -277,7 +278,12 @@ void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload) 
 	targ += usdspec.first.size();
 	targ = ulong_to_nbo(usdspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf.data(), len, cmspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, cmspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, cmspec);
+  }
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);

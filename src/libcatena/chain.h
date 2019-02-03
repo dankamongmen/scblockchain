@@ -183,7 +183,13 @@ void AddUser(const TXSpec& cmspec, const unsigned char* pubkey, size_t publen,
   AddUser(cmspec, pubkey, publen, symkey, payload, nullptr, 0);
 }
 
-void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload);
+void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload,
+    const void* privkey, size_t privlen);
+
+void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload) {
+  AddUserStatus(usdspec, payload, nullptr, 0);
+}
+
 void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 				int stype, const nlohmann::json& payload);
 
