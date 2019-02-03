@@ -103,6 +103,28 @@ TEST(CatenaChain, AddExternalLookup){
 	EXPECT_EQ(1, chain.GetBlockCount());
 }
 
+TEST(CatenaChain, AddExternalLookupKeySupplied){
+  size_t privlen;
+  auto privkey = Catena::ReadBinaryFile(ECDSAKEY, &privlen);
+  ASSERT_NE(privkey.get(), nullptr);
+  size_t len;
+  auto res = Catena::ReadBinaryFile(MOCKLEDGER, &len);
+  ASSERT_NE(res.get(), nullptr);
+	Catena::Chain chain(res.get(), len);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	EXPECT_EQ(0, chain.OutstandingTXCount());
+  std::string extid = "50a0a990-1a25-11e9-9131-8b159f637c76";
+	chain.AddExternalLookup(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					pem.length(), extid, Catena::ExtIDTypes::SharecareID, privkey.get(), privlen);
+	EXPECT_EQ(1, chain.OutstandingTXCount());
+  chain.CommitOutstanding();
+	EXPECT_EQ(MOCKLEDGER_BLOCKS + 1, chain.GetBlockCount());
+	EXPECT_EQ(0, chain.OutstandingTXCount());
+}
+
 TEST(CatenaChain, AddExternalLookupBadType){
 	Catena::Keypair kp(ECDSAKEY);
 	Catena::TXSpec cm1(CM1_TEST_TX);
