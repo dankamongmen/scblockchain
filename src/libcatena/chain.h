@@ -140,18 +140,31 @@ nlohmann::json UserStatus(const TXSpec& uspec, unsigned stype) const;
 // without a key supplied require the specified private key to be loaded in the
 // truststore.
 void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
-				size_t publen, const nlohmann::json& payload);
-void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
 				size_t publen, const nlohmann::json& payload, const void* privkey,
         size_t privlen);
 
-void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
-		size_t publen, const std::string& extid, ExtIDTypes lookuptype);
+void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
+				size_t publen, const nlohmann::json& payload){
+  AddConsortiumMember(keyspec, pubkey, publen, payload, nullptr, 0);
+}
+
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
 		size_t publen, const std::string& extid, ExtIDTypes lookuptype,
     const void* privkey, size_t privlen);
 
-void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
+void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
+		size_t publen, const std::string& extid, ExtIDTypes lookuptype){
+  AddExternalLookup(keyspec, pubkey, publen, extid, lookuptype, nullptr, 0);
+}
+
+void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload,
+    const void* privkey, size_t privlen);
+
+void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
+				const nlohmann::json& payload){
+  AddLookupAuthReq(cmspec, elspec, payload, nullptr, 0);
+}
+
 void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey);
 void AddUser(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
 		const SymmetricKey& symkey, const nlohmann::json& payload);

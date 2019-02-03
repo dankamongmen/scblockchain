@@ -96,11 +96,6 @@ void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubk
 	AddTransaction(std::move(tx));
 }
 
-void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
-				size_t publen, const nlohmann::json& payload){
-  AddConsortiumMember(keyspec, pubkey, publen, payload, nullptr, 0);
-}
-
 void Chain::AddTransaction(std::unique_ptr<Transaction> tx) {
   auto bcast = tx->Serialize();
 	outstanding.AddTransaction(std::move(tx));
@@ -121,7 +116,7 @@ BlockDetail Chain::Inspect(const CatenaHash& hash) const {
 }
 
 void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
-				const nlohmann::json& payload){
+    const nlohmann::json& payload, const void* privkey, size_t privlen) {
 	auto serialjson = payload.dump();
 	// Signed payload is ExternalLookup TXSpec + JSON
 	size_t len = elspec.first.size() + 4 + serialjson.length();
@@ -132,7 +127,12 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	targ += elspec.first.size();
 	targ = ulong_to_nbo(elspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf.data(), len, cmspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, cmspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, cmspec);
+  }
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -180,11 +180,6 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey
 	auto tx = std::unique_ptr<ExternalLookupTX>(new ExternalLookupTX());
 	tx->Extract(txbuf.data(), totlen);
   AddTransaction(std::move(tx));
-}
-
-void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
-		size_t publen, const std::string& extid, ExtIDTypes lookuptype){
-  AddExternalLookup(keyspec, pubkey, publen, extid, lookuptype, nullptr, 0);
 }
 
 void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
