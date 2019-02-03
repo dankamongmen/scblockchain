@@ -144,7 +144,7 @@ void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
         size_t privlen);
 
 void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
-				size_t publen, const nlohmann::json& payload){
+				size_t publen, const nlohmann::json& payload) {
   AddConsortiumMember(keyspec, pubkey, publen, payload, nullptr, 0);
 }
 
@@ -153,7 +153,7 @@ void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
     const void* privkey, size_t privlen);
 
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
-		size_t publen, const std::string& extid, ExtIDTypes lookuptype){
+		size_t publen, const std::string& extid, ExtIDTypes lookuptype) {
   AddExternalLookup(keyspec, pubkey, publen, extid, lookuptype, nullptr, 0);
 }
 
@@ -161,7 +161,7 @@ void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann
     const void* privkey, size_t privlen);
 
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
-				const nlohmann::json& payload){
+				const nlohmann::json& payload) {
   AddLookupAuthReq(cmspec, elspec, payload, nullptr, 0);
 }
 
@@ -174,8 +174,15 @@ void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKe
   AddLookupAuth(larspec, uspec, symkey, nullptr, 0);
 }
 
-void AddUser(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
-		const SymmetricKey& symkey, const nlohmann::json& payload);
+void AddUser(const TXSpec& cmspec, const unsigned char* pubkey, size_t publen,
+		const SymmetricKey& symkey, const nlohmann::json& payload,
+    const void* privkey, size_t privlen);
+
+void AddUser(const TXSpec& cmspec, const unsigned char* pubkey, size_t publen,
+		const SymmetricKey& symkey, const nlohmann::json& payload) {
+  AddUser(cmspec, pubkey, publen, symkey, payload, nullptr, 0);
+}
+
 void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload);
 void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 				int stype, const nlohmann::json& payload);
