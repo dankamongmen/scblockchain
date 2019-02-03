@@ -41,7 +41,7 @@ TrustStore::Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer)
 
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 TrustStore::Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer,
-      const unsigned char* pkey, size_t plen) const {
+      const void* pkey, size_t plen) const {
 	const auto& it = keys.find(signer);
 	if(it == keys.end()){
 		throw SigningException("no such entry in truststore");

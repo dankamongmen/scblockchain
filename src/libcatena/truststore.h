@@ -45,7 +45,7 @@ Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer) const;
 // match the provided private key.
 std::pair<std::unique_ptr<unsigned char[]>, size_t>
 Sign(const unsigned char* in, size_t inlen, const KeyLookup& signer,
-      const unsigned char* pkey, size_t plen) const;
+      const void* pkey, size_t plen) const;
 
 // Returned ciphertext includes 128 bits of random AES IV, so size >= 16
 // Throws EncryptException on error.

@@ -136,9 +136,15 @@ void AddPrivateKey(const KeyLookup& kl, const Keypair& kp) {
 nlohmann::json UserStatus(const TXSpec& uspec, unsigned stype) const;
 
 // Generate and sign new transactions, to be added to the ledger. Each of these
-// will result in a new outstanding transaction, plus a broadcast.
-void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
-				size_t plen, const nlohmann::json& payload);
+// will result in a new outstanding transaction, plus a broadcast. The versions
+// without a key supplied require the specified private key to be loaded in the
+// truststore.
+void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
+				size_t publen, const nlohmann::json& payload);
+void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
+				size_t publen, const nlohmann::json& payload, const void* privkey,
+        size_t privlen);
+
 void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 		size_t plen, const std::string& extid, ExtIDTypes lookuptype);
 void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
