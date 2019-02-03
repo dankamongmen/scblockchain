@@ -148,18 +148,24 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
   AddTransaction(std::move(tx));
 }
 
-void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
-		size_t plen, const std::string& extid, ExtIDTypes lookuptype){
-	// FIXME verify that pkey is a valid public key
-	size_t len = plen + 2 + extid.size();
+void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
+		size_t publen, const std::string& extid, ExtIDTypes lookuptype,
+    const void* privkey, size_t privlen) {
+	// FIXME verify that pubkey is a valid public key
+	size_t len = publen + 2 + extid.size();
   std::vector<unsigned char> buf;
   buf.reserve(len);
 	unsigned char *targ = buf.data();
-	targ = ulong_to_nbo(plen, targ, 2);
-	memcpy(targ, pkey, plen);
-	targ += plen;
+	targ = ulong_to_nbo(publen, targ, 2);
+	memcpy(targ, pubkey, publen);
+	targ += publen;
 	memcpy(targ, extid.c_str(), extid.size());
-	auto sig = tstore.Sign(buf.data(), len, keyspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+    sig = tstore.Sign(buf.data(), len, keyspec, privkey, privlen);
+  }else{
+    sig = tstore.Sign(buf.data(), len, keyspec);
+  }
 	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 4;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -174,6 +180,11 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
 	auto tx = std::unique_ptr<ExternalLookupTX>(new ExternalLookupTX());
 	tx->Extract(txbuf.data(), totlen);
   AddTransaction(std::move(tx));
+}
+
+void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
+		size_t publen, const std::string& extid, ExtIDTypes lookuptype){
+  AddExternalLookup(keyspec, pubkey, publen, extid, lookuptype, nullptr, 0);
 }
 
 void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
