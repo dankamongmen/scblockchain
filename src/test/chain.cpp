@@ -50,7 +50,23 @@ TEST(CatenaChain, AddConsortiumMember){
 	EXPECT_EQ(1, chain.GetBlockCount());
 }
 
-TEST(CatenaChain, AddConsortiumMemberNoKey){
+TEST(CatenaChain, AddConsortiumMemberKeySupplied){
+  size_t len;
+  auto res = Catena::ReadBinaryFile(ECDSAKEY, &len);
+  ASSERT_NE(res.get(), nullptr);
+	Catena::Chain chain(MOCKLEDGER);
+	Catena::TXSpec cm1(CM1_TEST_TX);
+	Catena::Keypair newkp;
+	newkp.Generate();
+	auto pem = newkp.PubkeyPEM();
+	nlohmann::json j = nlohmann::json::parse("{ \"Entity\": \"Test entity\" }");
+	EXPECT_EQ(0, chain.OutstandingTXCount());
+  chain.AddConsortiumMember(cm1, reinterpret_cast<const unsigned char*>(pem.c_str()),
+					      pem.length(), j, res.get(), len);
+	EXPECT_EQ(1, chain.OutstandingTXCount());
+}
+
+TEST(CatenaChain, AddConsortiumMemberNoKey){ // try it without a privkey loaded
 	Catena::Chain chain("", 0);
 	Catena::TXSpec cm1(CM1_TEST_TX);
 	Catena::Keypair newkp;
