@@ -561,6 +561,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) c
 		auto lookuptype = json.find("lookuptype");
 		auto payload = json.find("payload");
 		auto regspec = json.find("regspec");
+    auto privkey = json.find("privkey"); // optional
 		if(pubkey == json.end() || lookuptype == json.end() ||
 				payload == json.end() || regspec == json.end()){
 			std::cerr << "missing necessary elements from ExternalLookupTXRequest" << std::endl;
@@ -582,15 +583,27 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) c
 			std::cerr << "regspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto kstr = (*pubkey).get<std::string>();
 		auto pstr = (*payload).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		auto ltype = (*lookuptype).get<int>();
 		try{
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
-			chain.AddExternalLookup(regkl,
-					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), pstr, static_cast<Catena::ExtIDTypes>(ltype));
+      if(privkey == json.end()){
+        chain.AddExternalLookup(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), pstr, static_cast<Catena::ExtIDTypes>(ltype));
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+        chain.AddExternalLookup(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), pstr, static_cast<Catena::ExtIDTypes>(ltype),
+            privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
