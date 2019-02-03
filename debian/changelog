@@ -1,6 +1,6 @@
 catena (0.0.5~pre) UNRELEASED; urgency=medium
 
-  * 
+  * Augment JSON APIs to allow supply of private keys
 
  -- nick black <dankamongmen@gmail.com>  Fri, 01 Feb 2019 15:14:42 -0500
 
