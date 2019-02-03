@@ -627,6 +627,7 @@ int HTTPDServer::UserTXReq(struct PostState* ps, const char* upload) const {
 		auto pubkey = json.find("pubkey");
 		auto payload = json.find("payload");
 		auto regspec = json.find("regspec");
+    auto privkey = json.find("privkey"); // optional
 		if(pubkey == json.end() || payload == json.end() || regspec == json.end()){
 			std::cerr << "missing necessary elements" << std::endl;
 			return MHD_NO;
@@ -643,14 +644,25 @@ int HTTPDServer::UserTXReq(struct PostState* ps, const char* upload) const {
 			std::cerr << "regspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto kstr = (*pubkey).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		symkey = Catena::Keypair::CreateSymmetricKey();
 		try{
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
-			chain.AddUser(regkl,
-					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), symkey, *payload);
+      if(privkey == json.end()){
+        chain.AddUser(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), symkey, *payload);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+        chain.AddUser(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), symkey, *payload, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
