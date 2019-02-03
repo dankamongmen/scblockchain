@@ -697,6 +697,7 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 		auto refspec = json.find("refspec");
 		auto uspec = json.find("uspec");
 		auto symspec = json.find("symkey");
+    auto privkey = json.find("privkey"); // optional
 		if(refspec == json.end() || uspec == json.end()){
 			std::cerr << "missing necessary elements" << std::endl;
 			return MHD_NO;
@@ -713,6 +714,10 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 			std::cerr << "symkey was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto uspecstr = (*uspec).get<std::string>();
 		auto refspecstr = (*refspec).get<std::string>();
 		try{
@@ -720,7 +725,12 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 			Catena::StrToBlob((*symspec).get<std::string>(), symkey);
 			auto patkl = Catena::TXSpec::StrToTXSpec(uspecstr);
 			auto refkl = Catena::TXSpec::StrToTXSpec(refspecstr);
-			chain.AddLookupAuth(refkl, patkl, symkey);
+      if(privkey == json.end()){
+			  chain.AddLookupAuth(refkl, patkl, symkey);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+			  chain.AddLookupAuth(refkl, patkl, symkey, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
