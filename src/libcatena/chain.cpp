@@ -27,7 +27,7 @@ Chain::Chain(const std::string& fname) {
 }
 
 // A Chain instantiated from memory will not write out new blocks.
-Chain::Chain(const void* data, unsigned len){
+Chain::Chain(const void* data, unsigned len) {
 	LoadBuiltinKeys();
 	if(blocks.LoadData(data, len, lmap, tstore)){
 		throw BlockValidationException();
@@ -50,7 +50,7 @@ Chain::SerializeOutstanding() const {
 // transactions, we can't modify the outstanding table (including accepting
 // new transactions), or we need hide the outstanding transactions and then
 // merge them back on failure.
-void Chain::CommitOutstanding(){
+void Chain::CommitOutstanding() {
 	auto p = SerializeOutstanding();
 	if(blocks.AppendBlock(p.first.get(), p.second, lmap, tstore)){
 		throw BlockValidationException();
@@ -58,23 +58,29 @@ void Chain::CommitOutstanding(){
 	FlushOutstanding();
 }
 
-void Chain::FlushOutstanding(){
+void Chain::FlushOutstanding() {
 	outstanding.Flush();
 }
 
-void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
-				size_t plen, const nlohmann::json& payload){
-	// FIXME verify that pkey is a valid public key
+void Chain::AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
+				size_t publen, const nlohmann::json& payload, const void* privkey,
+        size_t privlen) {
+	// FIXME verify that pubkey is a valid public key
 	auto serialjson = payload.dump();
-	size_t len = plen + 2 + serialjson.length();
+	size_t len = publen + 2 + serialjson.length();
   std::vector<unsigned char> buf;
   buf.reserve(len);
 	unsigned char *targ = buf.data();
-	targ = ulong_to_nbo(plen, targ, 2);
-	memcpy(targ, pkey, plen);
-	targ += plen;
+	targ = ulong_to_nbo(publen, targ, 2);
+	memcpy(targ, pubkey, publen);
+	targ += publen;
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf.data(), len, keyspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, keyspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, keyspec);
+  }
 	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -110,7 +116,7 @@ BlockDetail Chain::Inspect(const CatenaHash& hash) const {
 }
 
 void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
-				const nlohmann::json& payload){
+    const nlohmann::json& payload, const void* privkey, size_t privlen) {
 	auto serialjson = payload.dump();
 	// Signed payload is ExternalLookup TXSpec + JSON
 	size_t len = elspec.first.size() + 4 + serialjson.length();
@@ -121,7 +127,12 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
 	targ += elspec.first.size();
 	targ = ulong_to_nbo(elspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf.data(), len, cmspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, cmspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, cmspec);
+  }
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -137,18 +148,24 @@ void Chain::AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
   AddTransaction(std::move(tx));
 }
 
-void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
-		size_t plen, const std::string& extid, ExtIDTypes lookuptype){
-	// FIXME verify that pkey is a valid public key
-	size_t len = plen + 2 + extid.size();
+void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
+		size_t publen, const std::string& extid, ExtIDTypes lookuptype,
+    const void* privkey, size_t privlen) {
+	// FIXME verify that pubkey is a valid public key
+	size_t len = publen + 2 + extid.size();
   std::vector<unsigned char> buf;
   buf.reserve(len);
 	unsigned char *targ = buf.data();
-	targ = ulong_to_nbo(plen, targ, 2);
-	memcpy(targ, pkey, plen);
-	targ += plen;
+	targ = ulong_to_nbo(publen, targ, 2);
+	memcpy(targ, pubkey, publen);
+	targ += publen;
 	memcpy(targ, extid.c_str(), extid.size());
-	auto sig = tstore.Sign(buf.data(), len, keyspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+    sig = tstore.Sign(buf.data(), len, keyspec, privkey, privlen);
+  }else{
+    sig = tstore.Sign(buf.data(), len, keyspec);
+  }
 	size_t totlen = len + sig.second + 4 + keyspec.first.size() + 4;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -165,23 +182,29 @@ void Chain::AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
   AddTransaction(std::move(tx));
 }
 
-void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
-			size_t plen, const SymmetricKey& symkey,
-			const nlohmann::json& payload){
-	// FIXME verify that pkey is a valid public key
+
+void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pubkey,
+			size_t publen, const SymmetricKey& symkey, const nlohmann::json& payload,
+      const void* privkey, size_t privlen) {
+	// FIXME verify that pubkey is a valid public key
 	auto serialjson = payload.dump(); // Only the JSON payload is encrypted
 	auto etext = tstore.Encrypt(serialjson.data(), serialjson.length(), symkey);
 	// etext.second is encrypted length, etext.first is ciphertext + IV
 	// The public key, keylen, IV, and encrypted payload are all signed
-	size_t len = plen + 2 + etext.second;
+	size_t len = publen + 2 + etext.second;
   std::vector<unsigned char> buf;
   buf.reserve(len);
 	unsigned char *targ = buf.data();
-	targ = ulong_to_nbo(plen, targ, 2);
-	memcpy(targ, pkey, plen);
-	targ += plen;
+	targ = ulong_to_nbo(publen, targ, 2);
+	memcpy(targ, pubkey, publen);
+	targ += publen;
 	memcpy(targ, etext.first.get(), etext.second);
-	auto sig = tstore.Sign(buf.data(), len, cmspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, cmspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, cmspec);
+  }
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -191,18 +214,24 @@ void Chain::AddUser(const TXSpec& cmspec, const unsigned char* pkey,
 	targ = ulong_to_nbo(cmspec.second, targ, 4); // sigidx
 	memcpy(targ, sig.first.get(), sig.second); // signature
 	targ += sig.second;
-	memcpy(targ, buf.data(), len); // signed payload (pkeylen, pkey, ciphertext)
+	memcpy(targ, buf.data(), len); // signed payload (pubkeylen, pubkey, ciphertext)
 	auto tx = std::unique_ptr<UserTX>(new UserTX());
 	tx.get()->Extract(txbuf.data(), totlen);
   AddTransaction(std::move(tx));
 }
 
 // FIXME can only work with AES256 (keytype 1) currently
-void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey){
+void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec,
+    const SymmetricKey& symkey, const void* privkey, size_t privlen) {
 	const auto& lar = lmap.LookupReq(larspec);
 	TXSpec elspec = lar.ELSpec();
 	TXSpec cmspec = lar.CMSpec();
-	SymmetricKey derivedkey = tstore.DeriveSymmetricKey(cmspec, elspec);
+	SymmetricKey derivedkey;
+  if(privkey){
+    derivedkey = tstore.DeriveSymmetricKey(cmspec, elspec, privkey, privlen);
+  }else{
+    derivedkey = tstore.DeriveSymmetricKey(cmspec, elspec);
+  }
 	// Encrypted payload is User TXSpec, 16-bit keytype, key
 	auto plainlen = symkey.size() + 2 + uspec.first.size() + 4;
   std::vector<unsigned char> plaintext;
@@ -214,7 +243,12 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
 	targ = ulong_to_nbo(static_cast<unsigned>(LookupAuthTX::Keytype::AES256), targ, 2);
 	memcpy(targ, symkey.data(), symkey.size());
 	auto etext = tstore.Encrypt(plaintext.data(), plainlen, derivedkey);
-	auto sig = tstore.Sign(etext.first.get(), etext.second, elspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(etext.first.get(), etext.second, elspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(etext.first.get(), etext.second, elspec);
+  }
 	size_t totlen = etext.second + sig.second + 4 + larspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -230,7 +264,8 @@ void Chain::AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const Symm
   AddTransaction(std::move(tx));
 }
 
-void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload){
+void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload,
+    const void* privkey, size_t privlen) {
 	const auto& psd = lmap.LookupDelegation(usdspec);
 	TXSpec cmspec = psd.CMSpec();
 	auto serialjson = payload.dump();
@@ -243,7 +278,12 @@ void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload){
 	targ += usdspec.first.size();
 	targ = ulong_to_nbo(usdspec.second, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf.data(), len, cmspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, cmspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, cmspec);
+  }
 	size_t totlen = len + sig.second + 4 + cmspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);
@@ -260,7 +300,7 @@ void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload){
 }
 
 void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
-				int stype, const nlohmann::json& payload){
+				int stype, const nlohmann::json& payload, const void* privkey, size_t privlen) {
 	auto serialjson = payload.dump();
 	// FIXME verify that uspec and cmspec are appropriate
 	size_t len = serialjson.length() + 4 + 4 + cmspec.first.size();
@@ -272,7 +312,12 @@ void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 	targ = ulong_to_nbo(cmspec.second, targ, 4);
 	targ = ulong_to_nbo(stype, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf.data(), len, uspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, uspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, uspec);
+  }
 	size_t totlen = len + sig.second + 4 + uspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);

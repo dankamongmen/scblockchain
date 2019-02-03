@@ -136,18 +136,68 @@ void AddPrivateKey(const KeyLookup& kl, const Keypair& kp) {
 nlohmann::json UserStatus(const TXSpec& uspec, unsigned stype) const;
 
 // Generate and sign new transactions, to be added to the ledger. Each of these
-// will result in a new outstanding transaction, plus a broadcast.
-void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pkey,
-				size_t plen, const nlohmann::json& payload);
-void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pkey,
-		size_t plen, const std::string& extid, ExtIDTypes lookuptype);
-void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload);
-void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey);
-void AddUser(const TXSpec& cmspec, const unsigned char* pkey, size_t plen,
-		const SymmetricKey& symkey, const nlohmann::json& payload);
-void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload);
+// will result in a new outstanding transaction, plus a broadcast. The versions
+// without a key supplied require the specified private key to be loaded in the
+// truststore.
+void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
+				size_t publen, const nlohmann::json& payload, const void* privkey,
+        size_t privlen);
+
+void AddConsortiumMember(const TXSpec& keyspec, const unsigned char* pubkey,
+				size_t publen, const nlohmann::json& payload) {
+  AddConsortiumMember(keyspec, pubkey, publen, payload, nullptr, 0);
+}
+
+void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
+		size_t publen, const std::string& extid, ExtIDTypes lookuptype,
+    const void* privkey, size_t privlen);
+
+void AddExternalLookup(const TXSpec& keyspec, const unsigned char* pubkey,
+		size_t publen, const std::string& extid, ExtIDTypes lookuptype) {
+  AddExternalLookup(keyspec, pubkey, publen, extid, lookuptype, nullptr, 0);
+}
+
+void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec, const nlohmann::json& payload,
+    const void* privkey, size_t privlen);
+
+void AddLookupAuthReq(const TXSpec& cmspec, const TXSpec& elspec,
+				const nlohmann::json& payload) {
+  AddLookupAuthReq(cmspec, elspec, payload, nullptr, 0);
+}
+
+// Wants the private key corresponding to the *elspec* referenced by the
+// specified *larspec* for signing and derivation+encryption.
+void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey,
+    const void* privkey, size_t privlen);
+
+void AddLookupAuth(const TXSpec& larspec, const TXSpec& uspec, const SymmetricKey& symkey) {
+  AddLookupAuth(larspec, uspec, symkey, nullptr, 0);
+}
+
+void AddUser(const TXSpec& cmspec, const unsigned char* pubkey, size_t publen,
+		const SymmetricKey& symkey, const nlohmann::json& payload,
+    const void* privkey, size_t privlen);
+
+void AddUser(const TXSpec& cmspec, const unsigned char* pubkey, size_t publen,
+		const SymmetricKey& symkey, const nlohmann::json& payload) {
+  AddUser(cmspec, pubkey, publen, symkey, payload, nullptr, 0);
+}
+
+void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload,
+    const void* privkey, size_t privlen);
+
+void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload) {
+  AddUserStatus(usdspec, payload, nullptr, 0);
+}
+
 void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
-				int stype, const nlohmann::json& payload);
+				int stype, const nlohmann::json& payload, const void* privkey,
+        size_t privlen);
+
+void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
+				int stype, const nlohmann::json& payload) {
+  AddUserStatusDelegation(cmspec, uspec, stype, payload, nullptr, 0);
+}
 
 void AddTransaction(std::unique_ptr<Transaction> tx);
 

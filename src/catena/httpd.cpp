@@ -503,6 +503,7 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 		auto pubkey = json.find("pubkey");
 		auto payload = json.find("payload");
 		auto regspec = json.find("regspec");
+    auto privkey = json.find("privkey"); // optional
 		if(pubkey == json.end() || payload == json.end() || regspec == json.end()){
 			std::cerr << "missing necessary elements" << std::endl;
 			return MHD_NO;
@@ -519,13 +520,24 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 			std::cerr << "regspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto kstr = (*pubkey).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		try{
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
-			chain.AddConsortiumMember(regkl,
-					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), *payload);
+      if(privkey == json.end()){
+        chain.AddConsortiumMember(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), *payload);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+        chain.AddConsortiumMember(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), *payload, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
@@ -549,6 +561,7 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) c
 		auto lookuptype = json.find("lookuptype");
 		auto payload = json.find("payload");
 		auto regspec = json.find("regspec");
+    auto privkey = json.find("privkey"); // optional
 		if(pubkey == json.end() || lookuptype == json.end() ||
 				payload == json.end() || regspec == json.end()){
 			std::cerr << "missing necessary elements from ExternalLookupTXRequest" << std::endl;
@@ -570,15 +583,27 @@ int HTTPDServer::ExternalLookupTXReq(struct PostState* ps, const char* upload) c
 			std::cerr << "regspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto kstr = (*pubkey).get<std::string>();
 		auto pstr = (*payload).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		auto ltype = (*lookuptype).get<int>();
 		try{
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
-			chain.AddExternalLookup(regkl,
-					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), pstr, static_cast<Catena::ExtIDTypes>(ltype));
+      if(privkey == json.end()){
+        chain.AddExternalLookup(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), pstr, static_cast<Catena::ExtIDTypes>(ltype));
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+        chain.AddExternalLookup(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), pstr, static_cast<Catena::ExtIDTypes>(ltype),
+            privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
@@ -602,6 +627,7 @@ int HTTPDServer::UserTXReq(struct PostState* ps, const char* upload) const {
 		auto pubkey = json.find("pubkey");
 		auto payload = json.find("payload");
 		auto regspec = json.find("regspec");
+    auto privkey = json.find("privkey"); // optional
 		if(pubkey == json.end() || payload == json.end() || regspec == json.end()){
 			std::cerr << "missing necessary elements" << std::endl;
 			return MHD_NO;
@@ -618,14 +644,25 @@ int HTTPDServer::UserTXReq(struct PostState* ps, const char* upload) const {
 			std::cerr << "regspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto kstr = (*pubkey).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		symkey = Catena::Keypair::CreateSymmetricKey();
 		try{
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
-			chain.AddUser(regkl,
-					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), symkey, *payload);
+      if(privkey == json.end()){
+        chain.AddUser(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), symkey, *payload);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+        chain.AddUser(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), symkey, *payload, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
@@ -649,7 +686,7 @@ int HTTPDServer::UserTXReq(struct PostState* ps, const char* upload) const {
 }
 
 int HTTPDServer::LookupAuthReqTXReq(struct PostState* ps, const char* upload) const {
-	(void)ps;
+	(void)ps; // FIXME
 	(void)upload;
 	return MHD_NO;
 }
@@ -660,6 +697,7 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 		auto refspec = json.find("refspec");
 		auto uspec = json.find("uspec");
 		auto symspec = json.find("symkey");
+    auto privkey = json.find("privkey"); // optional
 		if(refspec == json.end() || uspec == json.end()){
 			std::cerr << "missing necessary elements" << std::endl;
 			return MHD_NO;
@@ -676,6 +714,10 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 			std::cerr << "symkey was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto uspecstr = (*uspec).get<std::string>();
 		auto refspecstr = (*refspec).get<std::string>();
 		try{
@@ -683,7 +725,12 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 			Catena::StrToBlob((*symspec).get<std::string>(), symkey);
 			auto patkl = Catena::TXSpec::StrToTXSpec(uspecstr);
 			auto refkl = Catena::TXSpec::StrToTXSpec(refspecstr);
-			chain.AddLookupAuth(refkl, patkl, symkey);
+      if(privkey == json.end()){
+			  chain.AddLookupAuth(refkl, patkl, symkey);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+			  chain.AddLookupAuth(refkl, patkl, symkey, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
@@ -700,7 +747,7 @@ int HTTPDServer::LookupAuthTXReq(struct PostState* ps, const char* upload) const
 }
 
 int HTTPDServer::UserDelegationTXReq(struct PostState* ps, const char* upload) const {
-	(void)ps;
+	(void)ps; // FIXME
 	(void)upload;
 	return MHD_NO;
 }
@@ -710,6 +757,7 @@ int HTTPDServer::UserStatusTXReq(struct PostState* ps, const char* upload) const
 		auto json = nlohmann::json::parse(upload);
 		auto payload = json.find("payload");
 		auto usdspec = json.find("usdspec");
+    auto privkey = json.find("privkey"); // optional
 		if(payload == json.end() || usdspec == json.end()){
 			std::cerr << "missing necessary elements from NewUserStatusTX" << std::endl;
 			return MHD_NO;
@@ -722,10 +770,19 @@ int HTTPDServer::UserStatusTXReq(struct PostState* ps, const char* upload) const
 			std::cerr << "usdspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto usdspecstr = (*usdspec).get<std::string>();
 		try{
 			auto psdkl = Catena::TXSpec::StrToTXSpec(usdspecstr);
-			chain.AddUserStatus(psdkl, *payload);
+      if(privkey == json.end()){
+			  chain.AddUserStatus(psdkl, *payload);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+			  chain.AddUserStatus(psdkl, *payload, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response

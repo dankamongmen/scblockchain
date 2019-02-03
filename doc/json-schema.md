@@ -42,9 +42,10 @@ Accepted by the `/member` endpoint. Map of strings to T:
 * `pubkey`: String containing PEM-encoded public key
 * `regspec`: String containing TXSpec of registering ConsortiumMember
 * `payload`: JSON payload containing freeform details related to this entity
+* optional `privkey`: String containing PEM-encoded private key for `regspec`
 
 This will be signed using the consortium key referenced by `regspec`,
-which must have its private key loaded in the catena agent.
+which must have its private key loaded in the catena agent if not supplied.
 
 # NewExternalLookupTX
 
@@ -53,9 +54,10 @@ Accepted by the `/exlookup` endpoint. Map of strings to T:
 * `regspec`: String containing TXSpec of registering ConsortiumMember
 * `lookuptype`: Integer, lookup type
 * `payload`: String payload, dependent on lookuptype
+* optional `privkey`: String containing PEM-encoded private key for `regspec`
 
 This will be signed using the consortium key referenced by `regspec`,
-which must have its private key loaded in the catena agent.
+which must have its private key loaded in the catena agent if not supplied.
 
 # NewLookupAuthorizationRequestTX
 
@@ -63,9 +65,10 @@ Map of strings to T:
 * `extspec`: String containing TXSpec of requested ExternalLookup
 * `reqspec`: String containing TXSpec of requesting ConsortiumMember
 * `payload`: JSON payload containing freeform details related to this request
+* optional `privkey`: String containing PEM-encoded private key for `reqspec`
 
 This will be signed using the consortium key referenced by `reqspec`,
-which must have its private key loaded in the catena agent.
+which must have its private key loaded in the catena agent if not supplied.
 
 # NewLookupAuthorizationTX
 
@@ -73,9 +76,10 @@ Map of strings to T:
 * `refspec`: String containing TXSpec of subject LookupAuthReq
 * `uspec`: String containing TXSpec of unveiled User
 * `symkey`: String containing hex-encoded AES key used to encrypt User payload.
+* optional `privkey`: String containing PEM-encoded private key for `refspec`
 
 This will be signed using the patient lookup key referenced by `refspec`,
-which must have its private key loaded in the catena agent.
+which must have its private key loaded in the catena agent if not supplied.
 
 # NewUserTX
 
@@ -84,9 +88,10 @@ Map of strings to T:
 * `regspec`: String containing TXSpec of registering ConsortiumMember
 * `payload`: JSON payload containing freeform details related to this request.
 This will be encrypted before being written to the ledger.
+* optional `privkey`: String containing PEM-encoded private key for `regspec`
 
 This will be signed using the consortium key specified by `regspec`, which must
-have its private key loaded in the catena agent.
+have its private key loaded in the catena agent if not supplied.
 
 ## NewUserTXResponse
 
@@ -99,17 +104,20 @@ Map of strings to T:
 * `statustype`: Integer identifying the type of status being delegated
 * `delspec`: String containing TXSpec of delegated ConsortiumMember
 * `uspec`: String containing TXSpec of delegating User
+* optional `privkey`: String containing PEM-encoded private key for `uspec`
 
 This will be signed using the delegation authentication key specified by
-`uspec`, which must have its private key loaded in the catena agent.
+`uspec`, which must have its private key loaded in the catena agent if not
+supplied.
 
 # NewUserStatusTX
 Map of strings to T:
 * `usdspec`: String containing TXSpec of authorizing UserStatusDelegation
 * `payload`: JSON payload containing freeform details related to this request.
+* optional `privkey`: String containing PEM-encoded private key for `usdspec`
 
 This will be signed using the consortium key referenced by `usdspec`,
-which must have its private key loaded in the catena agent.
+which must have its private key loaded in the catena agent if not supplied.
 
 # TXRequestResponse
 
