@@ -503,6 +503,7 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 		auto pubkey = json.find("pubkey");
 		auto payload = json.find("payload");
 		auto regspec = json.find("regspec");
+    auto privkey = json.find("privkey"); // optional
 		if(pubkey == json.end() || payload == json.end() || regspec == json.end()){
 			std::cerr << "missing necessary elements" << std::endl;
 			return MHD_NO;
@@ -519,13 +520,24 @@ int HTTPDServer::MemberTXReq(struct PostState* ps, const char* upload) const {
 			std::cerr << "regspec was not a string" << std::endl;
 			return MHD_NO;
 		}
+    if(privkey != json.end() && !(*privkey).is_string()){
+			std::cerr << "privkey was not a string" << std::endl;
+			return MHD_NO;
+    }
 		auto kstr = (*pubkey).get<std::string>();
 		auto rspecstr = (*regspec).get<std::string>();
 		try{
 			auto regkl = Catena::TXSpec::StrToTXSpec(rspecstr);
-			chain.AddConsortiumMember(regkl,
-					reinterpret_cast<const unsigned char*>(kstr.c_str()),
-					kstr.size(), *payload);
+      if(privkey == json.end()){
+        chain.AddConsortiumMember(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), *payload);
+      }else{
+        auto privstr = (*privkey).get<std::string>();
+        chain.AddConsortiumMember(regkl,
+            reinterpret_cast<const unsigned char*>(kstr.c_str()),
+            kstr.size(), *payload, privstr.c_str(), privstr.size());
+      }
 		}catch(Catena::ConvertInputException& e){
 			std::cerr << "bad argument (" << e.what() << ")" << std::endl;
 			return MHD_NO; // FIXME return error response
