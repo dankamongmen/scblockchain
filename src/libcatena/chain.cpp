@@ -300,7 +300,7 @@ void Chain::AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload,
 }
 
 void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
-				int stype, const nlohmann::json& payload) {
+				int stype, const nlohmann::json& payload, const void* privkey, size_t privlen) {
 	auto serialjson = payload.dump();
 	// FIXME verify that uspec and cmspec are appropriate
 	size_t len = serialjson.length() + 4 + 4 + cmspec.first.size();
@@ -312,7 +312,12 @@ void Chain::AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
 	targ = ulong_to_nbo(cmspec.second, targ, 4);
 	targ = ulong_to_nbo(stype, targ, 4);
 	memcpy(targ, serialjson.c_str(), serialjson.length());
-	auto sig = tstore.Sign(buf.data(), len, uspec);
+  std::pair<std::unique_ptr<unsigned char[]>, size_t> sig;
+  if(privkey){
+	  sig = tstore.Sign(buf.data(), len, uspec, privkey, privlen);
+  }else{
+	  sig = tstore.Sign(buf.data(), len, uspec);
+  }
 	size_t totlen = len + sig.second + 4 + uspec.first.size() + 2;
   std::vector<unsigned char> txbuf;
   txbuf.reserve(totlen);

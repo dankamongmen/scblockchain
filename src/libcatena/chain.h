@@ -191,7 +191,13 @@ void AddUserStatus(const TXSpec& usdspec, const nlohmann::json& payload) {
 }
 
 void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
-				int stype, const nlohmann::json& payload);
+				int stype, const nlohmann::json& payload, const void* privkey,
+        size_t privlen);
+
+void AddUserStatusDelegation(const TXSpec& cmspec, const TXSpec& uspec,
+				int stype, const nlohmann::json& payload) {
+  AddUserStatusDelegation(cmspec, uspec, stype, payload, nullptr, 0);
+}
 
 void AddTransaction(std::unique_ptr<Transaction> tx);
 
