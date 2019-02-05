@@ -75,7 +75,7 @@ which must have its private key loaded in the catena agent if not supplied.
 Map of strings to T:
 * `refspec`: String containing TXSpec of subject LookupAuthReq
 * `uspec`: String containing TXSpec of unveiled User
-* `symkey`: String containing hex-encoded AES key used to encrypt User payload.
+* `symkey`: String containing hex-encoded AES key used to encrypt User payload
 * optional `privkey`: String containing PEM-encoded private key for `refspec`
 
 This will be signed using the patient lookup key referenced by `refspec`,
@@ -86,8 +86,8 @@ which must have its private key loaded in the catena agent if not supplied.
 Map of strings to T:
 * `pubkey`: String containing PEM-encode public key (user delegation auth key)
 * `regspec`: String containing TXSpec of registering ConsortiumMember
-* `payload`: JSON payload containing freeform details related to this request.
-This will be encrypted before being written to the ledger.
+* `payload`: JSON payload containing freeform details related to this request
+(encrypted before being written to the ledger)
 * optional `privkey`: String containing PEM-encoded private key for `regspec`
 
 This will be signed using the consortium key specified by `regspec`, which must
@@ -104,6 +104,7 @@ Map of strings to T:
 * `statustype`: Integer identifying the type of status being delegated
 * `delspec`: String containing TXSpec of delegated ConsortiumMember
 * `uspec`: String containing TXSpec of delegating User
+* `payload`: JSON payload containing freeform details related to this request
 * optional `privkey`: String containing PEM-encoded private key for `uspec`
 
 This will be signed using the delegation authentication key specified by
