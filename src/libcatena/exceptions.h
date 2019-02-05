@@ -3,80 +3,85 @@
 
 namespace Catena {
 
-class NetworkException : public std::runtime_error {
+class CatenaException : public std::runtime_error {
 public:
-NetworkException() : std::runtime_error("network error"){}
-NetworkException(const std::string& s) : std::runtime_error(s){}
+CatenaException(const std::string& s) : std::runtime_error(s){}
 };
 
-class BlockValidationException : public std::runtime_error {
+class NetworkException : public CatenaException {
 public:
-BlockValidationException() : std::runtime_error("error validating block"){}
-BlockValidationException(const std::string& s) : std::runtime_error(s){}
+NetworkException() : CatenaException("network error"){}
+NetworkException(const std::string& s) : CatenaException(s){}
 };
 
-class BlockHeaderException : public std::runtime_error {
+class BlockValidationException : public CatenaException {
 public:
-BlockHeaderException() : std::runtime_error("invalid block header"){}
-BlockHeaderException(const std::string& s) : std::runtime_error(s){}
+BlockValidationException() : CatenaException("error validating block"){}
+BlockValidationException(const std::string& s) : CatenaException(s){}
 };
 
-class SplitInputException : public std::runtime_error {
+class BlockHeaderException : public CatenaException {
 public:
-SplitInputException(const std::string& s) : std::runtime_error(s){}
+BlockHeaderException() : CatenaException("invalid block header"){}
+BlockHeaderException(const std::string& s) : CatenaException(s){}
 };
 
-class ConvertInputException : public std::runtime_error {
+class SplitInputException : public CatenaException {
 public:
-ConvertInputException(const std::string& s) : std::runtime_error(s){}
+SplitInputException(const std::string& s) : CatenaException(s){}
 };
 
-class SigningException : public std::runtime_error {
+class ConvertInputException : public CatenaException {
 public:
-SigningException() : std::runtime_error("error signing"){}
-SigningException(const std::string& s) : std::runtime_error(s){}
+ConvertInputException(const std::string& s) : CatenaException(s){}
 };
 
-class EncryptException : public std::runtime_error {
+class SigningException : public CatenaException {
 public:
-EncryptException() : std::runtime_error("error encrypting"){}
-EncryptException(const std::string& s) : std::runtime_error(s){}
+SigningException() : CatenaException("error signing"){}
+SigningException(const std::string& s) : CatenaException(s){}
 };
 
-class DecryptException : public std::runtime_error {
+class EncryptException : public CatenaException {
 public:
-DecryptException() : std::runtime_error("error decrypting"){}
-DecryptException(const std::string& s) : std::runtime_error(s){}
+EncryptException() : CatenaException("error encrypting"){}
+EncryptException(const std::string& s) : CatenaException(s){}
 };
 
-class KeypairException : public std::runtime_error {
+class DecryptException : public CatenaException {
 public:
-KeypairException() : std::runtime_error("keypair error"){}
-KeypairException(const std::string& s) : std::runtime_error(s){}
+DecryptException() : CatenaException("error decrypting"){}
+DecryptException(const std::string& s) : CatenaException(s){}
 };
 
-class InvalidTXSpecException : public std::runtime_error {
+class KeypairException : public CatenaException {
 public:
-InvalidTXSpecException() : std::runtime_error("bad transaction spec"){}
-InvalidTXSpecException(const std::string& s) : std::runtime_error(s){}
+KeypairException() : CatenaException("keypair error"){}
+KeypairException(const std::string& s) : CatenaException(s){}
 };
 
-class UserStatusException : public std::runtime_error {
+class InvalidTXSpecException : public CatenaException {
 public:
-UserStatusException() : std::runtime_error("bad user status"){}
-UserStatusException(const std::string& s) : std::runtime_error(s){}
+InvalidTXSpecException() : CatenaException("bad transaction spec"){}
+InvalidTXSpecException(const std::string& s) : CatenaException(s){}
 };
 
-class TransactionException : public std::runtime_error {
+class UserStatusException : public CatenaException {
 public:
-TransactionException() : std::runtime_error("invalid transaction"){}
-TransactionException(const std::string& s) : std::runtime_error(s){}
+UserStatusException() : CatenaException("bad user status"){}
+UserStatusException(const std::string& s) : CatenaException(s){}
 };
 
-class SystemException : public std::runtime_error {
+class TransactionException : public CatenaException {
 public:
-SystemException() : std::runtime_error("system error"){}
-SystemException(const std::string& s) : std::runtime_error(s){}
+TransactionException() : CatenaException("invalid transaction"){}
+TransactionException(const std::string& s) : CatenaException(s){}
+};
+
+class SystemException : public CatenaException {
+public:
+SystemException() : CatenaException("system error"){}
+SystemException(const std::string& s) : CatenaException(s){}
 };
 
 }
