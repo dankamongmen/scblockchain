@@ -30,4 +30,4 @@ package() {
 	install -D -m644 "$builddir"/doc/seedpeers "$pkgdir"/var/lib/catena/seedpeers
 }
 
-sha512sums="505888f1e0fe39f7e60cd3b08a947ce64d62a568b77ed4644816cc6d37e789a2b68375bd416e4c8c737dc47f0edaadd638a4e658e376871516da9e0b6ebddbe5  scblockchain-0.0.4.tar.gz"
+sha512sums="7fa6f797caed77ddc658c11a45ca520eccf94c8aaf290122ab55fec6bd58c67cbb2eecf309313e3de86a05dbd75b597913ea1cdaecfadc6f4c37055bbba16d92  scblockchain-0.0.5.tar.gz"
