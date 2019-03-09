@@ -590,12 +590,14 @@ void ReadlineUI::InputLoop(){
 		try{
 			tokens = Catena::SplitInput(line);
 		}catch(Catena::SplitInputException& e){
-			std::cerr << "error tokenizing inputs: " << e.what() << std::endl;
-			add_history(line);
+      std::cerr << "error tokenizing inputs: " << e.what() << std::endl;
+      add_history(line);
+      free(line);
 			continue;
 		}
 		if(tokens.size() == 0){
-			continue;
+      free(line);
+      continue;
 		}
 		add_history(line);
 		for(c = cmdtable ; c->fxn ; ++c){
