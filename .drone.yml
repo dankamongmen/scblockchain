@@ -4,3 +4,6 @@ pipeline:
     commands:
       - apk add --update alpine-sdk
       - make docker-apk
+    when:
+      event: [ push ]
+      branches: [ develop, master ]
