@@ -1,0 +1,6 @@
+pipeline:
+  build:
+    image: alpine/edge
+    commands:
+      - apk add --update alpine-sdk
+      - make docker-apk
