@@ -1,9 +1,14 @@
 pipeline:
   build:
-    image: alpine/edge
+    image:  library/alpine:edge
+    username:
+      from_secret: username
+    password:
+      from_secret: password
+    repo: Sharecare/catena
     commands:
-      - apk add --update alpine-sdk
-      - make docker-apk
-    when:
-      event: [ push ]
-      branches: [ develop, master ]
+      - echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories
+      - apk update
+      - apk add alpine-sdk dpkg ctags openssl-dev capnproto-dev
+         nlohmann-json-dev readline-dev libmicrohttpd-dev gtest-dev gtest
+      - make
