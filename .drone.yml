@@ -1,10 +1,6 @@
 pipeline:
   build:
     image:  library/alpine:edge
-    username:
-      from_secret: username
-    password:
-      from_secret: password
     repo: Sharecare/catena
     commands:
       - echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories
