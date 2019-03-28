@@ -46,13 +46,13 @@ access (to create a chroot):
 
 ### Docker
 
-Among other formats, Catena is distributed as a Debian-based Docker image.
+Among other formats, Catena is distributed as an Alpine-based Docker image.
 The `docker` target will:
 
-1. Create a Debian container with build dependencies
-2. Build a debian package within that image
-3. Extract the catena deb
-4. Create a new Debian container, and install catena directly to it.
+1. Create a Alpine container with build dependencies
+2. Build an alpine package (apk) within that image
+3. Extract the catena apk
+4. Create a new Alpine container, and install catena directly to it.
 
 The resulting container can be run on any Docker node. A persistent, per-node
 volume ought be attached for the ledger and node PKI.
