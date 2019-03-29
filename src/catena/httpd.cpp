@@ -952,6 +952,7 @@ int HTTPDServer::HandlePost(struct MHD_Connection* conn, const char* url,
 	}
 	auto ret = MHD_queue_response(conn, retcode, resp);
 	MHD_destroy_response(resp);
+  std::cout << "POST " << url << " 200" << std::endl;
 	return ret;
 }
 
@@ -1015,6 +1016,7 @@ int HTTPDServer::Handler(void* cls, struct MHD_Connection* conn, const char* url
 		std::cerr << "couldn't queue HTTP response" << std::endl;
 		return MHD_NO;
 	}
+  std::cout << method << ' ' << url << " 200" << std::endl;
 	return ret;
 }
 
